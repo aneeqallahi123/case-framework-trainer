@@ -51,8 +51,12 @@ router.post('/structure', requireAuth, async (req, res) => {
   }
 
   try {
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 2000 }
+    });
 
     const example = getExampleForType(caseType);
 
@@ -111,13 +115,8 @@ Return ONLY a JSON object with this exact structure (no extra text, no markdown 
 - meceNotes, gaps, and strengths should each have 1-3 items
 - Be honest about quality`;
 
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    const raw = message.content[0].text.trim();
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text().trim();
 
     // Strip markdown code fences if present
     const cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();

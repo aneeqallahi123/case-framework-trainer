@@ -8,7 +8,7 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
+    "@google/generative-ai": "^0.21.0",
     "@deepgram/sdk": "^3.9.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
