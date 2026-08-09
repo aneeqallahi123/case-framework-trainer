@@ -39,7 +39,18 @@
   .navi.on{color:var(--ink);font-weight:600}
   .navi.on::after{content:"";position:absolute;left:14px;right:14px;bottom:-1px;height:2px;background:var(--red)}
   .nav-right{display:flex;align-items:center;gap:16px}
-  .avatar{width:34px;height:34px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:14px;color:var(--ink)}
+  .avatar{width:34px;height:34px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:14px;color:var(--ink);cursor:pointer;user-select:none;transition:border-color .15s}
+  .avatar:hover{border-color:var(--gray)}
+  .acct-wrap{position:relative}
+  .acct-menu{position:absolute;top:calc(100% + 10px);right:0;min-width:220px;background:#fff;border:1px solid var(--line);border-radius:4px;box-shadow:0 6px 24px rgba(0,0,0,.10);z-index:200;display:none;flex-direction:column;overflow:hidden}
+  .acct-menu.open{display:flex}
+  .acct-user{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .acct-user-name{font-weight:600;font-size:14px;color:var(--ink)}
+  .acct-user-email{font-size:12px;color:var(--gray);margin-top:1px}
+  .acct-item{padding:11px 16px;font-size:13.5px;font-weight:500;color:var(--ink);background:transparent;border:0;text-align:left;cursor:pointer;font-family:var(--f);transition:background .12s}
+  .acct-item:hover{background:var(--bg2)}
+  .acct-sep{height:1px;background:var(--line);margin:0}
+  .acct-item.danger{color:var(--red)}
 
   .content{max-width:1180px;margin:0 auto;padding:0 40px}
   .crumbrow{display:flex;align-items:baseline;gap:14px;padding:30px 0 0}
@@ -358,13 +369,22 @@
         <button class="navi on" data-view="dashboard">Dashboard</button>
         <button class="navi" data-view="drill">Drill</button>
         <button class="navi" id="navStats" data-view="dashboard">Stats</button>
-        <button class="navi" id="navSettings">Setup</button>
-        <button class="navi" id="navAdmin" data-view="admin" style="display:none">Admin</button>
       </nav>
       <div class="nav-right">
         <button class="btn red" id="newDrillBtn">New drill</button>
-        <button class="btn ghost" id="logoutBtn" style="font-size:12px">Sign out</button>
-        <div class="avatar" id="profileAv">N</div>
+        <div class="acct-wrap">
+          <div class="avatar" id="profileAv">N</div>
+          <div class="acct-menu" id="acctMenu">
+            <div class="acct-user">
+              <div class="acct-user-name" id="acctName"></div>
+              <div class="acct-user-email" id="acctEmail"></div>
+            </div>
+            <button class="acct-item" id="acctSetup">Setup</button>
+            <button class="acct-item" id="acctAdmin" style="display:none">Admin</button>
+            <div class="acct-sep"></div>
+            <button class="acct-item danger" id="logoutBtn">Sign out</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -663,9 +683,12 @@
 
   function showApp() {
     document.getElementById('authScreen').classList.add('hidden');
-    const initials = (AUTH.user?.firstName || AUTH.user?.email || 'U').slice(0,1).toUpperCase();
+    const u = AUTH.user;
+    const initials = (u?.firstName || u?.email || 'U').slice(0,1).toUpperCase();
     document.getElementById('profileAv').textContent = initials;
-    document.getElementById('navAdmin').style.display = AUTH.user?.role === 'admin' ? '' : 'none';
+    document.getElementById('acctName').textContent = u?.firstName || u?.email || '';
+    document.getElementById('acctEmail').textContent = u?.firstName ? (u?.email || '') : '';
+    document.getElementById('acctAdmin').style.display = u?.role === 'admin' ? '' : 'none';
     loadCaseBank();
     syncHistoryFromServer();
   }
@@ -1389,7 +1412,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     renderAdminCasesTable(filtered);
   });
 
-  el('navSettings').onclick=()=>el('settingsModal').classList.add('show');
+  // Account circle dropdown
+  el('profileAv').onclick=(e)=>{ e.stopPropagation(); el('acctMenu').classList.toggle('open'); };
+  document.addEventListener('click',()=>el('acctMenu').classList.remove('open'));
+  el('acctMenu').addEventListener('click',e=>e.stopPropagation());
+  el('acctSetup').onclick=()=>{ el('acctMenu').classList.remove('open'); openSetup(); };
+  el('acctAdmin').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('admin'); loadAdminUsers(); loadAdminCases(); };
+
   el('closeSettings').onclick=()=>el('settingsModal').classList.remove('show');
   el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) el('settingsModal').classList.remove('show'); };
   el('resetData').onclick=()=>{ if(confirm('Erase all your drill history and scores?')){ saveHistory([]); renderDashboard(); toast('Progress reset.'); } };
@@ -1427,7 +1456,6 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
 
   renderDashboard();
-  el('profileAv').textContent=(localStorage.getItem('cd_name')||'N').slice(0,1).toUpperCase();
 });
 
 /* ---- ready room ---- */
@@ -1482,7 +1510,6 @@ function resumeSession(){ el('settingsModal').classList.remove('show'); S.paused
     if(pauseWasTiming) beginTick(); } }
 function closeSetup(){ if(modalMode==='pause') resumeSession(); else el('settingsModal').classList.remove('show'); }
 window.addEventListener('DOMContentLoaded',()=>{
-  el('navSettings').onclick=openSetup;
   el('closeSettings').onclick=closeSetup;
   el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) closeSetup(); };
   const pb=el('pauseBtn'); if(pb) pb.onclick=pauseSession;
