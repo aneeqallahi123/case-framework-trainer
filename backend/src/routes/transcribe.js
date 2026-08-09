@@ -95,7 +95,11 @@ Do NOT transcribe or lightly reword their sentences. Understand their underlying
 
 Merge repeated or restated ideas into a single node. Convert every node label into a short, punchy business phrase (2-6 words) — never a sentence fragment lifted verbatim from the transcript. If the candidate mentioned specific numbers while describing a branch (e.g. "we went from 10,000 to 12,000 units"), attach that as a "metric" on that node instead of losing it in the label.
 
-## Reference example (a strong real issue tree for a similar case type — match this style and rigor, not these exact words)
+## CRITICAL — content fidelity
+
+The tree must contain ONLY what the candidate actually said, restructured and relabeled. You are a transcription-to-structure tool, not a case-solving tool. Never add a branch, sub-branch, or idea the candidate did not express, even if it's a standard part of this framework type or something a strong candidate "should" have said. If they gave 2 top-level ideas, output 2 — do not pad it to 3-5 by inventing more. If a branch they mentioned has no sub-points, leave its children empty — do not manufacture sub-points to fill it out. Missing standard elements belong in "gaps" as feedback text, never as fabricated tree nodes.
+
+## Reference example (for STYLE ONLY — how to phrase labels, how deep nesting typically goes, how metrics attach. Do NOT borrow any of its actual branch names, topics, or content — this is a different case)
 
 Question: "${example.question}"
 Tree: ${JSON.stringify(example.tree)}
@@ -129,12 +133,12 @@ Return ONLY a JSON object with this exact structure (no extra text, no markdown 
 }
 
 ## Rules
-- 2-5 top-level branches directly off the root, reflecting the real MECE split implied by their answer (e.g. Revenue vs. Costs, not chronological chunks of speech)
+- Only as many top-level branches as the candidate actually distinguished — could be 2, could be 5. Never pad the count.
 - Nest to a second (and third, if the candidate actually spoke that deep) level wherever their answer implied it — do not flatten real nesting into one level, and do not invent depth that wasn't there
 - Only set "metric" on a node when the candidate stated an actual number for it; otherwise omit the key or set it to null
-- If they only said 1-2 things, still infer a sensible tree from what was said, filling the rest with what the case type typically requires — but list those inferred parts under "gaps", not "strengths"
+- If they only said 1-2 things, output a small 1-2 branch tree — that is a correct, honest transcription of a thin framework. Do NOT fill it out with what the case type "typically requires." List what's missing under "gaps" instead — as text feedback, never as invented tree nodes.
 - meceNotes, gaps, and strengths should each have 1-3 items
-- Be honest about quality`;
+- Be honest about quality — a small tree that faithfully reflects a thin answer should score lower on completeness than a fabricated large one, so there is no incentive to invent content`;
 
     const result = await model.generateContent(prompt);
     const finishReason = result.response.candidates?.[0]?.finishReason;

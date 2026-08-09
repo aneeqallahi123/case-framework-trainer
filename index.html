@@ -338,11 +338,12 @@
   #adminCaseModal .box{width:600px}
 
   /* ---- issue tree diagram ---- */
-  .tree-diagram{position:relative;overflow-x:auto;padding:18px 8px 20px}
+  .tree-diagram{position:relative;overflow-x:auto;padding:24px 12px 28px}
   .tree-lines{position:absolute;top:0;left:0;pointer-events:none;z-index:0}
   .tree-lines path{fill:none;stroke:var(--line);stroke-width:1.5}
-  .tree-cols{position:relative;z-index:1;display:flex;align-items:stretch;gap:40px}
-  .tree-col{display:flex;flex-direction:column;justify-content:center;gap:14px;flex:0 0 auto}
+  .tree-cols{position:relative;z-index:1;display:flex;align-items:stretch;gap:56px}
+  .tree-col{display:flex;flex-direction:column;justify-content:center;gap:18px;flex:0 0 auto}
+  .tree-node.group-start{margin-top:28px}
   .tree-node{position:relative;background:#fff;border:1px solid var(--line);border-radius:2px;padding:10px 14px;min-width:150px;max-width:190px;text-align:center}
   .tree-node.root{border-color:var(--ink);border-width:2px;font-weight:700;min-width:170px}
   .tree-node .tn-label{font-size:13px;font-weight:600;line-height:1.35}
@@ -1141,16 +1142,22 @@ function renderIssueTree(container, treeRoot, opts, focusNode){
   if (!treeRoot || !treeRoot.label) { container.innerHTML = '<div class="empty">No tree to display.</div>'; return; }
   const levels = buildTreeLayout(treeRoot);
   const flat = levels.flat();
-  const colsHtml = levels.map((col, i) => `
-    <div class="tree-col">${col.map(n => `
-      <div class="tree-node${i===0?' root':''}" id="${n.id}">
+  const colsHtml = levels.map((col, i) => {
+    let prevParentId = null;
+    return `<div class="tree-col">${col.map(n => {
+      const groupStart = i > 0 && n.parentId !== prevParentId;
+      prevParentId = n.parentId;
+      return `
+      <div class="tree-node${i===0?' root':''}${groupStart?' group-start':''}" id="${n.id}">
         <div class="tn-label" data-id="${n.id}" ${opts.editable ? 'contenteditable="true" spellcheck="false"' : ''}>${esc(n.node.label)}</div>
         ${metricHtml(n.node.metric)}
         ${opts.editable ? `<div class="tn-actions">
           ${i>0 ? `<button type="button" class="tn-del" data-id="${n.id}" title="Delete this branch">✕</button>` : ''}
           <button type="button" class="tn-add" data-id="${n.id}" title="Add a branch here">+</button>
         </div>` : ''}
-      </div>`).join('')}</div>`).join('');
+      </div>`;
+    }).join('')}</div>`;
+  }).join('');
   container.innerHTML = `<div class="tree-diagram"><svg class="tree-lines"></svg><div class="tree-cols">${colsHtml}</div></div>`;
 
   if (opts.editable) {
@@ -1201,7 +1208,7 @@ function renderIssueTree(container, treeRoot, opts, focusNode){
       const x1 = pr.right - base.left, y1 = pr.top - base.top + pr.height / 2;
       const x2 = cr.left - base.left, y2 = cr.top - base.top + cr.height / 2;
       const midx = (x1 + x2) / 2;
-      paths += `<path d="M ${x1} ${y1} H ${midx} V ${y2} H ${x2}" />`;
+      paths += `<path d="M ${x1} ${y1} C ${midx} ${y1}, ${midx} ${y2}, ${x2} ${y2}" />`;
     });
     svg.innerHTML = paths;
   });
