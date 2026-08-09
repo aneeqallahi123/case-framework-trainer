@@ -1300,6 +1300,7 @@ async function startDrill(){
   await loadCaseBank();
   if(!CASE_BANK.length){ toast('Case bank failed to load. Please refresh and try again.'); return; }
   S.caseObj=randomCase(); S.recorded=false; S.sumChecked=false;
+  window._lastAIFramework=null;
   if(timerInt){ clearInterval(timerInt); timerInt=null; }
   tElapsed=0; tLimit=0; tStarted=false;
   el('startTimer').disabled=false; el('stopEarly').disabled=true; el('timerLog').textContent='';
@@ -1368,10 +1369,14 @@ function runReview(){
   const c=S.caseObj, st=parseStructure(el('structText').value);
   if(!st.length){ el('reviewOut').innerHTML='<div class="fb warn">Nothing to review — add at least one <span class="kbd"># bucket</span>.</div>'; return; }
   const r=reviewFramework(st,c); const lvl={strong:100,ok:62,weak:32}; const gc=r.pct>=75?'var(--good)':r.pct>=45?'var(--amber)':'var(--bad)';
-  let html='<div class="card" style="margin-top:18px"><h3>Your framework, transcribed</h3><div class="preview" style="min-height:auto;margin-top:10px">'+st.map((b,i)=>`<h4><span class="n">${i+1}</span>${b.header}</h4><ul>${b.bullets.map(x=>`<li>${x}</li>`).join('')||'<li class="empty">(no points)</li>'}</ul>`).join('')+'</div></div>';
+  const hasTree = !!window._lastAIFramework?.tree;
+  const framedContent = hasTree ? '<div id="reviewTreeBox"></div>' :
+    st.map((b,i)=>`<h4><span class="n">${i+1}</span>${b.header}</h4><ul>${b.bullets.map(x=>`<li>${x}</li>`).join('')||'<li class="empty">(no points)</li>'}</ul>`).join('');
+  let html='<div class="card" style="margin-top:18px"><h3>Your framework, transcribed</h3><div class="preview" style="min-height:auto;margin-top:10px">'+framedContent+'</div></div>';
   html+=`<div class="card" style="margin-top:18px"><h3>Review</h3><div class="grademain" style="margin-top:12px"><div class="gring" id="gring" style="--gc:${gc}"><div class="gi"><div><div class="gnum" id="gnum">0</div><div class="glbl">/ 100</div></div></div></div><div class="overall-txt">${r.overall}</div></div>`;
   html+=r.crits.map(cr=>{ const g=cr.level==='strong'?['c-strong','✓','i-strong']:cr.level==='ok'?['c-ok','~','i-ok']:['c-weak','!','i-weak']; return `<div class="crit"><div class="crithead"><div class="cicon ${g[0]}">${g[1]}</div><div><div class="ctitle2">${cr.name}</div><div class="csub2">${cr.sub}</div></div></div><div class="strbar"><i class="${g[2]}" data-w="${lvl[cr.level]}"></i></div>${cr.notes.map(n=>`<div class="fb ${cr.level==='strong'?'good':cr.level==='ok'?'warn':'bad'}">${n}</div>`).join('')}</div>`; }).join('')+'</div>';
   el('reviewOut').innerHTML=html; el('reviewFoot').style.display='flex';
+  if (hasTree) renderIssueTree(el('reviewTreeBox'), window._lastAIFramework.tree);
   requestAnimationFrame(()=>{ $$('#reviewOut .strbar i').forEach(i=>i.style.width=i.dataset.w+'%'); const gr=el('gring'); if(gr)gr.style.background=`conic-gradient(${gc} ${r.pct*3.6}deg,#ECECEC 0)`; animateCount(el('gnum'),r.pct,1000); });
   Beep.score(r.pct); TTS.speak(r.overall);
   recordResult(c,r,st);
