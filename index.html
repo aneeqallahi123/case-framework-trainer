@@ -325,6 +325,18 @@
   .admin-table .row-actions{display:flex;gap:8px;justify-content:flex-end}
   .admin-table .row-actions button{font-size:12px;padding:6px 10px}
   #adminCaseModal .box{width:600px}
+
+  /* ---- issue tree diagram ---- */
+  .tree-diagram{position:relative;overflow-x:auto;padding:8px 4px 16px}
+  .tree-lines{position:absolute;top:0;left:0;pointer-events:none;z-index:0}
+  .tree-lines path{fill:none;stroke:var(--line);stroke-width:1.5}
+  .tree-cols{position:relative;z-index:1;display:flex;align-items:stretch;gap:40px}
+  .tree-col{display:flex;flex-direction:column;justify-content:center;gap:14px;flex:0 0 auto}
+  .tree-node{background:#fff;border:1px solid var(--line);border-radius:2px;padding:10px 14px;min-width:150px;max-width:190px;text-align:center}
+  .tree-node.root{border-color:var(--ink);border-width:2px;font-weight:700;min-width:170px}
+  .tree-node .tn-label{font-size:13px;font-weight:600;line-height:1.35}
+  .tree-node.root .tn-label{font-size:14px}
+  .tree-node .tn-metric{margin-top:6px;font-size:11.5px;color:var(--red);font-weight:600}
 </style>
 </head>
 <body>
@@ -879,27 +891,14 @@
       const structured = data.structured;
       window._lastAIFramework = structured;
 
-      // Normalize bullets: backend may return strings (older shape) or {text, subBullets}
-      const norm = b => (b || []).map(x => typeof x === 'string' ? { text: x, subBullets: [] } : { text: x.text || '', subBullets: x.subBullets || [] });
-
-      // Render bucket preview
-      const bucketsHtml = (structured.buckets || []).map((b, i) => `
-        <div class="ai-bucket">
-          <div class="num">${i+1}</div>
-          <div class="bbody">
-            <div class="bname">${esc(b.name)}</div>
-            <ul>${norm(b.bullets).map(p => `
-              <li>${esc(p.text)}${p.subBullets.length ? `<ul class="sub-bullets">${p.subBullets.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}</li>`).join('')}</ul>
-          </div>
-        </div>`).join('');
-
       const gapsHtml = (structured.gaps || []).map(g =>
         `<span class="ai-pill gap">⚠ ${esc(g)}</span>`).join('');
       const strengthsHtml = (structured.strengths || []).map(s =>
         `<span class="ai-pill strength">✓ ${esc(s)}</span>`).join('');
+      const meceHtml = (structured.meceNotes || []).map(m =>
+        `<span class="ai-pill gap">⚠ ${esc(m)}</span>`).join('');
 
-      document.getElementById('aiFrameworkBuckets').innerHTML = bucketsHtml;
-      document.getElementById('aiFrameworkPills').innerHTML = gapsHtml + strengthsHtml;
+      document.getElementById('aiFrameworkPills').innerHTML = gapsHtml + meceHtml + strengthsHtml;
 
       const typeEl = document.getElementById('aiFrameworkType');
       typeEl.textContent = structured.frameworkType || '';
@@ -915,19 +914,21 @@
       if (structured.hypothesis) { hypEl.textContent = structured.hypothesis; hypEl.style.display = ''; }
       else hypEl.style.display = 'none';
 
+      if (structured.tree) {
+        renderIssueTree(document.getElementById('aiFrameworkBuckets'), structured.tree);
+        document.getElementById('structText').value = flattenTreeToStructText(structured.tree);
+      } else {
+        // Legacy fallback shape (buckets/bullets) in case an older response sneaks through
+        const norm = b => (b || []).map(x => typeof x === 'string' ? { text: x, subBullets: [] } : { text: x.text || '', subBullets: x.subBullets || [] });
+        document.getElementById('aiFrameworkBuckets').innerHTML = (structured.buckets || []).map((b, i) => `
+          <div class="ai-bucket"><div class="num">${i+1}</div><div class="bbody"><div class="bname">${esc(b.name)}</div>
+          <ul>${norm(b.bullets).map(p => `<li>${esc(p.text)}</li>`).join('')}</ul></div></div>`).join('');
+        const lines = [];
+        (structured.buckets || []).forEach(b => { lines.push('# ' + b.name); norm(b.bullets).forEach(p => lines.push('- ' + p.text)); });
+        document.getElementById('structText').value = lines.join('\n');
+      }
+
       aiFramework.classList.add('show');
-
-      // Auto-populate the structure textarea too (sub-bullets flattened with a nested marker)
-      const lines = [];
-      (structured.buckets || []).forEach(b => {
-        lines.push('# ' + b.name);
-        norm(b.bullets).forEach(p => {
-          lines.push('- ' + p.text);
-          p.subBullets.forEach(s => lines.push('  - ' + s));
-        });
-      });
-      document.getElementById('structText').value = lines.join('\n');
-
       document.getElementById('fwDone').disabled = false;
 
     } catch (err) {
@@ -1096,6 +1097,76 @@ function reviewFramework(struct,c){
   const score=res.crits.reduce((n,c)=>n+(c.level==='strong'?2:c.level==='ok'?1:0),0); res.score=score; res.pct=Math.round(score/8*100);
   res.overall=score>=7?'Strong framework. Interview-ready.':score>=4?'Solid framework. Address the flagged items.':'Incomplete. Rework the flagged areas before delivering.';
   return res;
+}
+
+/* ---------- issue tree diagram ---------- */
+function buildTreeLayout(root){
+  const levels = [[{ id:'n0', label: root.label || '', metric: root.metric || null, parentId: null }]];
+  let counter = 1;
+  (function walk(node, depth, parentId){
+    (node.children || []).forEach(child => {
+      const id = 'n' + (counter++);
+      if (!levels[depth + 1]) levels[depth + 1] = [];
+      levels[depth + 1].push({ id, label: child.label || '', metric: child.metric || null, parentId });
+      walk(child, depth + 1, id);
+    });
+  })(root, 0, 'n0');
+  return levels;
+}
+function metricHtml(m){
+  if (!m || (!m.before && !m.after)) return '';
+  const arrow = (m.before && m.after) ? `${esc(m.before)} → <b>${esc(m.after)}</b>` : esc(m.after || m.before);
+  return `<div class="tn-metric">${arrow}${m.unit ? ' ' + esc(m.unit) : ''}</div>`;
+}
+function renderIssueTree(container, treeRoot){
+  if (!treeRoot || !treeRoot.label) { container.innerHTML = '<div class="empty">No tree to display.</div>'; return; }
+  const levels = buildTreeLayout(treeRoot);
+  const colsHtml = levels.map((col, i) => `
+    <div class="tree-col">${col.map(n => `
+      <div class="tree-node${i===0?' root':''}" id="${n.id}">
+        <div class="tn-label">${esc(n.label)}</div>
+        ${metricHtml(n.metric)}
+      </div>`).join('')}</div>`).join('');
+  container.innerHTML = `<div class="tree-diagram"><svg class="tree-lines"></svg><div class="tree-cols">${colsHtml}</div></div>`;
+
+  requestAnimationFrame(() => {
+    const diagram = container.querySelector('.tree-diagram');
+    const wrap = container.querySelector('.tree-cols');
+    const svg = container.querySelector('.tree-lines');
+    const w = wrap.scrollWidth, h = wrap.scrollHeight;
+    svg.setAttribute('width', w); svg.setAttribute('height', h);
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    const base = diagram.getBoundingClientRect();
+    let paths = '';
+    levels.flat().forEach(n => {
+      if (!n.parentId) return;
+      const childEl = document.getElementById(n.id), parentEl = document.getElementById(n.parentId);
+      if (!childEl || !parentEl) return;
+      const cr = childEl.getBoundingClientRect(), pr = parentEl.getBoundingClientRect();
+      const x1 = pr.right - base.left, y1 = pr.top - base.top + pr.height / 2;
+      const x2 = cr.left - base.left, y2 = cr.top - base.top + cr.height / 2;
+      const midx = (x1 + x2) / 2;
+      paths += `<path d="M ${x1} ${y1} H ${midx} V ${y2} H ${x2}" />`;
+    });
+    svg.innerHTML = paths;
+  });
+}
+function flattenTreeToStructText(root){
+  const lines = [];
+  (root.children || []).forEach(top => {
+    lines.push('# ' + top.label);
+    (function walk(node){
+      (node.children || []).forEach(child => {
+        let text = child.label;
+        if (child.metric && (child.metric.before || child.metric.after)) {
+          text += ` (${child.metric.before || ''} → ${child.metric.after || ''}${child.metric.unit ? ' ' + child.metric.unit : ''})`;
+        }
+        lines.push('- ' + text);
+        walk(child);
+      });
+    })(top);
+  });
+  return lines.join('\n');
 }
 
 /* ---------- view + stage machine ---------- */

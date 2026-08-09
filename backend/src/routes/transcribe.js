@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const { requireAuth } = require('../middleware/auth');
+const { getExampleForType } = require('../data/framework-examples');
 
 const router = express.Router();
 
@@ -53,47 +54,66 @@ router.post('/structure', requireAuth, async (req, res) => {
     const Anthropic = require('@anthropic-ai/sdk');
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const prompt = `You are a McKinsey case interview coach. A candidate just delivered their framework verbally for this case:
+    const example = getExampleForType(caseType);
+
+    const prompt = `You are a McKinsey case interview coach who is an expert at building MECE issue trees — the kind found in real casebooks (Wharton, Yale, Darden, MBB). A candidate just delivered their framework VERBALLY for this case:
 
 Case: "${caseTitle || 'Unknown case'}"
 Case type: ${caseType || 'general'}
 
-Candidate's spoken response (raw transcript):
+Candidate's spoken response (raw transcript, messy — filler words, run-ons, restatements):
 "${transcript}"
 
-Your job is NOT to transcribe or reword their sentences. It is to understand their intent and rebuild it as the clean, professional framework a real consultant would write on a page — the way they'd write it, not the way they said it out loud (spoken language is messy: filler words, run-on sentences, "so", "I want to", repeated ideas). Merge repeated or restated ideas into one bullet. Convert each idea into a short, punchy business phrase (3-8 words), not a sentence fragment lifted from the transcript.
+## Your job
 
-Return ONLY a JSON object with this exact structure (no extra text, no markdown, no explanation):
+Do NOT transcribe or lightly reword their sentences. Understand their underlying intent and rebuild it as a real, hierarchical MECE issue tree — a root question that branches into 2-5 top-level issues, each of which can itself branch into sub-issues, exactly like a consultant would draw it on paper. Depth matters: if the candidate nested an idea while speaking ("within revenue, that's volume and price, and within volume that's units and category mix"), preserve that as three levels, not one flat list.
+
+Merge repeated or restated ideas into a single node. Convert every node label into a short, punchy business phrase (2-6 words) — never a sentence fragment lifted verbatim from the transcript. If the candidate mentioned specific numbers while describing a branch (e.g. "we went from 10,000 to 12,000 units"), attach that as a "metric" on that node instead of losing it in the label.
+
+## Reference example (a strong real issue tree for a similar case type — match this style and rigor, not these exact words)
+
+Question: "${example.question}"
+Tree: ${JSON.stringify(example.tree)}
+
+## Output format
+
+Return ONLY a JSON object with this exact structure (no extra text, no markdown fences, no explanation):
 {
   "frameworkType": "e.g. Profitability / Market Entry / Pricing / Growth / M&A / Operations",
   "hypothesis": "One sentence: what is the candidate's main hypothesis or angle?",
-  "buckets": [
-    {
-      "name": "Short bucket name (2-5 words), e.g. 'Cost Structure', 'Revenue Drivers'",
-      "bullets": [
-        {
-          "text": "Short punchy phrase (3-8 words), e.g. 'Fixed vs. variable costs'",
-          "subBullets": ["optional deeper sub-point", "another sub-point"]
-        }
-      ]
-    }
-  ],
-  "gaps": ["Any important areas they missed for this case type"],
+  "tree": {
+    "label": "Root node — the case question, rephrased short",
+    "children": [
+      {
+        "label": "Top-level MECE branch (2-6 words)",
+        "metric": null,
+        "children": [
+          {
+            "label": "Sub-branch (2-6 words)",
+            "metric": { "before": "10,000", "after": "12,000", "unit": "units/month" },
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "meceNotes": ["Any overlap or gap in MECE-ness you noticed across the top-level branches"],
+  "gaps": ["Important areas this case type usually needs that the candidate missed"],
   "strengths": ["What they did well in their structure"],
   "overallQuality": "strong | ok | weak"
 }
 
-Rules:
-- Extract 3-5 buckets that reflect the actual MECE structure implied by their answer (e.g. Cost vs. Revenue, not just chronological chunks of speech)
-- Each bucket should have 2-5 bullets
-- Only add "subBullets" when the candidate clearly nested an idea (e.g. "within revenue, volume breaks into category a, b, c") — omit the key entirely if there's nothing to nest
-- If they only said 1-2 things, still infer a sensible structure from what was said, filling gaps with what the case type would typically require, but flag those as gaps, not strengths
-- gaps and strengths should each have 1-3 items
+## Rules
+- 2-5 top-level branches directly off the root, reflecting the real MECE split implied by their answer (e.g. Revenue vs. Costs, not chronological chunks of speech)
+- Nest to a second (and third, if the candidate actually spoke that deep) level wherever their answer implied it — do not flatten real nesting into one level, and do not invent depth that wasn't there
+- Only set "metric" on a node when the candidate stated an actual number for it; otherwise omit the key or set it to null
+- If they only said 1-2 things, still infer a sensible tree from what was said, filling the rest with what the case type typically requires — but list those inferred parts under "gaps", not "strengths"
+- meceNotes, gaps, and strengths should each have 1-3 items
 - Be honest about quality`;
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 1500,
+      max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }]
     });
 
