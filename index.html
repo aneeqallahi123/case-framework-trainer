@@ -338,16 +338,24 @@
   #adminCaseModal .box{width:600px}
 
   /* ---- issue tree diagram ---- */
-  .tree-diagram{position:relative;overflow-x:auto;padding:8px 4px 16px}
+  .tree-diagram{position:relative;overflow-x:auto;padding:18px 8px 20px}
   .tree-lines{position:absolute;top:0;left:0;pointer-events:none;z-index:0}
   .tree-lines path{fill:none;stroke:var(--line);stroke-width:1.5}
   .tree-cols{position:relative;z-index:1;display:flex;align-items:stretch;gap:40px}
   .tree-col{display:flex;flex-direction:column;justify-content:center;gap:14px;flex:0 0 auto}
-  .tree-node{background:#fff;border:1px solid var(--line);border-radius:2px;padding:10px 14px;min-width:150px;max-width:190px;text-align:center}
+  .tree-node{position:relative;background:#fff;border:1px solid var(--line);border-radius:2px;padding:10px 14px;min-width:150px;max-width:190px;text-align:center}
   .tree-node.root{border-color:var(--ink);border-width:2px;font-weight:700;min-width:170px}
   .tree-node .tn-label{font-size:13px;font-weight:600;line-height:1.35}
   .tree-node.root .tn-label{font-size:14px}
   .tree-node .tn-metric{margin-top:6px;font-size:11.5px;color:var(--red);font-weight:600}
+  .tree-node .tn-label[contenteditable="true"]{outline:none;border-radius:2px;cursor:text}
+  .tree-node .tn-label[contenteditable="true"]:hover{background:var(--bg2)}
+  .tree-node .tn-label[contenteditable="true"]:focus{background:#fff;box-shadow:0 0 0 2px var(--ink) inset}
+  .tn-actions{position:absolute;top:-9px;right:-9px;display:flex;gap:4px;opacity:0;transition:opacity .12s}
+  .tree-node:hover .tn-actions,.tree-node .tn-label:focus ~ .tn-actions{opacity:1}
+  .tn-del,.tn-add{width:18px;height:18px;line-height:16px;padding:0;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:11px;color:var(--gray);cursor:pointer}
+  .tn-del:hover{background:var(--red);border-color:var(--red);color:#fff}
+  .tn-add:hover{background:var(--ink);border-color:var(--ink);color:#fff}
 </style>
 </head>
 <body>
@@ -602,15 +610,11 @@
             <div class="ai-framework" id="aiFramework">
               <div class="ai-head">
                 <h4>AI — structured your framework as:</h4>
-                <div style="display:flex;gap:8px;align-items:center">
-                  <span class="ai-tag" id="aiFrameworkType"></span>
-                  <span class="ai-quality" id="aiFrameworkQuality"></span>
-                </div>
+                <span class="ai-tag" id="aiFrameworkType"></span>
               </div>
               <div class="ai-hypothesis" id="aiFrameworkHypothesis" style="display:none"></div>
               <div id="aiFrameworkBuckets"></div>
-              <div id="aiFrameworkPills" style="margin-top:10px"></div>
-              <div style="margin-top:16px;font-size:13px;color:var(--gray)">Is this what you meant? Edit the transcript above if not, then continue.</div>
+              <div style="margin-top:16px;font-size:13px;color:var(--gray)">Edit any box directly — click text to rename, ✕ to delete a branch, + to add one. Then continue to judging.</div>
             </div>
 
             <div class="btnbar" style="margin-top:18px">
@@ -621,8 +625,8 @@
 
         <section class="stage" data-stage="review">
           <div class="stagehead"><div class="eyebrow">Step 6 of 6</div><h1 class="title">Review</h1></div>
-          <p class="sub">Edit the structure if needed; the preview updates as you type. Then run the review. <span class="kbd"># Bucket</span> · <span class="kbd">- point</span></p>
-          <div class="card flat"><span class="corner">Structure</span>
+          <p class="sub" id="reviewSub">Edit the structure if needed; the preview updates as you type. Then run the review. <span class="kbd"># Bucket</span> · <span class="kbd">- point</span></p>
+          <div class="card flat" id="structureEditCard"><span class="corner">Structure</span>
             <h3>Structure</h3>
             <div class="splitcols"><textarea id="structText"></textarea><div class="preview" id="structPreview"></div></div>
             <div class="btnbar"><button class="btn ghost" id="reAuto">Re-parse</button><button class="btn accent" id="runReview">Run the review</button></div>
@@ -914,31 +918,21 @@
       const structured = data.structured;
       window._lastAIFramework = structured;
 
-      const gapsHtml = (structured.gaps || []).map(g =>
-        `<span class="ai-pill gap">⚠ ${esc(g)}</span>`).join('');
-      const strengthsHtml = (structured.strengths || []).map(s =>
-        `<span class="ai-pill strength">✓ ${esc(s)}</span>`).join('');
-      const meceHtml = (structured.meceNotes || []).map(m =>
-        `<span class="ai-pill gap">⚠ ${esc(m)}</span>`).join('');
-
-      document.getElementById('aiFrameworkPills').innerHTML = gapsHtml + meceHtml + strengthsHtml;
+      // Gaps/strengths/quality are judgment calls — deliberately not shown before the candidate confirms
+      // the structure and asks to be judged. They're still on `structured` for later use if ever needed.
 
       const typeEl = document.getElementById('aiFrameworkType');
       typeEl.textContent = structured.frameworkType || '';
       typeEl.style.display = structured.frameworkType ? '' : 'none';
-
-      const qEl = document.getElementById('aiFrameworkQuality');
-      const q = (structured.overallQuality || '').toLowerCase();
-      qEl.textContent = q;
-      qEl.className = 'ai-quality' + (q ? ' ' + q : '');
-      qEl.style.display = q ? '' : 'none';
 
       const hypEl = document.getElementById('aiFrameworkHypothesis');
       if (structured.hypothesis) { hypEl.textContent = structured.hypothesis; hypEl.style.display = ''; }
       else hypEl.style.display = 'none';
 
       if (structured.tree) {
-        renderIssueTree(document.getElementById('aiFrameworkBuckets'), structured.tree);
+        mountEditableIssueTree(document.getElementById('aiFrameworkBuckets'), structured.tree, () => {
+          document.getElementById('structText').value = flattenTreeToStructText(structured.tree);
+        });
         document.getElementById('structText').value = flattenTreeToStructText(structured.tree);
       } else {
         // Legacy fallback shape (buckets/bullets) in case an older response sneaks through
@@ -1124,13 +1118,13 @@ function reviewFramework(struct,c){
 
 /* ---------- issue tree diagram ---------- */
 function buildTreeLayout(root){
-  const levels = [[{ id:'n0', label: root.label || '', metric: root.metric || null, parentId: null }]];
+  const levels = [[{ id:'n0', node: root, parentId: null }]];
   let counter = 1;
   (function walk(node, depth, parentId){
     (node.children || []).forEach(child => {
       const id = 'n' + (counter++);
       if (!levels[depth + 1]) levels[depth + 1] = [];
-      levels[depth + 1].push({ id, label: child.label || '', metric: child.metric || null, parentId });
+      levels[depth + 1].push({ id, node: child, parentId });
       walk(child, depth + 1, id);
     });
   })(root, 0, 'n0');
@@ -1141,27 +1135,65 @@ function metricHtml(m){
   const arrow = (m.before && m.after) ? `${esc(m.before)} → <b>${esc(m.after)}</b>` : esc(m.after || m.before);
   return `<div class="tn-metric">${arrow}${m.unit ? ' ' + esc(m.unit) : ''}</div>`;
 }
-function renderIssueTree(container, treeRoot){
+// opts: { editable, onLabelCommit(node,text), onDelete(node), onAdd(node) }. focusNode: a node object to focus/select after render (e.g. one just added).
+function renderIssueTree(container, treeRoot, opts, focusNode){
+  opts = opts || {};
   if (!treeRoot || !treeRoot.label) { container.innerHTML = '<div class="empty">No tree to display.</div>'; return; }
   const levels = buildTreeLayout(treeRoot);
+  const flat = levels.flat();
   const colsHtml = levels.map((col, i) => `
     <div class="tree-col">${col.map(n => `
       <div class="tree-node${i===0?' root':''}" id="${n.id}">
-        <div class="tn-label">${esc(n.label)}</div>
-        ${metricHtml(n.metric)}
+        <div class="tn-label" data-id="${n.id}" ${opts.editable ? 'contenteditable="true" spellcheck="false"' : ''}>${esc(n.node.label)}</div>
+        ${metricHtml(n.node.metric)}
+        ${opts.editable ? `<div class="tn-actions">
+          ${i>0 ? `<button type="button" class="tn-del" data-id="${n.id}" title="Delete this branch">✕</button>` : ''}
+          <button type="button" class="tn-add" data-id="${n.id}" title="Add a branch here">+</button>
+        </div>` : ''}
       </div>`).join('')}</div>`).join('');
   container.innerHTML = `<div class="tree-diagram"><svg class="tree-lines"></svg><div class="tree-cols">${colsHtml}</div></div>`;
+
+  if (opts.editable) {
+    const findNode = id => { const e = flat.find(x => x.id === id); return e ? e.node : null; };
+    container.querySelectorAll('.tn-label').forEach(labelEl => {
+      labelEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); labelEl.blur(); } });
+      labelEl.addEventListener('blur', () => {
+        const node = findNode(labelEl.dataset.id);
+        const text = labelEl.textContent.trim() || 'Untitled';
+        if (node && node.label !== text) { node.label = text; opts.onLabelCommit && opts.onLabelCommit(node, text); }
+      });
+    });
+    container.querySelectorAll('.tn-del').forEach(btn => btn.onclick = () => {
+      const node = findNode(btn.dataset.id);
+      if (node) opts.onDelete && opts.onDelete(node);
+    });
+    container.querySelectorAll('.tn-add').forEach(btn => btn.onclick = () => {
+      const node = findNode(btn.dataset.id);
+      if (node) opts.onAdd && opts.onAdd(node);
+    });
+  }
+
+  if (focusNode) {
+    const entry = flat.find(x => x.node === focusNode);
+    const labelEl = entry && document.getElementById(entry.id)?.querySelector('.tn-label');
+    if (labelEl) {
+      labelEl.focus();
+      const range = document.createRange(); range.selectNodeContents(labelEl);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    }
+  }
 
   requestAnimationFrame(() => {
     const diagram = container.querySelector('.tree-diagram');
     const wrap = container.querySelector('.tree-cols');
     const svg = container.querySelector('.tree-lines');
+    if (!diagram || !wrap || !svg) return;
     const w = wrap.scrollWidth, h = wrap.scrollHeight;
     svg.setAttribute('width', w); svg.setAttribute('height', h);
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
     const base = diagram.getBoundingClientRect();
     let paths = '';
-    levels.flat().forEach(n => {
+    flat.forEach(n => {
       if (!n.parentId) return;
       const childEl = document.getElementById(n.id), parentEl = document.getElementById(n.parentId);
       if (!childEl || !parentEl) return;
@@ -1173,6 +1205,37 @@ function renderIssueTree(container, treeRoot){
     });
     svg.innerHTML = paths;
   });
+}
+// Finds the children array that directly contains `target`, so it can be spliced out (delete) or used to locate siblings.
+function findParentArray(node, target){
+  for (const child of (node.children || [])) {
+    if (child === target) return node.children;
+    const found = findParentArray(child, target);
+    if (found) return found;
+  }
+  return null;
+}
+// Owns re-rendering an editable tree across mutations (label edits, add, delete) and notifies onChange after each one.
+function mountEditableIssueTree(container, root, onChange){
+  function rerender(focusNode){
+    renderIssueTree(container, root, {
+      editable: true,
+      onLabelCommit(){ onChange && onChange(); },
+      onDelete(node){
+        if (node === root) return;
+        const arr = findParentArray(root, node);
+        if (arr) { arr.splice(arr.indexOf(node), 1); rerender(); onChange && onChange(); }
+      },
+      onAdd(node){
+        node.children = node.children || [];
+        const newNode = { label: 'New branch', children: [] };
+        node.children.push(newNode);
+        rerender(newNode);
+        onChange && onChange();
+      }
+    }, focusNode);
+  }
+  rerender();
 }
 function flattenTreeToStructText(root){
   const lines = [];
@@ -1286,7 +1349,23 @@ function endTimer(hard){ if(timerInt){clearInterval(timerInt);timerInt=null;} el
 
 /* review */
 function renderPreview(){ const st=parseStructure(el('structText').value), box=el('structPreview'); if(!st.length){ box.innerHTML='<div class="empty">Your buckets and bullets preview here…</div>'; return; } box.innerHTML=st.map((b,i)=>`<h4><span class="n">${i+1}</span>${b.header||'(unnamed)'}</h4><ul>${b.bullets.map(x=>`<li>${x}</li>`).join('')||'<li class="empty">no points yet</li>'}</ul>`).join(''); }
-function toReview(){ STT.stop(); Mic.hide(); if(!el('structText').value.trim()) el('structText').value=autoStructure(el('fwText').value); el('reviewOut').innerHTML=''; el('reviewFoot').style.display='none'; gotoStage('review'); renderPreview(); }
+function toReview(){
+  STT.stop(); Mic.hide();
+  const hadAiStructure = !!el('structText').value.trim();
+  if (!hadAiStructure) el('structText').value = autoStructure(el('fwText').value);
+  el('reviewOut').innerHTML = ''; el('reviewFoot').style.display = 'none';
+  gotoStage('review'); renderPreview();
+  if (hadAiStructure) {
+    // AI already produced (and you already edited, if needed) the tree — skip the manual editor and judge it directly.
+    el('structureEditCard').style.display = 'none';
+    el('reviewSub').textContent = 'Judging the framework you confirmed.';
+    runReview();
+  } else {
+    // AI structuring wasn't available — fall back to the manual editor so you can still build a structure by hand.
+    el('structureEditCard').style.display = '';
+    el('reviewSub').innerHTML = 'Edit the structure if needed; the preview updates as you type. Then run the review. <span class="kbd"># Bucket</span> · <span class="kbd">- point</span>';
+  }
+}
 function animateCount(node,to,dur){ const s=performance.now(); const step=now=>{ const p=Math.min(1,(now-s)/dur); node.textContent=Math.round(p*to); if(p<1)requestAnimationFrame(step); }; requestAnimationFrame(step); }
 function runReview(){
   const c=S.caseObj, st=parseStructure(el('structText').value);
