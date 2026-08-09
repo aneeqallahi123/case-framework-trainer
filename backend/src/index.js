@@ -18,6 +18,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/drills', require('./routes/drills'));
 app.use('/api/transcribe', require('./routes/transcribe'));
+app.use('/api/cases', require('./routes/cases'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Health check - Railway uses this to confirm the app is running
 app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
