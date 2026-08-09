@@ -286,14 +286,27 @@
   .dg-status.show{display:flex}
   .dg-spinner{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;flex:0 0 16px}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .ai-framework{background:#fff;border:1px solid var(--line);border-left:3px solid var(--red);padding:20px 22px;margin-top:16px;display:none}
+  .ai-framework{background:#fff;border:1px solid var(--line);border-left:3px solid var(--red);padding:22px 24px;margin-top:16px;display:none}
   .ai-framework.show{display:block;animation:rise .3s var(--ease)}
-  .ai-framework h4{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin-bottom:14px}
-  .ai-bucket{margin-bottom:14px}
-  .ai-bucket .bname{font-weight:700;font-size:16px;margin-bottom:6px}
+  .ai-framework h4{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin-bottom:2px}
+  .ai-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .ai-tag{display:inline-flex;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;background:var(--bg2);color:var(--ink)}
+  .ai-quality{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px}
+  .ai-quality.strong{background:#f0f4f0;color:#1a6b1a}
+  .ai-quality.ok{background:#fff8e8;color:#8a6d00}
+  .ai-quality.weak{background:#fef0f0;color:var(--red)}
+  .ai-hypothesis{font-size:14.5px;color:var(--ink);font-style:italic;padding:10px 14px;background:var(--bg2);border-left:2px solid var(--line);margin-bottom:18px}
+  .ai-bucket{display:flex;gap:14px;margin-bottom:18px}
+  .ai-bucket:last-of-type{margin-bottom:0}
+  .ai-bucket .num{flex:0 0 24px;height:24px;background:var(--red);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:2px}
+  .ai-bucket .bbody{flex:1;min-width:0}
+  .ai-bucket .bname{font-weight:700;font-size:16px;margin-bottom:8px}
   .ai-bucket ul{margin:0;padding-left:0;list-style:none}
-  .ai-bucket ul li{font-size:14px;color:var(--gray);padding:3px 0 3px 16px;position:relative}
-  .ai-bucket ul li:before{content:"—";position:absolute;left:0;color:var(--gray2)}
+  .ai-bucket > .bbody > ul > li{font-size:14px;color:var(--ink);padding:4px 0 4px 16px;position:relative}
+  .ai-bucket > .bbody > ul > li:before{content:"—";position:absolute;left:0;color:var(--gray2)}
+  .ai-bucket .sub-bullets{list-style:none;margin:4px 0 4px 16px;padding-left:16px;border-left:2px solid var(--line)}
+  .ai-bucket .sub-bullets li{font-size:13px;color:var(--gray);padding:2px 0 2px 14px;position:relative}
+  .ai-bucket .sub-bullets li:before{content:"·";position:absolute;left:0;color:var(--gray2)}
   .ai-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;margin-right:6px;margin-bottom:6px}
   .ai-pill.gap{background:#fef0f0;color:var(--red);border:1px solid #ffd5d5}
   .ai-pill.strength{background:#f0f4f0;color:#1a6b1a;border:1px solid #c3ddc3}
@@ -484,7 +497,14 @@
 
             <!-- AI structured framework preview -->
             <div class="ai-framework" id="aiFramework">
-              <h4>AI — structured your framework as:</h4>
+              <div class="ai-head">
+                <h4>AI — structured your framework as:</h4>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <span class="ai-tag" id="aiFrameworkType"></span>
+                  <span class="ai-quality" id="aiFrameworkQuality"></span>
+                </div>
+              </div>
+              <div class="ai-hypothesis" id="aiFrameworkHypothesis" style="display:none"></div>
               <div id="aiFrameworkBuckets"></div>
               <div id="aiFrameworkPills" style="margin-top:10px"></div>
               <div style="margin-top:16px;font-size:13px;color:var(--gray)">Is this what you meant? Edit the transcript above if not, then continue.</div>
@@ -543,6 +563,10 @@
 
   function authHeaders() {
     return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AUTH.token };
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
   async function apiPost(path, body) {
@@ -771,27 +795,52 @@
       const structured = data.structured;
       window._lastAIFramework = structured;
 
+      // Normalize bullets: backend may return strings (older shape) or {text, subBullets}
+      const norm = b => (b || []).map(x => typeof x === 'string' ? { text: x, subBullets: [] } : { text: x.text || '', subBullets: x.subBullets || [] });
+
       // Render bucket preview
       const bucketsHtml = (structured.buckets || []).map((b, i) => `
         <div class="ai-bucket">
-          <div class="bname">${i+1}. ${b.name}</div>
-          <ul>${(b.bullets||[]).map(p => `<li>${p}</li>`).join('')}</ul>
+          <div class="num">${i+1}</div>
+          <div class="bbody">
+            <div class="bname">${esc(b.name)}</div>
+            <ul>${norm(b.bullets).map(p => `
+              <li>${esc(p.text)}${p.subBullets.length ? `<ul class="sub-bullets">${p.subBullets.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}</li>`).join('')}</ul>
+          </div>
         </div>`).join('');
 
       const gapsHtml = (structured.gaps || []).map(g =>
-        `<span class="ai-pill gap">⚠ ${g}</span>`).join('');
+        `<span class="ai-pill gap">⚠ ${esc(g)}</span>`).join('');
       const strengthsHtml = (structured.strengths || []).map(s =>
-        `<span class="ai-pill strength">✓ ${s}</span>`).join('');
+        `<span class="ai-pill strength">✓ ${esc(s)}</span>`).join('');
 
       document.getElementById('aiFrameworkBuckets').innerHTML = bucketsHtml;
       document.getElementById('aiFrameworkPills').innerHTML = gapsHtml + strengthsHtml;
+
+      const typeEl = document.getElementById('aiFrameworkType');
+      typeEl.textContent = structured.frameworkType || '';
+      typeEl.style.display = structured.frameworkType ? '' : 'none';
+
+      const qEl = document.getElementById('aiFrameworkQuality');
+      const q = (structured.overallQuality || '').toLowerCase();
+      qEl.textContent = q;
+      qEl.className = 'ai-quality' + (q ? ' ' + q : '');
+      qEl.style.display = q ? '' : 'none';
+
+      const hypEl = document.getElementById('aiFrameworkHypothesis');
+      if (structured.hypothesis) { hypEl.textContent = structured.hypothesis; hypEl.style.display = ''; }
+      else hypEl.style.display = 'none';
+
       aiFramework.classList.add('show');
 
-      // Auto-populate the structure textarea too
+      // Auto-populate the structure textarea too (sub-bullets flattened with a nested marker)
       const lines = [];
       (structured.buckets || []).forEach(b => {
         lines.push('# ' + b.name);
-        (b.bullets || []).forEach(p => lines.push('- ' + p));
+        norm(b.bullets).forEach(p => {
+          lines.push('- ' + p.text);
+          p.subBullets.forEach(s => lines.push('  - ' + s));
+        });
       });
       document.getElementById('structText').value = lines.join('\n');
 

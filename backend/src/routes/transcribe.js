@@ -51,7 +51,7 @@ router.post('/structure', requireAuth, async (req, res) => {
 
   try {
     const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic.default();
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     const prompt = `You are a McKinsey case interview coach. A candidate just delivered their framework verbally for this case:
 
@@ -61,7 +61,7 @@ Case type: ${caseType || 'general'}
 Candidate's spoken response (raw transcript):
 "${transcript}"
 
-Your job is to parse what they said and return it as a clean, structured framework JSON. Even if they spoke informally, extract their intent.
+Your job is NOT to transcribe or reword their sentences. It is to understand their intent and rebuild it as the clean, professional framework a real consultant would write on a page — the way they'd write it, not the way they said it out loud (spoken language is messy: filler words, run-on sentences, "so", "I want to", repeated ideas). Merge repeated or restated ideas into one bullet. Convert each idea into a short, punchy business phrase (3-8 words), not a sentence fragment lifted from the transcript.
 
 Return ONLY a JSON object with this exact structure (no extra text, no markdown, no explanation):
 {
@@ -69,8 +69,13 @@ Return ONLY a JSON object with this exact structure (no extra text, no markdown,
   "hypothesis": "One sentence: what is the candidate's main hypothesis or angle?",
   "buckets": [
     {
-      "name": "Short bucket name (2-5 words)",
-      "bullets": ["sub-point 1", "sub-point 2", "sub-point 3"]
+      "name": "Short bucket name (2-5 words), e.g. 'Cost Structure', 'Revenue Drivers'",
+      "bullets": [
+        {
+          "text": "Short punchy phrase (3-8 words), e.g. 'Fixed vs. variable costs'",
+          "subBullets": ["optional deeper sub-point", "another sub-point"]
+        }
+      ]
     }
   ],
   "gaps": ["Any important areas they missed for this case type"],
@@ -79,15 +84,16 @@ Return ONLY a JSON object with this exact structure (no extra text, no markdown,
 }
 
 Rules:
-- Extract 3-5 buckets from what they said
+- Extract 3-5 buckets that reflect the actual MECE structure implied by their answer (e.g. Cost vs. Revenue, not just chronological chunks of speech)
 - Each bucket should have 2-5 bullets
-- If they only said 1-2 things, still try to infer structure from what was said
+- Only add "subBullets" when the candidate clearly nested an idea (e.g. "within revenue, volume breaks into category a, b, c") — omit the key entirely if there's nothing to nest
+- If they only said 1-2 things, still infer a sensible structure from what was said, filling gaps with what the case type would typically require, but flag those as gaps, not strengths
 - gaps and strengths should each have 1-3 items
 - Be honest about quality`;
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 1000,
+      max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }]
     });
 
