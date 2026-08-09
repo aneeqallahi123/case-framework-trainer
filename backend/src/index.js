@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const { initDB } = require('./db');
@@ -20,6 +21,13 @@ app.use('/api/transcribe', require('./routes/transcribe'));
 
 // Health check - Railway uses this to confirm the app is running
 app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+
+// Serve the frontend
+const FRONTEND_DIR = path.join(__dirname, '..', '..');
+app.use(express.static(FRONTEND_DIR));
+app.get(/^(?!\/api).*/, (req, res) => {
+  res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
+});
 
 // Start server
 async function start() {
