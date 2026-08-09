@@ -1286,7 +1286,7 @@ function endTimer(hard){ if(timerInt){clearInterval(timerInt);timerInt=null;} el
 
 /* review */
 function renderPreview(){ const st=parseStructure(el('structText').value), box=el('structPreview'); if(!st.length){ box.innerHTML='<div class="empty">Your buckets and bullets preview here…</div>'; return; } box.innerHTML=st.map((b,i)=>`<h4><span class="n">${i+1}</span>${b.header||'(unnamed)'}</h4><ul>${b.bullets.map(x=>`<li>${x}</li>`).join('')||'<li class="empty">no points yet</li>'}</ul>`).join(''); }
-function toReview(){ STT.stop(); Mic.hide(); el('structText').value=autoStructure(el('fwText').value); el('reviewOut').innerHTML=''; el('reviewFoot').style.display='none'; gotoStage('review'); renderPreview(); }
+function toReview(){ STT.stop(); Mic.hide(); if(!el('structText').value.trim()) el('structText').value=autoStructure(el('fwText').value); el('reviewOut').innerHTML=''; el('reviewFoot').style.display='none'; gotoStage('review'); renderPreview(); }
 function animateCount(node,to,dur){ const s=performance.now(); const step=now=>{ const p=Math.min(1,(now-s)/dur); node.textContent=Math.round(p*to); if(p<1)requestAnimationFrame(step); }; requestAnimationFrame(step); }
 function runReview(){
   const c=S.caseObj, st=parseStructure(el('structText').value);
