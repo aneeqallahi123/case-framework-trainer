@@ -55,7 +55,7 @@ router.post('/structure', requireAuth, async (req, res) => {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
       model: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
-      generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 2000 }
+      generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 }
     });
 
     const example = getExampleForType(caseType);
@@ -116,6 +116,10 @@ Return ONLY a JSON object with this exact structure (no extra text, no markdown 
 - Be honest about quality`;
 
     const result = await model.generateContent(prompt);
+    const finishReason = result.response.candidates?.[0]?.finishReason;
+    if (finishReason && finishReason !== 'STOP') {
+      console.error('Gemini stopped early, finishReason:', finishReason);
+    }
     const raw = result.response.text().trim();
 
     // Strip markdown code fences if present
