@@ -536,7 +536,7 @@
   // e.g. "https://case-framework-trainer-production.up.railway.app"
   const API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:3001'
-    : 'https://YOUR-RAILWAY-URL-HERE.up.railway.app';
+    : 'https://case-framework-trainer-production.up.railway.app';
 
   // ---- Auth state ----
   let AUTH = { token: localStorage.getItem('cf_token'), user: JSON.parse(localStorage.getItem('cf_user') || 'null') };
