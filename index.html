@@ -1300,6 +1300,9 @@ async function startDrill(){
   await loadCaseBank();
   if(!CASE_BANK.length){ toast('Case bank failed to load. Please refresh and try again.'); return; }
   S.caseObj=randomCase(); S.recorded=false; S.sumChecked=false;
+  if(timerInt){ clearInterval(timerInt); timerInt=null; }
+  tElapsed=0; tLimit=0; tStarted=false;
+  el('startTimer').disabled=false; el('stopEarly').disabled=true; el('timerLog').textContent='';
   ['sumText','clrText','fwText','structText'].forEach(id=>el(id).value='');
   ['sumWords','fwWords'].forEach(id=>el(id).textContent='0'); ['sumTime','fwTime'].forEach(id=>el(id).textContent='0:00');
   el('sumFbInline').innerHTML=''; el('clrAnswers').innerHTML=''; el('reviewOut').innerHTML=''; el('reviewFoot').style.display='none';
@@ -1338,14 +1341,8 @@ function answerClarifiers(){
 /* timer */
 let timerInt=null;
 function renderMarks(){ const m=el('marks'); const lim=S.timeLimit; let h=''; for(let t=30;t<lim;t+=30)h+=`<span class="mark" data-t="${t}">${fmtClock(t)}</span>`; h+=`<span class="mark" data-t="${lim}" data-final="1">${fmtClock(lim)} ⛳</span>`; m.innerHTML=h; el('clock').textContent=fmtClock(lim); }
-function startTimer(){ const lim=S.timeLimit; let e=0; el('startTimer').disabled=true; el('stopEarly').disabled=false; el('timerLog').textContent=''; renderMarks();
-  const ring=el('ring'),clock=el('clock'),lbl=el('clocklbl'); lbl.textContent='remaining'; Beep.start(); TTS.speak('Your time starts now.');
-  timerInt=setInterval(()=>{ e++; const rem=lim-e; clock.textContent=fmtClock(Math.max(0,rem)); ring.style.setProperty('--p',(e/lim)*100); ring.classList.toggle('warn',rem<=60&&rem>30); ring.classList.toggle('crit',rem<=30);
-    if(e%30===0&&rem>0){ const mk=$('#marks .mark[data-t="'+e+'"]'); if(mk)mk.classList.add('hit'); ring.classList.remove('beat'); void ring.offsetWidth; ring.classList.add('beat'); const msg=rem>=60?`${fmtClock(rem)} remaining.`:`${rem} seconds left.`; el('timerLog').textContent='🔔 '+msg; if(rem<=30)Beep.urgent(); else Beep.reminder(); TTS.speak(msg,{rate:1.05}); }
-    if(rem<=0) endTimer(true); },1000); }
-function endTimer(hard){ if(timerInt){clearInterval(timerInt);timerInt=null;} el('stopEarly').disabled=true; const mk=$('#marks .mark[data-final="1"]'); if(mk&&hard)mk.classList.add('hit');
-  if(hard){ Beep.stopBell(); el('timerLog').textContent='⏱ Time. Pens down.'; TTS.speak("Time. Please deliver your framework.",{onEnd:()=>gotoStage('recite2')}); }
-  else TTS.speak('Please deliver your framework.',{onEnd:()=>gotoStage('recite2')}); }
+/* startTimer/endTimer live in the "adaptable setup: pause/resume" section below, which also
+   owns tElapsed/tLimit/tStarted for pausing mid-timer. Kept in one place, not duplicated. */
 
 /* review */
 function renderPreview(){ const st=parseStructure(el('structText').value), box=el('structPreview'); if(!st.length){ box.innerHTML='<div class="empty">Your buckets and bullets preview here…</div>'; return; } box.innerHTML=st.map((b,i)=>`<h4><span class="n">${i+1}</span>${b.header||'(unnamed)'}</h4><ul>${b.bullets.map(x=>`<li>${x}</li>`).join('')||'<li class="empty">no points yet</li>'}</ul>`).join(''); }
