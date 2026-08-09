@@ -5,6 +5,27 @@ const { getExampleForType } = require('../data/framework-examples');
 
 const router = express.Router();
 
+// Scans for the first balanced {...} span, ignoring braces inside strings.
+// Returns null if no complete object is found (e.g. real truncation).
+function extractFirstJsonObject(text) {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0, inString = false, escaped = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}') { depth--; if (depth === 0) return text.slice(start, i + 1); }
+  }
+  return null;
+}
+
 // Store audio in memory (not disk) - fine for short recordings
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
@@ -123,7 +144,12 @@ Return ONLY a JSON object with this exact structure (no extra text, no markdown 
     const raw = result.response.text().trim();
 
     // Strip markdown code fences if present
-    const cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+    let cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+
+    // Gemini occasionally appends stray trailing characters (e.g. an extra
+    // closing brace) after an otherwise-valid JSON object. Extract just the
+    // balanced {...} span instead of trusting the whole response verbatim.
+    cleaned = extractFirstJsonObject(cleaned) || cleaned;
 
     let structured;
     try {
