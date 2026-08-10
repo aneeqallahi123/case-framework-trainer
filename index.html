@@ -1023,17 +1023,7 @@ const Mic={ stream:null, ctx:null, analyser:null, raf:null, container:null, bars
   hide(){ if(this.raf)cancelAnimationFrame(this.raf); this.raf=null; if(this.container){ this.container.classList.remove('live'); this.container.innerHTML=''; this.container=null;} this.bars=[]; }
 };
 
-/* ---------- speech recognition (one reused instance) ---------- */
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-const STT={ rec:null, active:false, target:null, interimEl:null, onState:null, supported:!!SR,
-  _ensure(){ if(this.rec) return; const r=new SR(); r.lang='en-US'; r.continuous=true; r.interimResults=true;
-    r.onresult=(e)=>{ let interim=''; for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript; if(e.results[i].isFinal){ const cur=this.target.value.trim(); this.target.value=(cur?cur+' ':'')+t.trim(); this.target.dispatchEvent(new Event('input')); } else interim+=t; } if(this.interimEl) this.interimEl.textContent=interim; };
-    r.onend=()=>{ if(this.active){ try{r.start();}catch(e){} } else if(this.onState) this.onState(false); };
-    r.onerror=(e)=>{ if(e.error==='not-allowed'||e.error==='service-not-allowed'){ this.active=false; toast('🎤 Mic blocked — allow it once (best on http://localhost). You can type instead.'); if(this.onState)this.onState(false);} };
-    this.rec=r;
-  },
-  start(target,interimEl,onState){ if(!this.supported) return false; this._ensure(); this.target=target; this.interimEl=interimEl; this.onState=onState; this.active=true; try{this.rec.start();}catch(e){} if(onState)onState(true); return true; },
-  stop(){ this.active=false; if(this.interimEl)this.interimEl.textContent=''; try{this.rec&&this.rec.stop();}catch(e){} if(this.onState)this.onState(false); } };
+/* ---------- speech recognition removed — all stages use Deepgram ---------- */
 
 /* ---------- audio cues ---------- */
 const Beep={ ctx:null, _c(){ if(!this.ctx){ const AC=window.AudioContext||window.webkitAudioContext; if(AC)this.ctx=new AC(); } return this.ctx; },
@@ -1284,21 +1274,58 @@ function gotoStage(name){
 }
 
 /* ---------- capture controller ---------- */
-function makeCapture(o){
-  const recBtn=el(o.rec),stopBtn=el(o.stop),target=el(o.target),interim=el(o.interim),status=el(o.status);
-  const meter=o.meter?el(o.meter):null, meta=o.meta?el(o.meta):null; let acc=0,startTs=0,int=null;
+function makeDeepgramCapture(o){
+  const recBtn=el(o.rec),stopBtn=el(o.stop),target=el(o.target);
+  const interim=o.interim?el(o.interim):null, status=o.status?el(o.status):null;
+  const meter=o.meter?el(o.meter):null, meta=o.meta?el(o.meta):null;
+  let _mr=null,_chunks=[],_acc=0,_startTs=0,_int=null;
   const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-  const upW=()=>{ if(o.words) el(o.words).textContent=(target.value.trim()?target.value.trim().split(/\s+/).length:0); };
-  const tick=()=>{ const cur=acc+(startTs?(Date.now()-startTs)/1000:0); if(o.time)el(o.time).textContent=fmt(Math.floor(cur)); upW(); };
+  const upW=()=>{ if(o.words)el(o.words).textContent=(target.value.trim()?target.value.trim().split(/\s+/).length:0); };
   target.addEventListener('input',upW);
-  recBtn.onclick=()=>{
-    if(STT.active){ STT.stop(); return; }
-    if(!STT.supported){ target.focus(); status.textContent='Voice not supported — type instead.'; return; }
-    STT.start(target,interim,(live)=>{ recBtn.classList.toggle('live',live); recBtn.textContent=live?'● Listening…':'🎤 Record'; stopBtn.disabled=!live; status.textContent=live?'Listening — speak now':''; if(meta)meta.classList.toggle('recording',live);
-      if(live){ startTs=Date.now(); if(!int)int=setInterval(tick,200); if(meter)Mic.show(meter); }
-      else{ if(int){clearInterval(int);int=null;} if(startTs){acc+=(Date.now()-startTs)/1000;startTs=0;} Mic.hide(); upW(); } });
+  recBtn.onclick=async()=>{
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      _chunks=[]; _mr=new MediaRecorder(stream);
+      _mr.ondataavailable=e=>{if(e.data.size>0)_chunks.push(e.data);};
+      _mr.start(250);
+      recBtn.disabled=true; recBtn.classList.add('live');
+      stopBtn.disabled=false;
+      if(meta)meta.classList.add('recording');
+      if(interim)interim.textContent='🔴 Recording… speak now';
+      if(status)status.textContent='Listening — speak now';
+      _startTs=Date.now();
+      if(!_int)_int=setInterval(()=>{ const cur=_acc+(Date.now()-_startTs)/1000; if(o.time)el(o.time).textContent=fmt(Math.floor(cur)); upW(); },200);
+      if(meter)Mic.show(meter);
+    }catch(e){ toast('🎤 Microphone blocked. Please allow access, or type your answer directly.'); }
   };
-  stopBtn.onclick=()=>STT.stop();
+  stopBtn.onclick=async()=>{
+    if(!_mr||_mr.state==='inactive')return;
+    if(_int){clearInterval(_int);_int=null;}
+    if(_startTs){_acc+=(Date.now()-_startTs)/1000;_startTs=0;}
+    _mr.stop(); _mr.stream.getTracks().forEach(t=>t.stop());
+    recBtn.disabled=false; recBtn.classList.remove('live');
+    stopBtn.disabled=true;
+    if(meta)meta.classList.remove('recording');
+    if(interim)interim.textContent='';
+    Mic.hide(); upW();
+    await new Promise(r=>setTimeout(r,300));
+    const blob=new Blob(_chunks,{type:'audio/webm'});
+    if(status)status.textContent='Transcribing…';
+    try{
+      const fd=new FormData(); fd.append('audio',blob,'recording.webm');
+      const resp=await fetch(API_BASE+'/api/transcribe',{method:'POST',headers:{'Authorization':'Bearer '+AUTH.token},body:fd});
+      const data=await resp.json();
+      if(data.error)throw new Error(data.error);
+      const prev=target.value.trim();
+      target.value=(prev?prev+' ':'')+(data.transcript||'');
+      target.dispatchEvent(new Event('input'));
+      if(status)status.textContent='';
+      upW();
+    }catch(err){
+      if(status)status.textContent='';
+      toast('Transcription failed: '+err.message+'. You can type your answer instead.');
+    }
+  };
 }
 
 /* ---------- drill actions ---------- */
@@ -1321,7 +1348,7 @@ async function startDrill(){
   el('clock').textContent=fmtClock(S.timeLimit);
   const pt=el('promptText'); pt.textContent=c.prompt; pt.style.display=S.showText?'block':'none';
   showView('drill'); el('drillReady').style.display='none'; el('drillRun').style.display='block'; gotoStage('recite'); recitePrompt();
-  if(STT.supported) Mic.ensure(); // warm up permission once
+  Mic.ensure(); // warm up mic permission once
 }
 function recitePrompt(){ const c=S.caseObj; el('toSummary').disabled=true; el('replayBtn').disabled=true;
   el('reciteStatus').innerHTML='<span class="speaking">reading <i></i><i></i><i></i></span>';
@@ -1590,9 +1617,9 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   el('replayBtn').onclick=recitePrompt;
   el('toSummary').onclick=()=>gotoStage('summary');
-  makeCapture({rec:'sumRec',stop:'sumStop',target:'sumText',interim:'sumInterim',status:'sumStatus',meter:'sumMeter',meta:'sumMeta',words:'sumWords',time:'sumTime'});
+  makeDeepgramCapture({rec:'sumRec',stop:'sumStop',target:'sumText',interim:'sumInterim',status:'sumStatus',meter:'sumMeter',meta:'sumMeta',words:'sumWords',time:'sumTime'});
   el('sumDone').onclick=doSummary;
-  makeCapture({rec:'clrRec',stop:'clrStop',target:'clrText',interim:'clrInterim',status:'clrStatus',meter:'clrMeter'});
+  makeDeepgramCapture({rec:'clrRec',stop:'clrStop',target:'clrText',interim:'clrInterim',status:'clrStatus',meter:'clrMeter'});
   el('clrAnswer').onclick=answerClarifiers;
   el('toTimer').onclick=()=>{ gotoStage('timer'); renderMarks(); };
   el('startTimer').onclick=startTimer; el('stopEarly').onclick=()=>endTimer(false);
