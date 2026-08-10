@@ -1262,11 +1262,11 @@ function showView(v){
   $$('.navi').forEach(n=>n.classList.toggle('on',n.dataset.view===v));
   el('pageTitle').childNodes[0].nodeValue=v==='dashboard'?'Dashboard':(v==='admin'?'Admin':'Drill');
   el('pageSub').textContent=v==='dashboard'?'Case framework practice':(v==='admin'?'Users & case bank':(S.caseObj?S.caseObj.source:'Live practice'));
-  if(v==='dashboard'){ STT.stop(); TTS.stop(); Mic.hide(); renderDashboard(); }
-  if(v==='admin'){ STT.stop(); TTS.stop(); Mic.hide(); loadAdminUsers(); loadAdminCases(); }
+  if(v==='dashboard'){ TTS.stop(); Mic.hide(); renderDashboard(); }
+  if(v==='admin'){ TTS.stop(); Mic.hide(); loadAdminUsers(); loadAdminCases(); }
 }
 function gotoStage(name){
-  STT.stop(); TTS.stop(); Mic.hide();
+  TTS.stop(); Mic.hide();
   $$('#viewDrill .stage').forEach(s=>s.classList.toggle('show',s.dataset.stage===name));
   const step=STEP_OF[name], idx=STEP_ORDER.indexOf(step);
   $$('#progress .pstep').forEach(p=>{ const i=STEP_ORDER.indexOf(p.dataset.step); p.classList.toggle('active',p.dataset.step===step); p.classList.toggle('done',i>-1&&i<idx); });
@@ -1354,7 +1354,7 @@ function recitePrompt(){ const c=S.caseObj; el('toSummary').disabled=true; el('r
   el('reciteStatus').innerHTML='<span class="speaking">reading <i></i><i></i><i></i></span>';
   TTS.speak(c.prompt,{onEnd:()=>{ el('reciteStatus').textContent='Prompt complete. Replay or summarize.'; el('toSummary').disabled=false; el('replayBtn').disabled=false; }}); }
 function doSummary(){
-  STT.stop(); Mic.hide();
+  Mic.hide();
   if(!S.sumChecked){
     const c=S.caseObj, flags=checkSummary(el('sumText').value,c), box=el('sumFbInline');
     let html;
@@ -1366,7 +1366,7 @@ function doSummary(){
   } else gotoStage('clarify');
 }
 function answerClarifiers(){
-  STT.stop(); Mic.hide();
+  Mic.hide();
   const c=S.caseObj, qs=splitQuestions(el('clrText').value), box=el('clrAnswers');
   if(!qs.length){ box.innerHTML='<div class="fb warn">No questions recorded. You may continue.</div>'; return; }
   box.innerHTML=qs.map(q=>{ const r=classifyQuestion(q,c); const v=r.good?'<span class="verdict v-good">good clarifier</span>':'<span class="verdict v-bad">not a clarifier</span>'; return `<div class="qa"><div class="q">“${capitalize(q)}?” ${v}</div><div class="a">${r.answer}</div></div>`; }).join('');
@@ -1382,7 +1382,7 @@ function renderMarks(){ const m=el('marks'); const lim=S.timeLimit; let h=''; fo
 /* review */
 function renderPreview(){ const st=parseStructure(el('structText').value), box=el('structPreview'); if(!st.length){ box.innerHTML='<div class="empty">Your buckets and bullets preview here…</div>'; return; } box.innerHTML=st.map((b,i)=>`<h4><span class="n">${i+1}</span>${b.header||'(unnamed)'}</h4><ul>${b.bullets.map(x=>`<li>${x}</li>`).join('')||'<li class="empty">no points yet</li>'}</ul>`).join(''); }
 function toReview(){
-  STT.stop(); Mic.hide();
+  Mic.hide();
   const hadAiStructure = !!el('structText').value.trim();
   if (!hadAiStructure) el('structText').value = autoStructure(el('fwText').value);
   el('reviewOut').innerHTML = ''; el('reviewFoot').style.display = 'none';
@@ -1579,7 +1579,6 @@ function applySettingsToUI(){ $$('#timeSeg button').forEach(b=>b.classList.toggl
 /* ---------- init ---------- */
 window.addEventListener('DOMContentLoaded',()=>{
   loadSettings();
-  if(!STT.supported){ const e=el('unsupported'); e.style.display='block'; e.innerHTML='Speech-to-text needs <b>Chrome or Edge</b>. You can still run every step by typing.'; }
   // nav
   $$('.navi[data-view]').forEach(n=>n.onclick=()=>{ if(n.dataset.view==='drill') showReady(); else if(n.dataset.view==='admin') showView('admin'); else showView('dashboard'); });
   // admin
@@ -1684,7 +1683,7 @@ function remarkHits(){ for(let t=30;t<=tElapsed;t+=30){ const mk=$('#marks .mark
 function inDrill(){ return el('viewDrill').style.display!=='none' && el('drillRun').style.display!=='none'; }
 function openSetup(){ if(inDrill()){ pauseSession(); }
   else { modalMode='set'; el('closeSettings').textContent='Done'; el('pauseNote').style.display='none'; el('settingsModal').classList.add('show'); } }
-function pauseSession(){ modalMode='pause'; S.paused=true; TTS.stop(); STT.stop(); Mic.hide();
+function pauseSession(){ modalMode='pause'; S.paused=true; TTS.stop(); Mic.hide();
   pauseWasTiming=!!timerInt; if(timerInt){ clearInterval(timerInt); timerInt=null; }
   if(tStarted) el('timerLog').textContent='|| Paused';
   el('closeSettings').textContent='Resume drill'; el('pauseNote').style.display='block'; el('settingsModal').classList.add('show'); }
