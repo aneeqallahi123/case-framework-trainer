@@ -295,8 +295,13 @@
   #viewDashboard.enter>*:nth-child(2){animation-delay:.07s}
   #viewDashboard.enter>*:nth-child(3){animation-delay:.14s}
   #viewDashboard.enter>*:nth-child(4){animation-delay:.21s}
-  .runtop{display:flex;justify-content:space-between;align-items:center;margin:8px 0 0}
-  .runtop .eyebrow.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:7px;vertical-align:middle;animation:recpulse2 1.3s infinite}
+  .runtop{display:flex;justify-content:space-between;align-items:center;padding:20px 0 18px;border-bottom:1px solid var(--line);margin-bottom:0}
+  .runtop-l{display:flex;align-items:center;gap:10px}
+  .run-pip{width:7px;height:7px;border-radius:50%;background:var(--red);flex:0 0 7px;animation:pipPulse 2s ease-in-out infinite}
+  @keyframes pipPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(204,0,0,.35)}55%{opacity:.55;box-shadow:0 0 0 5px rgba(204,0,0,0)}}
+  .run-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+  .run-sep{color:var(--line);font-size:14px;line-height:1}
+  .run-src{font-size:12.5px;color:var(--gray);font-weight:500}
   #pauseNote{display:none;background:var(--bg2);border-left:3px solid var(--red);padding:11px 14px;font-size:13px;color:var(--ink);margin:16px 0 0;border-radius:0 2px 2px 0}
 
   /* ---- auth screen ---- */
@@ -433,7 +438,7 @@
   </header>
 
   <main class="content">
-    <div class="crumbrow"><span class="eyebrow" id="pageTitle">Dashboard</span><span id="pageSub">Case framework practice</span></div>
+    <div class="crumbrow" id="mainCrumb"><span class="eyebrow" id="pageTitle">Dashboard</span><span id="pageSub">Case framework practice</span></div>
     <div class="unsupported" id="unsupported"></div>
 
     <!-- DASHBOARD -->
@@ -547,7 +552,15 @@
       </div>
 
       <div id="drillRun" style="display:none">
-        <div class="runtop"><span class="eyebrow" id="runEyebrow">Drill in progress</span><button class="btn ghost" id="pauseBtn">Pause</button></div>
+        <div class="runtop">
+          <div class="runtop-l">
+            <span class="run-pip"></span>
+            <span class="run-label">Live drill</span>
+            <span class="run-sep">·</span>
+            <span class="run-src" id="runCaseSrc"></span>
+          </div>
+          <button class="btn ghost" id="pauseBtn">Pause</button>
+        </div>
         <div class="progress" id="progress">
           <div class="pstep" data-step="recite"><span class="pn">01</span>Prompt</div>
           <div class="pstep" data-step="summary"><span class="pn">02</span>Summary</div>
@@ -1032,7 +1045,7 @@ const TTS={ _audio:null, _abort:null, _gen:0,
       this._audio.play().catch(()=>{});
     }catch(e){ if(e.name!=='AbortError'){ onEnd&&onEnd(); } res(); }
   }); },
-  stop(){ this._gen++; if(this._abort){ this._abort.abort(); this._abort=null; } if(this._audio){ this._audio.pause(); this._audio.src=''; this._audio=null; } } };
+  stop(){ this._gen++; if(this._abort){ this._abort.abort(); this._abort=null; } if(this._audio){ this._audio.onended=null; this._audio.onerror=null; this._audio.pause(); this._audio.src=''; this._audio=null; } } };
 
 /* ---------- single shared mic (one permission, reused) ---------- */
 const Mic={ stream:null, ctx:null, analyser:null, raf:null, container:null, bars:[],
@@ -1300,6 +1313,7 @@ function showView(v){
   $$('.navi').forEach(n=>n.classList.toggle('on',n.dataset.view===v));
   el('pageTitle').childNodes[0].nodeValue=v==='dashboard'?'Dashboard':(v==='admin'?'Admin':'Drill');
   el('pageSub').textContent=v==='dashboard'?'Case framework practice':(v==='admin'?'Users & case bank':(S.caseObj?S.caseObj.source:'Live practice'));
+  if(v!=='drill') el('mainCrumb').style.display='';
   if(v==='dashboard'){ TTS.stop(); Mic.hide(); renderDashboard(); }
   if(v==='admin'){ TTS.stop(); Mic.hide(); loadAdminUsers(); loadAdminCases(); }
 }
@@ -1384,7 +1398,9 @@ async function startDrill(){
   el('caseTitle').textContent='Prompt';
   el('clock').textContent=fmtClock(S.timeLimit);
   const pt=el('promptText'); pt.textContent=c.prompt; pt.style.display=S.showText?'block':'none';
-  showView('drill'); el('drillReady').style.display='none'; el('drillRun').style.display='block'; gotoStage('recite'); recitePrompt();
+  showView('drill'); el('drillReady').style.display='none'; el('drillRun').style.display='block';
+  el('mainCrumb').style.display='none'; el('runCaseSrc').textContent=c.source||c.title||'';
+  gotoStage('recite'); recitePrompt();
   Mic.ensure(); // warm up mic permission once
 }
 function recitePrompt(){ const c=S.caseObj; const rb=el('replayBtn');
@@ -1685,7 +1701,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 /* ---- ready room ---- */
-function showReady(){ showView('drill'); el('drillReady').style.display='block'; el('drillRun').style.display='none'; renderReady(); }
+function showReady(){ showView('drill'); el('drillReady').style.display='block'; el('drillRun').style.display='none'; el('mainCrumb').style.display=''; renderReady(); }
 function renderReady(){
   const h=loadHistory();
   el('readyCount').textContent=h.length;
