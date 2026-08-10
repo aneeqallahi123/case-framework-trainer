@@ -991,11 +991,12 @@ function saveHistory(h){ try{ localStorage.setItem(LS_HIST,JSON.stringify(h)); }
 
 /* ---------- TTS (Deepgram Aura) ---------- */
 const TTS={ _audio:null,
+  _base(){ return window.location.hostname==='localhost'?'http://localhost:3001':'https://case-framework-trainer-production.up.railway.app'; },
   speak(text,{rate=S.rate,onEnd}={}){ return new Promise(async res=>{
     this.stop();
     try{
       const token=localStorage.getItem('cf_token');
-      const resp=await fetch(API_BASE+'/api/transcribe/speak',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({text,speed:rate})});
+      const resp=await fetch(this._base()+'/api/transcribe/speak',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({text,speed:rate})});
       if(!resp.ok) throw new Error('TTS failed');
       const blob=await resp.blob();
       const url=URL.createObjectURL(blob);
