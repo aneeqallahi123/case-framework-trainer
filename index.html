@@ -989,12 +989,22 @@ function saveSettings(){ try{ localStorage.setItem(LS_SET,JSON.stringify({timeLi
 function loadHistory(){ try{ return JSON.parse(localStorage.getItem(LS_HIST)||'[]'); }catch(e){ return []; } }
 function saveHistory(h){ try{ localStorage.setItem(LS_HIST,JSON.stringify(h)); }catch(e){} }
 
-/* ---------- TTS ---------- */
-const TTS={ voice:null,
-  pickVoice(){ const vs=speechSynthesis.getVoices(); this.voice=vs.find(v=>/en-US/.test(v.lang)&&/(Google|Samantha|Natural|Jenny|Aria|Zira)/i.test(v.name))||vs.find(v=>/en-US/.test(v.lang))||vs.find(v=>/^en/.test(v.lang))||vs[0]||null; },
-  speak(text,{rate=S.rate,onEnd}={}){ return new Promise(res=>{ try{speechSynthesis.cancel();}catch(e){} const u=new SpeechSynthesisUtterance(text); if(this.voice)u.voice=this.voice; u.rate=rate; u.onend=()=>{onEnd&&onEnd();res();}; u.onerror=()=>{onEnd&&onEnd();res();}; speechSynthesis.speak(u); }); },
-  stop(){ try{speechSynthesis.cancel();}catch(e){} } };
-if('speechSynthesis' in window){ TTS.pickVoice(); speechSynthesis.onvoiceschanged=()=>TTS.pickVoice(); }
+/* ---------- TTS (Deepgram Aura) ---------- */
+const TTS={ _audio:null,
+  speak(text,{rate=S.rate,onEnd}={}){ return new Promise(async res=>{
+    this.stop();
+    try{
+      const resp=await fetch(API_BASE+'/api/transcribe/speak',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({text,speed:rate})});
+      if(!resp.ok) throw new Error('TTS failed');
+      const blob=await resp.blob();
+      const url=URL.createObjectURL(blob);
+      this._audio=new Audio(url);
+      this._audio.onended=()=>{ URL.revokeObjectURL(url); onEnd&&onEnd(); res(); };
+      this._audio.onerror=()=>{ URL.revokeObjectURL(url); onEnd&&onEnd(); res(); };
+      this._audio.play();
+    }catch(e){ onEnd&&onEnd(); res(); }
+  }); },
+  stop(){ if(this._audio){ this._audio.pause(); this._audio.src=''; this._audio=null; } } };
 
 /* ---------- single shared mic (one permission, reused) ---------- */
 const Mic={ stream:null, ctx:null, analyser:null, raf:null, container:null, bars:[],

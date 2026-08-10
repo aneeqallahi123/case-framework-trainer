@@ -170,4 +170,36 @@ Return ONLY a JSON object with this exact structure (no extra text, no markdown 
   }
 });
 
+// POST /api/transcribe/speak  - send text, get back audio stream via Deepgram TTS
+router.post('/speak', requireAuth, async (req, res) => {
+  const { text, speed } = req.body;
+  if (!text || !text.trim()) {
+    return res.status(400).json({ error: 'No text provided' });
+  }
+
+  try {
+    const url = `https://api.deepgram.com/v1/speak?model=aura-2-apollo-en&speed=${speed || 1}`;
+    const dgRes = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${process.env.DEEPGRAM_API_KEY}`,
+        'Content-Type': 'text/plain'
+      },
+      body: text.trim()
+    });
+
+    if (!dgRes.ok) {
+      const err = await dgRes.text();
+      console.error('Deepgram TTS error:', err);
+      return res.status(500).json({ error: 'TTS request failed' });
+    }
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    dgRes.body.pipe(res);
+  } catch (err) {
+    console.error('Speak route error:', err);
+    res.status(500).json({ error: 'TTS service unavailable' });
+  }
+});
+
 module.exports = router;
