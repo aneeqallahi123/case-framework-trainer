@@ -1014,7 +1014,7 @@ function saveHistory(h){ try{ localStorage.setItem(LS_HIST,JSON.stringify(h)); }
 /* ---------- TTS (Deepgram Aura) ---------- */
 const TTS={ _audio:null, _abort:null, _gen:0,
   _base(){ return window.location.hostname==='localhost'?'http://localhost:3001':'https://case-framework-trainer-production.up.railway.app'; },
-  speak(text,{rate=S.rate,onEnd}={}){ return new Promise(async res=>{
+  speak(text,{rate=S.rate,onStart,onEnd}={}){ return new Promise(async res=>{
     this.stop();
     const gen=++this._gen;
     const ac=new AbortController(); this._abort=ac;
@@ -1028,6 +1028,7 @@ const TTS={ _audio:null, _abort:null, _gen:0,
       this._audio=new Audio(url);
       this._audio.onended=()=>{ URL.revokeObjectURL(url); onEnd&&onEnd(); res(); };
       this._audio.onerror=()=>{ URL.revokeObjectURL(url); onEnd&&onEnd(); res(); };
+      onStart&&onStart();
       this._audio.play().catch(()=>{});
     }catch(e){ if(e.name!=='AbortError'){ onEnd&&onEnd(); } res(); }
   }); },
@@ -1386,9 +1387,13 @@ async function startDrill(){
   showView('drill'); el('drillReady').style.display='none'; el('drillRun').style.display='block'; gotoStage('recite'); recitePrompt();
   Mic.ensure(); // warm up mic permission once
 }
-function recitePrompt(){ const c=S.caseObj; el('toSummary').disabled=true; el('replayBtn').disabled=true;
+function recitePrompt(){ const c=S.caseObj; const rb=el('replayBtn');
+  el('toSummary').disabled=true; rb.disabled=true; rb.textContent='Loading…';
   el('reciteStatus').innerHTML='<span class="speaking">reading <i></i><i></i><i></i></span>';
-  TTS.speak(c.prompt,{onEnd:()=>{ el('reciteStatus').textContent='Prompt complete. Replay or summarize.'; el('toSummary').disabled=false; el('replayBtn').disabled=false; }}); }
+  TTS.speak(c.prompt,{
+    onStart:()=>{ rb.textContent='● Playing'; },
+    onEnd:()=>{ el('reciteStatus').textContent='Prompt complete. Replay or summarize.'; el('toSummary').disabled=false; rb.disabled=false; rb.textContent='Replay'; }
+  }); }
 function doSummary(){
   Mic.hide();
   if(!S.sumChecked){
