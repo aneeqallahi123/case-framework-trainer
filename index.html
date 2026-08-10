@@ -994,7 +994,8 @@ const TTS={ _audio:null,
   speak(text,{rate=S.rate,onEnd}={}){ return new Promise(async res=>{
     this.stop();
     try{
-      const resp=await fetch(API_BASE+'/api/transcribe/speak',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({text,speed:rate})});
+      const token=localStorage.getItem('cf_token');
+      const resp=await fetch(API_BASE+'/api/transcribe/speak',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({text,speed:rate})});
       if(!resp.ok) throw new Error('TTS failed');
       const blob=await resp.blob();
       const url=URL.createObjectURL(blob);
