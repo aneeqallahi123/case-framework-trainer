@@ -194,8 +194,9 @@ router.post('/speak', requireAuth, async (req, res) => {
       return res.status(500).json({ error: 'TTS request failed' });
     }
 
+    const buffer = Buffer.from(await dgRes.arrayBuffer());
     res.setHeader('Content-Type', 'audio/mpeg');
-    dgRes.body.pipe(res);
+    res.send(buffer);
   } catch (err) {
     console.error('Speak route error:', err);
     res.status(500).json({ error: 'TTS service unavailable' });
