@@ -131,4 +131,70 @@ router.delete('/cases/:id', async (req, res) => {
   }
 });
 
+// ---- Marking Criteria ----
+
+// GET /api/admin/marking-criteria - list all marking criteria
+router.get('/marking-criteria', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, description, enabled, weight, config FROM marking_criteria ORDER BY id');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Admin list marking criteria error:', err);
+    res.status(500).json({ error: 'Could not fetch marking criteria' });
+  }
+});
+
+// PUT /api/admin/marking-criteria/:name - update a marking criterion
+router.put('/marking-criteria/:name', async (req, res) => {
+  const { name } = req.params;
+  const { description, enabled, weight, config } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE marking_criteria SET description = $1, enabled = $2, weight = $3, config = $4, updated_at = NOW() WHERE name = $5 RETURNING *',
+      [description, enabled, weight, JSON.stringify(config), name]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Marking criterion not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Admin update marking criterion error:', err);
+    res.status(500).json({ error: 'Could not update marking criterion' });
+  }
+});
+
+// POST /api/admin/marking-criteria/:name/reset - reset to defaults
+router.post('/marking-criteria/:name/reset', async (req, res) => {
+  const { name } = req.params;
+  const defaults = {
+    Structure: {
+      minBuckets: 3, maxBuckets: 5, minPointsPerBucket: 4, maxPointsPerBucket: 5,
+      feedback: { strong: 'Within the 3–5 bucket range with 4–5 points each.', ok: 'Either bucket count or point distribution could be optimized.', weak: 'Needs adjustment: aim for 3–5 buckets with 4–5 points each.' }
+    },
+    MECE: {
+      overlapThreshold: 0.22, minSharedWords: 2, minCoveragePct: 0,
+      feedback: { strong: 'No significant overlap; covers key dimensions.', ok: 'Some overlap exists; could improve exclusivity.', weak: 'Significant overlap or missing key dimensions.' }
+    },
+    Succinct: {
+      maxAvgWordLength: 12, maxLongPointsBeforeOk: 2, maxLongPointsBeforeWeak: 3, maxTotalBullets: 22,
+      feedback: { strong: 'Points are concise and phrase-length.', ok: 'Some points could be more concise.', weak: 'Several points are too long; compress to phrases.' }
+    },
+    Relevant: {
+      minRelevancePctForStrong: 0.5, minRelevancePctForOk: 0.25,
+      feedback: { strong: 'Well tailored to this case with good specificity.', ok: 'Partly tailored; add more case-specific hooks.', weak: 'Generic. Reference client, industry, and specific figures.' }
+    }
+  };
+  const config = defaults[name];
+  if (!config) return res.status(400).json({ error: 'Unknown criterion name' });
+  try {
+    const result = await pool.query(
+      'UPDATE marking_criteria SET config = $1, updated_at = NOW() WHERE name = $2 RETURNING *',
+      [JSON.stringify(config), name]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Marking criterion not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Admin reset marking criterion error:', err);
+    res.status(500).json({ error: 'Could not reset marking criterion' });
+  }
+});
+
 module.exports = router;

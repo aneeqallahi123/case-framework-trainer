@@ -363,6 +363,23 @@
   .admin-table .row-actions button{font-size:12px;padding:6px 10px}
   #adminCaseModal .box{width:600px}
 
+  /* ---- marking criteria ---- */
+  .crit-item{border:1px solid var(--line);border-radius:3px;padding:20px;margin-bottom:16px;transition:box-shadow .15s}
+  .crit-item:hover{box-shadow:var(--shadow-sm)}
+  .crit-head{display:flex;justify-content:space-between;align-items:start;margin-bottom:14px}
+  .crit-title{font-weight:700;font-size:15px;color:var(--ink)}
+  .crit-desc{font-size:13px;color:var(--gray);margin-top:2px}
+  .crit-toggle{display:flex;align-items:center;gap:8px}
+  .crit-toggle label{font-size:12px;color:var(--gray);margin:0;cursor:pointer}
+  .crit-toggle input[type="checkbox"]{cursor:pointer;width:18px;height:18px}
+  .crit-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+  .crit-field{display:flex;flex-direction:column}
+  .crit-field label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--gray2);margin-bottom:6px}
+  .crit-field input[type="number"],.crit-field input[type="text"]{width:100%;border:1px solid var(--line);padding:8px 10px;font-family:var(--f);font-size:13px;border-radius:2px}
+  .crit-field input[type="number"]:focus,.crit-field input[type="text"]:focus{outline:none;border-color:var(--ink)}
+  .crit-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+  .crit-actions button{font-size:12px;padding:6px 12px}
+
   /* ---- issue tree diagram ---- */
   .tree-diagram{position:relative;overflow-x:auto;padding:24px 12px 28px}
   .tree-lines{position:absolute;top:0;left:0;pointer-events:none;z-index:0}
@@ -487,6 +504,7 @@
       <div class="seg" id="adminTabs" style="margin-bottom:20px">
         <button data-tab="users" class="on">Users</button>
         <button data-tab="cases">Case bank</button>
+        <button data-tab="criteria">Marking criteria</button>
       </div>
 
       <div id="adminUsersPane">
@@ -510,6 +528,13 @@
             <thead><tr><th>Title</th><th>Type</th><th>Source</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
+        </div>
+      </div>
+
+      <div id="adminCriteriaPane" style="display:none">
+        <div class="card flat">
+          <h3>Marking criteria <span class="csub">Adjust scoring thresholds</span></h3>
+          <div id="adminCriteriaList" style="margin-top:20px"></div>
         </div>
       </div>
     </section>
@@ -1128,31 +1153,52 @@ function autoStructure(raw){ const text=raw.replace(/\s+/g,' ').trim(); if(!text
   const lines=[]; buckets.forEach((b,i)=>{ let h=b.replace(BUCKET_CUE,'').trim(); let hw=h.split(' ').slice(0,5).join(' ').replace(/^(is |would be |i'?d |i would |look at |looking at |around |about )/i,'').trim(); lines.push('# '+(capitalize(hw)||('Bucket '+(i+1)))); let rest=h.split(' ').slice(5).join(' '); let pc=rest.split(BULLET_CUE).join('|').split(/[|,]| and /i).map(s=>s.trim()).filter(s=>s.length>2); if(!pc.length)pc=[h]; pc.slice(0,6).forEach(p=>lines.push('- '+capitalize(p))); }); return lines.join('\n'); }
 function parseStructure(text){ const out=[]; text.split(/\n/).forEach(line=>{ const t=line.trim(); if(!t)return; if(/^#/.test(t))out.push({header:t.replace(/^#+\s*/,'').trim(),bullets:[]}); else{ const b=t.replace(/^[\-\*•]\s*/,'').trim(); if(!out.length)out.push({header:b,bullets:[]}); else out[out.length-1].bullets.push(b);} }); return out; }
 
-function reviewFramework(struct,c){
+function reviewFramework(struct,c,criteriaConfig){
+  const cfg=criteriaConfig||MARKING_CRITERIA_CONFIG;
   const res={crits:[]}, totalBullets=struct.reduce((n,b)=>n+b.bullets.length,0), allText=struct.map(b=>b.header+' '+b.bullets.join(' ')).join(' ').toLowerCase();
-  (function(){ const notes=[]; let level='strong'; const nb=struct.length;
-    if(nb<3){ notes.push(`Only ${nb} bucket${nb===1?'':'s'} — aim for 3–5 top-level areas.`); level='weak'; }
-    else if(nb>5){ notes.push(`${nb} buckets is a lot — 3–5 is easier to deliver.`); level='ok'; } else notes.push(`${nb} buckets — within the 3–5 range.`);
-    const thin=struct.filter(b=>b.bullets.length<3).map(b=>b.header), fat=struct.filter(b=>b.bullets.length>6).map(b=>b.header);
-    if(thin.length){ notes.push(`Thin (under 3 points): ${thin.join('; ')}. Target 4–5 each.`); if(level==='strong')level='ok'; }
-    if(fat.length){ notes.push(`Overloaded (7+ points): ${fat.join('; ')}. Trim to 4–5.`); if(level==='strong')level='ok'; }
-    res.crits.push({name:'Structure',sub:'3–5 buckets, 4–5 points each',level,notes}); })();
-  (function(){ const notes=[]; let level='strong'; const sets=struct.map(b=>new Set(sigWords(b.header+' '+b.bullets.join(' ')))); let ov=false;
-    for(let i=0;i<sets.length;i++)for(let j=i+1;j<sets.length;j++){ const a=sets[i],b=sets[j]; let inter=0; a.forEach(w=>{if(b.has(w))inter++;}); const uni=new Set([...a,...b]).size||1, jac=inter/uni, sh=[...a].filter(w=>b.has(w)); if(jac>0.22&&sh.length>=2){ ov=true; notes.push(`"${struct[i].header}" and "${struct[j].header}" overlap (shared: ${sh.slice(0,4).join(', ')}). Make them mutually exclusive.`);} }
+
+  (function(){
+    const critCfg=cfg.Structure||{}; const notes=[]; let level='strong'; const nb=struct.length;
+    const minB=critCfg.minBuckets||3, maxB=critCfg.maxBuckets||5;
+    if(nb<minB){ notes.push(`Only ${nb} bucket${nb===1?'':'s'} — aim for ${minB}–${maxB} top-level areas.`); level='weak'; }
+    else if(nb>maxB){ notes.push(`${nb} buckets is a lot — ${minB}–${maxB} is easier to deliver.`); level='ok'; } else notes.push(`${nb} buckets — within the ${minB}–${maxB} range.`);
+    const minPts=critCfg.minPointsPerBucket||4, maxPts=critCfg.maxPointsPerBucket||5;
+    const thin=struct.filter(b=>b.bullets.length<minPts).map(b=>b.header), fat=struct.filter(b=>b.bullets.length>maxPts).map(b=>b.header);
+    if(thin.length){ notes.push(`Thin (under ${minPts} points): ${thin.join('; ')}. Target ${minPts}–${maxPts} each.`); if(level==='strong')level='ok'; }
+    if(fat.length){ notes.push(`Overloaded (${maxPts+1}+ points): ${fat.join('; ')}. Trim to ${minPts}–${maxPts}.`); if(level==='strong')level='ok'; }
+    res.crits.push({name:'Structure',sub:`${minB}–${maxB} buckets, ${minPts}–${maxPts} points each`,level,notes});
+  })();
+
+  (function(){
+    const critCfg=cfg.MECE||{}; const notes=[]; let level='strong'; const sets=struct.map(b=>new Set(sigWords(b.header+' '+b.bullets.join(' ')))); let ov=false;
+    const overlapThresh=critCfg.overlapThreshold||0.22, minShared=critCfg.minSharedWords||2;
+    for(let i=0;i<sets.length;i++)for(let j=i+1;j<sets.length;j++){ const a=sets[i],b=sets[j]; let inter=0; a.forEach(w=>{if(b.has(w))inter++;}); const uni=new Set([...a,...b]).size||1, jac=inter/uni, sh=[...a].filter(w=>b.has(w)); if(jac>overlapThresh&&sh.length>=minShared){ ov=true; notes.push(`"${struct[i].header}" and "${struct[j].header}" overlap (shared: ${sh.slice(0,4).join(', ')}). Make them mutually exclusive.`);} }
     if(!ov)notes.push('No significant overlap between buckets; mutually exclusive.'); else level='ok';
     const missing=(c.meceDimensions||[]).filter(d=>!d.keywords.some(k=>allText.includes(k))), cov=(c.meceDimensions||[]).length-missing.length;
     if(missing.length){ notes.push(`Possible gaps for a ${c.type.replace('_',' ')} case — nothing on: ${missing.map(d=>d.name).join('; ')}.`); level=missing.length>=2?'weak':(level==='strong'?'ok':level); }
     else notes.push(`Collectively exhaustive — covers the big ${c.type.replace('_',' ')} dimensions (${cov}/${(c.meceDimensions||[]).length}).`);
-    res.crits.push({name:'MECE',sub:'Mutually exclusive, collectively exhaustive',level,notes}); })();
-  (function(){ const notes=[]; let level='strong'; const lens=[]; struct.forEach(b=>b.bullets.forEach(x=>lens.push({w:words(x).length,t:x}))); const long=lens.filter(x=>x.w>12), avg=lens.length?Math.round(lens.reduce((n,x)=>n+x.w,0)/lens.length):0;
+    res.crits.push({name:'MECE',sub:'Mutually exclusive, collectively exhaustive',level,notes});
+  })();
+
+  (function(){
+    const critCfg=cfg.Succinct||{}; const notes=[]; let level='strong'; const lens=[]; struct.forEach(b=>b.bullets.forEach(x=>lens.push({w:words(x).length,t:x})));
+    const maxWordLen=critCfg.maxAvgWordLength||12, maxLongOk=critCfg.maxLongPointsBeforeOk||2, maxLongWeak=critCfg.maxLongPointsBeforeWeak||3, maxTotal=critCfg.maxTotalBullets||22;
+    const long=lens.filter(x=>x.w>maxWordLen), avg=lens.length?Math.round(lens.reduce((n,x)=>n+x.w,0)/lens.length):0;
     notes.push(`Average point length: ${avg} words.`);
-    if(long.length){ notes.push(`${long.length} point${long.length===1?'':'s'} run long (>12 words) — compress to phrases.`); level=long.length>=3?'weak':'ok'; } else notes.push('Points are concise and phrase-length, suitable for delivery.');
-    if(totalBullets>22){ notes.push(`${totalBullets} total points is a lot to say in a few minutes — prioritize.`); if(level==='strong')level='ok'; }
-    res.crits.push({name:'Succinct',sub:'Tight, phrase-length points',level,notes}); })();
-  (function(){ const notes=[]; let level='strong'; const kw=(c.caseKeywords||[]).map(k=>k.toLowerCase()); let tl=0; struct.forEach(b=>b.bullets.forEach(x=>{ const xl=x.toLowerCase(); if(kw.some(k=>k&&xl.includes(k)))tl++; })); const ratio=totalBullets?tl/totalBullets:0,pct=Math.round(ratio*100);
+    if(long.length){ notes.push(`${long.length} point${long.length===1?'':'s'} run long (>${maxWordLen} words) — compress to phrases.`); level=long.length>=maxLongWeak?'weak':(long.length>maxLongOk?'ok':'strong'); } else notes.push('Points are concise and phrase-length, suitable for delivery.');
+    if(totalBullets>maxTotal){ notes.push(`${totalBullets} total points is a lot to say in a few minutes — prioritize.`); if(level==='strong')level='ok'; }
+    res.crits.push({name:'Succinct',sub:'Tight, phrase-length points',level,notes});
+  })();
+
+  (function(){
+    const critCfg=cfg.Relevant||{}; const notes=[]; let level='strong'; const kw=(c.caseKeywords||[]).map(k=>k.toLowerCase()); let tl=0; struct.forEach(b=>b.bullets.forEach(x=>{ const xl=x.toLowerCase(); if(kw.some(k=>k&&xl.includes(k)))tl++; }));
+    const ratio=totalBullets?tl/totalBullets:0, pct=Math.round(ratio*100);
+    const minStrong=critCfg.minRelevancePctForStrong||0.5, minOk=critCfg.minRelevancePctForOk||0.25;
     notes.push(`${tl}/${totalBullets} points (${pct}%) reference something specific to this case.`);
-    if(ratio<0.25){ notes.push('Generic. Reference the client, industry, and specific figures or levers.'); level='weak'; } else if(ratio<0.5){ notes.push('Partly tailored — add more case-specific hooks per bucket.'); level='ok'; } else notes.push('Well tailored to this case.');
-    res.crits.push({name:'Relevant',sub:'Tailored to THIS case',level,notes}); })();
+    if(ratio<minOk){ notes.push('Generic. Reference the client, industry, and specific figures or levers.'); level='weak'; } else if(ratio<minStrong){ notes.push('Partly tailored — add more case-specific hooks per bucket.'); level='ok'; } else notes.push('Well tailored to this case.');
+    res.crits.push({name:'Relevant',sub:'Tailored to THIS case',level,notes});
+  })();
+
   const score=res.crits.reduce((n,c)=>n+(c.level==='strong'?2:c.level==='ok'?1:0),0); res.score=score; res.pct=Math.round(score/8*100);
   res.overall=score>=7?'Strong framework. Interview-ready.':score>=4?'Solid framework. Address the flagged items.':'Incomplete. Rework the flagged areas before delivering.';
   return res;
@@ -1483,7 +1529,8 @@ function recordResult(c,r,st){
 }
 
 /* ---------- dashboard analytics ---------- */
-const CRITS=['Structure','MECE','Succinct','Relevant'];
+let CRITS=['Structure','MECE','Succinct','Relevant'];
+let MARKING_CRITERIA_CONFIG={};
 function dayKey(ts){ const d=new Date(ts); return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); }
 function computeStreak(h){ if(!h.length)return 0; const days=new Set(h.map(x=>dayKey(x.ts))); let streak=0; const d=new Date(); for(;;){ const k=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); if(days.has(k)){streak++; d.setDate(d.getDate()-1);} else break; } return streak; }
 function coverColor(pct){ return pct>=75?'#1A1A1A':pct>=45?'#8A8A8A':'#CC0000'; }
@@ -1629,13 +1676,149 @@ async function saveCaseFromModal(){
   toast(isEdit ? 'Case updated.' : 'Case added.');
 }
 
+let _adminCriteriaCache = {};
+async function loadAdminCriteria(){
+  const container = el('adminCriteriaList');
+  container.innerHTML = '<div class="empty">Loading…</div>';
+  try{
+    const criteria = await apiGet('/api/admin/marking-criteria');
+    if(criteria.error){ container.innerHTML = `<div class="empty">${esc(criteria.error)}</div>`; return; }
+    _adminCriteriaCache = {};
+    criteria.forEach(c => _adminCriteriaCache[c.name] = c);
+    renderAdminCriteria(criteria);
+  }catch(err){ container.innerHTML = '<div class="empty">Could not load marking criteria.</div>'; }
+}
+
+function renderAdminCriteria(criteria){
+  const container = el('adminCriteriaList');
+  container.innerHTML = criteria.map(c=>`
+    <div class="crit-item" data-name="${esc(c.name)}">
+      <div class="crit-head">
+        <div>
+          <div class="crit-title">${esc(c.name)}</div>
+          <div class="crit-desc">${esc(c.description)}</div>
+        </div>
+        <div class="crit-toggle">
+          <input type="checkbox" data-act="toggle-enabled" ${c.enabled?'checked':''}>
+          <label>Enabled</label>
+        </div>
+      </div>
+      <div class="crit-body" data-content="${esc(c.name)}"></div>
+      <div class="crit-actions">
+        <button class="btn ghost" data-act="reset-criterion">Reset to defaults</button>
+        <button class="btn accent" data-act="save-criterion">Save changes</button>
+      </div>
+    </div>
+  `).join('');
+
+  criteria.forEach(c => renderCriterionFields(c));
+
+  container.querySelectorAll('[data-act="reset-criterion"]').forEach(btn=>btn.onclick=async(e)=>{
+    const item = e.target.closest('.crit-item'), name = item.dataset.name;
+    if(!confirm(`Reset "${name}" to default values?`)) return;
+    const res = await fetch(API_BASE+'/api/admin/marking-criteria/'+name+'/reset',{method:'POST',headers:authHeaders()}).then(r=>r.json());
+    if(res.error){ toast(res.error); return; }
+    _adminCriteriaCache[name] = res;
+    renderCriterionFields(res);
+    toast('Reset to defaults.');
+  });
+
+  container.querySelectorAll('[data-act="save-criterion"]').forEach(btn=>btn.onclick=async(e)=>{
+    const item = e.target.closest('.crit-item'), name = item.dataset.name;
+    const enabled = item.querySelector('[data-act="toggle-enabled"]').checked;
+    const config = readCriterionFields(name);
+    const res = await fetch(API_BASE+'/api/admin/marking-criteria/'+name,{
+      method:'PUT',
+      headers:authHeaders(),
+      body:JSON.stringify({enabled,config})
+    }).then(r=>r.json());
+    if(res.error){ toast(res.error); return; }
+    _adminCriteriaCache[name] = res;
+    toast('Criterion updated.');
+  });
+}
+
+function renderCriterionFields(c){
+  const body = document.querySelector(`[data-content="${esc(c.name)}"]`);
+  const cfg = c.config || {};
+  let html = '';
+
+  if(c.name === 'Structure'){
+    html = `
+      <div class="crit-field"><label>Min buckets</label><input type="number" data-field="minBuckets" value="${cfg.minBuckets||3}" min="1" max="10"></div>
+      <div class="crit-field"><label>Max buckets</label><input type="number" data-field="maxBuckets" value="${cfg.maxBuckets||5}" min="1" max="10"></div>
+      <div class="crit-field"><label>Min points per bucket</label><input type="number" data-field="minPointsPerBucket" value="${cfg.minPointsPerBucket||4}" min="1" max="10"></div>
+      <div class="crit-field"><label>Max points per bucket</label><input type="number" data-field="maxPointsPerBucket" value="${cfg.maxPointsPerBucket||5}" min="1" max="10"></div>
+    `;
+  }else if(c.name === 'MECE'){
+    html = `
+      <div class="crit-field"><label>Overlap threshold (0–1)</label><input type="number" data-field="overlapThreshold" value="${cfg.overlapThreshold||0.22}" min="0" max="1" step="0.01"></div>
+      <div class="crit-field"><label>Min shared words</label><input type="number" data-field="minSharedWords" value="${cfg.minSharedWords||2}" min="0" max="10"></div>
+      <div class="crit-field"><label>Min coverage %</label><input type="number" data-field="minCoveragePct" value="${cfg.minCoveragePct||0}" min="0" max="100"></div>
+    `;
+  }else if(c.name === 'Succinct'){
+    html = `
+      <div class="crit-field"><label>Max avg words per point</label><input type="number" data-field="maxAvgWordLength" value="${cfg.maxAvgWordLength||12}" min="1" max="30"></div>
+      <div class="crit-field"><label>Long points before "ok"</label><input type="number" data-field="maxLongPointsBeforeOk" value="${cfg.maxLongPointsBeforeOk||2}" min="0" max="20"></div>
+      <div class="crit-field"><label>Long points before "weak"</label><input type="number" data-field="maxLongPointsBeforeWeak" value="${cfg.maxLongPointsBeforeWeak||3}" min="1" max="20"></div>
+      <div class="crit-field"><label>Max total points</label><input type="number" data-field="maxTotalBullets" value="${cfg.maxTotalBullets||22}" min="10" max="50"></div>
+    `;
+  }else if(c.name === 'Relevant'){
+    html = `
+      <div class="crit-field"><label>Min relevance % for "strong"</label><input type="number" data-field="minRelevancePctForStrong" value="${Math.round((cfg.minRelevancePctForStrong||0.5)*100)}" min="0" max="100"></div>
+      <div class="crit-field"><label>Min relevance % for "ok"</label><input type="number" data-field="minRelevancePctForOk" value="${Math.round((cfg.minRelevancePctForOk||0.25)*100)}" min="0" max="100"></div>
+    `;
+  }
+
+  body.innerHTML = html;
+}
+
+function readCriterionFields(name){
+  const item = document.querySelector(`[data-name="${esc(name)}"]`);
+  const cfg = _adminCriteriaCache[name].config || {};
+  const fields = item.querySelectorAll('[data-field]');
+  const result = {...cfg};
+
+  fields.forEach(f => {
+    const key = f.dataset.field;
+    let value = f.value;
+    if(key.includes('Pct') || key.includes('Relevance')){
+      value = parseFloat(value) / 100;
+    }else if(key.includes('Threshold')){
+      value = parseFloat(value);
+    }else{
+      value = parseInt(value, 10);
+    }
+    result[key] = value;
+  });
+
+  return result;
+}
+
 /* ---------- settings ---------- */
 function wireSeg(id,setter){ const seg=el(id); seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); setter(b.dataset.v); saveSettings(); }); }
 function applySettingsToUI(){ $$('#timeSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.timeLimit)); $$('#rateSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.rate)); el('showText').checked=S.showText; el('clock').textContent=fmtClock(S.timeLimit); }
 
+async function loadMarkingCriteria(){
+  try{
+    const criteria=await apiGet('/api/cases/marking-criteria');
+    if(criteria && !criteria.error){
+      MARKING_CRITERIA_CONFIG={};
+      CRITS=[];
+      Object.entries(criteria).forEach(([name,data])=>{
+        MARKING_CRITERIA_CONFIG[name]=data.config||{};
+        CRITS.push(name);
+      });
+    }
+  }catch(err){
+    console.warn('Could not load marking criteria, using defaults:',err);
+  }
+}
+
 /* ---------- init ---------- */
-window.addEventListener('DOMContentLoaded',()=>{
+window.addEventListener('DOMContentLoaded',async ()=>{
   loadSettings();
+  await loadMarkingCriteria();
   // nav
   $$('.navi[data-view]').forEach(n=>n.onclick=()=>{ if(n.dataset.view==='drill') showReady(); else if(n.dataset.view==='admin') showView('admin'); else showView('dashboard'); });
   // admin
@@ -1643,6 +1826,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     $$('#adminTabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
     el('adminUsersPane').style.display = b.dataset.tab==='users' ? 'block' : 'none';
     el('adminCasesPane').style.display = b.dataset.tab==='cases' ? 'block' : 'none';
+    el('adminCriteriaPane').style.display = b.dataset.tab==='criteria' ? 'block' : 'none';
+    if(b.dataset.tab==='criteria') loadAdminCriteria();
   });
   el('adminAddCaseBtn').onclick=()=>openCaseModal(null);
   el('acCancel').onclick=closeCaseModal;
@@ -1659,7 +1844,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('click',()=>el('acctMenu').classList.remove('open'));
   el('acctMenu').addEventListener('click',e=>e.stopPropagation());
   el('acctSetup').onclick=()=>{ el('acctMenu').classList.remove('open'); openSetup(); };
-  el('acctAdmin').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('admin'); loadAdminUsers(); loadAdminCases(); };
+  el('acctAdmin').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('admin'); loadAdminUsers(); loadAdminCases(); loadAdminCriteria(); };
 
   el('closeSettings').onclick=()=>el('settingsModal').classList.remove('show');
   el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) el('settingsModal').classList.remove('show'); };

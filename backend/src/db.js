@@ -53,11 +53,23 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS marking_criteria (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(50) UNIQUE NOT NULL,
+        description TEXT,
+        enabled BOOLEAN DEFAULT true,
+        weight INTEGER DEFAULT 2,
+        config JSONB DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
     `);
     console.log('✅ Database tables ready');
 
     await seedAdmins(client);
     await seedCases(client);
+    await seedMarkingCriteria(client);
   } catch (err) {
     console.error('❌ Database init error:', err.message);
     throw err;
@@ -96,6 +108,79 @@ async function seedCases(client) {
     );
   }
   console.log(`✅ Seeded ${cases.length} cases into the database`);
+}
+
+async function seedMarkingCriteria(client) {
+  const { rows } = await client.query('SELECT COUNT(*)::int AS count FROM marking_criteria');
+  if (rows[0].count > 0) return;
+
+  const criteria = [
+    {
+      name: 'Structure',
+      description: '3–5 buckets, 4–5 points each',
+      config: {
+        minBuckets: 3,
+        maxBuckets: 5,
+        minPointsPerBucket: 4,
+        maxPointsPerBucket: 5,
+        feedback: {
+          strong: 'Within the 3–5 bucket range with 4–5 points each.',
+          ok: 'Either bucket count or point distribution could be optimized.',
+          weak: 'Needs adjustment: aim for 3–5 buckets with 4–5 points each.'
+        }
+      }
+    },
+    {
+      name: 'MECE',
+      description: 'Mutually exclusive, collectively exhaustive',
+      config: {
+        overlapThreshold: 0.22,
+        minSharedWords: 2,
+        minCoveragePct: 0,
+        feedback: {
+          strong: 'No significant overlap; covers key dimensions.',
+          ok: 'Some overlap exists; could improve exclusivity.',
+          weak: 'Significant overlap or missing key dimensions.'
+        }
+      }
+    },
+    {
+      name: 'Succinct',
+      description: 'Tight, phrase-length points',
+      config: {
+        maxAvgWordLength: 12,
+        maxLongPointsBeforeOk: 2,
+        maxLongPointsBeforeWeak: 3,
+        maxTotalBullets: 22,
+        feedback: {
+          strong: 'Points are concise and phrase-length.',
+          ok: 'Some points could be more concise.',
+          weak: 'Several points are too long; compress to phrases.'
+        }
+      }
+    },
+    {
+      name: 'Relevant',
+      description: 'Tailored to THIS case',
+      config: {
+        minRelevancePctForStrong: 0.5,
+        minRelevancePctForOk: 0.25,
+        feedback: {
+          strong: 'Well tailored to this case with good specificity.',
+          ok: 'Partly tailored; add more case-specific hooks.',
+          weak: 'Generic. Reference client, industry, and specific figures.'
+        }
+      }
+    }
+  ];
+
+  for (const crit of criteria) {
+    await client.query(
+      'INSERT INTO marking_criteria (name, description, enabled, weight, config) VALUES ($1, $2, $3, $4, $5)',
+      [crit.name, crit.description, true, 2, JSON.stringify(crit.config)]
+    );
+  }
+  console.log(`✅ Seeded ${criteria.length} marking criteria`);
 }
 
 module.exports = { pool, initDB };
