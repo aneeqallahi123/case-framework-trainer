@@ -433,6 +433,7 @@
       <nav class="navlinks">
         <button class="navi on" data-view="dashboard">Dashboard</button>
         <button class="navi" data-view="drill">Drill</button>
+        <button class="navi" id="navCreator" data-view="creator" style="display:none">Creator</button>
         <button class="navi" id="navStats" data-view="dashboard">Stats</button>
       </nav>
       <div class="nav-right">
@@ -445,6 +446,7 @@
               <div class="acct-user-email" id="acctEmail"></div>
             </div>
             <button class="acct-item" id="acctSetup">Setup</button>
+            <button class="acct-item" id="acctCreator" style="display:none">Creator hub</button>
             <button class="acct-item" id="acctAdmin" style="display:none">Admin</button>
             <div class="acct-sep"></div>
             <button class="acct-item danger" id="logoutBtn">Sign out</button>
@@ -506,6 +508,8 @@
         <button data-tab="cases">Case bank</button>
         <button data-tab="criteria">Marking criteria</button>
         <button data-tab="system-prompt">System prompt</button>
+        <button data-tab="solved-frameworks">Solved frameworks</button>
+        <button data-tab="case-submissions">Case submissions</button>
       </div>
 
       <div id="adminUsersPane">
@@ -549,6 +553,103 @@
             <button class="btn primary" id="spSaveBtn">Save prompt</button>
           </div>
           <div id="spStatus" style="margin-top:12px;font-size:13px;color:var(--gray)"></div>
+        </div>
+      </div>
+
+      <div id="adminSolvedFrameworksPane" style="display:none">
+        <div class="card flat">
+          <h3>Solved frameworks <span class="csub" id="solvedFrameworksCount">0 pending</span></h3>
+          <table class="admin-table" id="solvedFrameworksTable" style="margin-top:14px">
+            <thead><tr><th>Creator</th><th>Case</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="adminCaseSubmissionsPane" style="display:none">
+        <div class="card flat">
+          <h3>Case submissions <span class="csub" id="caseSubmissionsCount">0 pending</span></h3>
+          <table class="admin-table" id="caseSubmissionsTable" style="margin-top:14px">
+            <thead><tr><th>Creator</th><th>Title</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- CREATOR -->
+    <section id="viewCreator" style="display:none">
+      <div class="dash-head">
+        <div class="eyebrow">Creator</div>
+        <h1>Contribute frameworks and cases</h1>
+        <p>Submit solved frameworks for existing cases or add new cases to the directory. Your submissions help train the evaluator.</p>
+      </div>
+
+      <div class="seg" id="creatorTabs" style="margin-bottom:20px">
+        <button data-tab="frameworks" class="on">Submit framework</button>
+        <button data-tab="cases">Submit case</button>
+        <button data-tab="submissions">My submissions</button>
+      </div>
+
+      <!-- Submit framework -->
+      <div id="creatorFrameworkPane" style="display:none">
+        <div class="card flat">
+          <h3>Submit a solved framework</h3>
+          <p style="color:var(--gray);margin-top:6px">Choose a case and provide the framework you solved.</p>
+
+          <label class="fld" style="margin-top:20px">Select case</label>
+          <select id="creatorFrameworkCaseId" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:2px;font-family:var(--f)">
+            <option value="">— Choose a case —</option>
+          </select>
+
+          <label class="fld" style="margin-top:14px">Framework</label>
+          <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">Paste your framework structure (JSON or text format)</p>
+          <textarea id="creatorFrameworkText" placeholder='{"bucket1": [...], "bucket2": [...]}' style="width:100%;min-height:180px;padding:12px;border:1px solid var(--line);border-radius:2px;font-family:monospace;font-size:13px;resize:vertical"></textarea>
+
+          <div class="btnbar" style="margin-top:16px">
+            <button class="btn primary" id="submitFrameworkBtn">Submit framework</button>
+            <span id="frameworkStatus" style="font-size:13px;color:var(--gray);margin-left:12px"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit case -->
+      <div id="creatorCasePane">
+        <div class="card flat">
+          <h3>Add a new case to the directory</h3>
+          <p style="color:var(--gray);margin-top:6px">Create a new case and optionally provide a solved framework.</p>
+
+          <label class="fld" style="margin-top:20px">Title</label>
+          <input type="text" id="creatorCaseTitle" placeholder="Case title" style="width:100%">
+
+          <label class="fld" style="margin-top:14px">Type</label>
+          <input type="text" id="creatorCaseType" placeholder="e.g. profitability, market_entry, pricing" style="width:100%">
+
+          <label class="fld" style="margin-top:14px">Source</label>
+          <input type="text" id="creatorCaseSource" placeholder="e.g. Wharton, Fuqua, MBB" style="width:100%">
+
+          <label class="fld" style="margin-top:14px">Prompt</label>
+          <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">The full case prompt</p>
+          <textarea id="creatorCasePrompt" placeholder="Case prompt text…" style="width:100%;min-height:120px;padding:12px;border:1px solid var(--line);border-radius:2px;font-family:var(--f);font-size:13px;resize:vertical"></textarea>
+
+          <label class="fld" style="margin-top:14px">Framework (optional)</label>
+          <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">Solved framework for this case</p>
+          <textarea id="creatorCaseFramework" placeholder='{"bucket1": [...], "bucket2": [...]}' style="width:100%;min-height:120px;padding:12px;border:1px solid var(--line);border-radius:2px;font-family:monospace;font-size:13px;resize:vertical"></textarea>
+
+          <div class="btnbar" style="margin-top:16px">
+            <button class="btn primary" id="submitCaseBtn">Submit case</button>
+            <span id="caseStatus" style="font-size:13px;color:var(--gray);margin-left:12px"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- My submissions -->
+      <div id="creatorSubmissionsPane" style="display:none">
+        <div class="card flat">
+          <h3>Your submissions</h3>
+          <div id="creatorSubmissionsList" style="margin-top:16px">
+            <p style="color:var(--gray);text-align:center;padding:40px 20px">Loading submissions...</p>
+          </div>
         </div>
       </div>
     </section>
@@ -780,6 +881,8 @@
     document.getElementById('acctName').textContent = u?.firstName || u?.email || '';
     document.getElementById('acctEmail').textContent = u?.firstName ? (u?.email || '') : '';
     document.getElementById('acctAdmin').style.display = u?.role === 'admin' ? '' : 'none';
+    document.getElementById('acctCreator').style.display = u?.role === 'creator' || u?.role === 'admin' ? '' : 'none';
+    document.getElementById('navCreator').style.display = u?.role === 'creator' || u?.role === 'admin' ? '' : 'none';
     loadCaseBank();
     syncHistoryFromServer();
   }
@@ -1370,12 +1473,14 @@ function showView(v){
   el('viewDashboard').style.display=v==='dashboard'?'block':'none';
   el('viewDrill').style.display=v==='drill'?'block':'none';
   el('viewAdmin').style.display=v==='admin'?'block':'none';
+  el('viewCreator').style.display=v==='creator'?'block':'none';
   $$('.navi').forEach(n=>n.classList.toggle('on',n.dataset.view===v));
-  el('pageTitle').childNodes[0].nodeValue=v==='dashboard'?'Dashboard':(v==='admin'?'Admin':'Drill');
-  el('pageSub').textContent=v==='dashboard'?'Case framework practice':(v==='admin'?'Users & case bank':(S.caseObj?S.caseObj.source:'Live practice'));
+  el('pageTitle').childNodes[0].nodeValue=v==='dashboard'?'Dashboard':(v==='admin'?'Admin':(v==='creator'?'Creator':'Drill'));
+  el('pageSub').textContent=v==='dashboard'?'Case framework practice':(v==='admin'?'Users & case bank':(v==='creator'?'Submit frameworks and cases':(S.caseObj?S.caseObj.source:'Live practice')));
   if(v!=='drill') el('mainCrumb').style.display='';
   if(v==='dashboard'){ TTS.stop(); Mic.hide(); renderDashboard(); }
-  if(v==='admin'){ TTS.stop(); Mic.hide(); loadAdminUsers(); loadAdminCases(); }
+  if(v==='admin'){ TTS.stop(); Mic.hide(); loadAdminUsers(); loadAdminCases(); loadSolvedFrameworks(); loadCaseSubmissions(); }
+  if(v==='creator'){ TTS.stop(); Mic.hide(); loadCreatorFrameworkCases(); loadCreatorSubmissions(); }
 }
 function gotoStage(name){
   TTS.stop(); Mic.hide();
@@ -1873,6 +1978,213 @@ Focus feedback on what's working and what to address next, providing actionable 
   await saveSystemPrompt();
 }
 
+/* ---------- creator platform ---------- */
+async function loadCreatorFrameworkCases(){
+  try{
+    const cases = await apiGet('/api/cases');
+    if(cases.error){ el('creatorFrameworkCaseId').innerHTML = '<option>Error loading cases</option>'; return; }
+    const select = el('creatorFrameworkCaseId');
+    select.innerHTML = '<option value="">— Choose a case —</option>' + cases.map(c=>`<option value="${esc(c.id)}">${esc(c.title)}</option>`).join('');
+  }catch(err){ console.error(err); }
+}
+
+async function submitFramework(){
+  const btn = event.target;
+  const caseId = el('creatorFrameworkCaseId').value;
+  const frameworkText = el('creatorFrameworkText').value;
+  const status = el('frameworkStatus');
+
+  if(!caseId){ status.textContent = 'Please select a case'; status.style.color = 'var(--red)'; return; }
+  if(!frameworkText){ status.textContent = 'Please enter a framework'; status.style.color = 'var(--red)'; return; }
+
+  try{
+    let framework;
+    try{ framework = JSON.parse(frameworkText); }
+    catch{ framework = {text: frameworkText}; }
+
+    btn.disabled = true;
+    status.textContent = 'Submitting...';
+    const res = await fetch(API_BASE+'/api/creator/solved-frameworks',{
+      method:'POST',
+      headers:authHeaders(),
+      body:JSON.stringify({caseId, framework})
+    }).then(r=>r.json());
+
+    if(res.error){ status.textContent = res.error; status.style.color = 'var(--red)'; return; }
+
+    status.textContent = 'Framework submitted!';
+    status.style.color = 'var(--good)';
+    el('creatorFrameworkText').value = '';
+    el('creatorFrameworkCaseId').value = '';
+    setTimeout(()=>{ status.textContent = ''; }, 2500);
+  }catch(err){
+    status.textContent = 'Error submitting framework';
+    status.style.color = 'var(--red)';
+    console.error(err);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function submitCase(){
+  const btn = event.target;
+  const title = el('creatorCaseTitle').value;
+  const type = el('creatorCaseType').value;
+  const source = el('creatorCaseSource').value;
+  const prompt = el('creatorCasePrompt').value;
+  const frameworkText = el('creatorCaseFramework').value;
+  const status = el('caseStatus');
+
+  if(!title){ status.textContent = 'Title is required'; status.style.color = 'var(--red)'; return; }
+  if(!prompt){ status.textContent = 'Prompt is required'; status.style.color = 'var(--red)'; return; }
+
+  try{
+    btn.disabled = true;
+    status.textContent = 'Submitting...';
+    const res = await fetch(API_BASE+'/api/creator/case-submissions',{
+      method:'POST',
+      headers:authHeaders(),
+      body:JSON.stringify({title, type, source, prompt})
+    }).then(r=>r.json());
+
+    if(res.error){ status.textContent = res.error; status.style.color = 'var(--red)'; return; }
+
+    status.textContent = 'Case submitted!';
+    status.style.color = 'var(--good)';
+    el('creatorCaseTitle').value = '';
+    el('creatorCaseType').value = '';
+    el('creatorCaseSource').value = '';
+    el('creatorCasePrompt').value = '';
+    el('creatorCaseFramework').value = '';
+    setTimeout(()=>{ status.textContent = ''; }, 2500);
+  }catch(err){
+    status.textContent = 'Error submitting case';
+    status.style.color = 'var(--red)';
+    console.error(err);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function loadCreatorSubmissions(){
+  try{
+    const frameworks = await apiGet('/api/creator/solved-frameworks');
+    const cases = await apiGet('/api/creator/case-submissions');
+    const list = el('creatorSubmissionsList');
+
+    const all = [
+      ...(frameworks.map?frameworks:[]).map(f=>({type:'framework',data:f})),
+      ...(cases.map?cases:[]).map(c=>({type:'case',data:c}))
+    ];
+
+    if(all.length === 0){
+      list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">No submissions yet. Start by submitting a framework or case!</p>';
+      return;
+    }
+
+    list.innerHTML = all.sort((a,b)=>new Date(b.data.created_at)-new Date(a.data.created_at)).map(item=>`
+      <div style="border:1px solid var(--line);border-radius:2px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <div style="font-weight:600">${item.type==='framework'?'Framework for '+item.data.case_id:item.data.title}</div>
+            <div style="font-size:13px;color:var(--gray);margin-top:2px">${new Date(item.data.created_at).toLocaleDateString()}</div>
+          </div>
+          <div style="font-size:12px;padding:3px 8px;border-radius:2px;${item.data.status==='pending'?'background:var(--line)':'background:var(--bg2);color:var(--good)'}">${item.data.status}</div>
+        </div>
+        ${item.data.status!=='approved'?`<div style="margin-top:10px"><button class="btn ghost" data-del="${item.type}:${item.data.id}" onclick="deleteSubmission(this)">Delete</button></div>`:''}
+      </div>
+    `).join('');
+  }catch(err){ el('creatorSubmissionsList').innerHTML = '<p style="color:var(--gray)">Could not load submissions</p>'; console.error(err); }
+}
+
+async function deleteSubmission(btn){
+  const [type,id] = btn.dataset.del.split(':');
+  if(!confirm('Delete this submission?')) return;
+  try{
+    const endpoint = type==='framework'?'/api/creator/solved-frameworks/':'/api/creator/case-submissions/';
+    const res = await fetch(API_BASE+endpoint+id,{method:'DELETE',headers:authHeaders()}).then(r=>r.json());
+    if(res.error){ toast(res.error); return; }
+    toast('Submission deleted');
+    loadCreatorSubmissions();
+  }catch(err){ toast('Error deleting submission'); console.error(err); }
+}
+
+async function loadSolvedFrameworks(){
+  try{
+    const res = await apiGet('/api/admin/solved-frameworks');
+    if(res.error){ el('solvedFrameworksTable').querySelector('tbody').innerHTML = '<tr><td colspan="5">'+esc(res.error)+'</td></tr>'; return; }
+    const tbody = el('solvedFrameworksTable').querySelector('tbody');
+    const pending = res.filter(f=>f.status==='pending').length;
+    el('solvedFrameworksCount').textContent = pending + (pending===1?' pending':' pending');
+
+    tbody.innerHTML = res.map(f=>`
+      <tr>
+        <td>${esc(f.first_name||f.email)}</td>
+        <td>${esc(f.case_id)}</td>
+        <td><span style="font-size:12px;padding:3px 6px;border-radius:2px;${f.status==='approved'?'background:var(--bg2);color:var(--good)':'background:var(--line)'}">${f.status}</span></td>
+        <td style="font-size:13px;color:var(--gray)">${new Date(f.created_at).toLocaleDateString()}</td>
+        <td style="text-align:right">${f.status==='pending'?`<button class="btn ghost" onclick="approveFramework(${f.id})">Approve</button> <button class="btn ghost" onclick="rejectFramework(${f.id})">Reject</button>`:'—'}</td>
+      </tr>
+    `).join('');
+  }catch(err){ console.error(err); }
+}
+
+async function loadCaseSubmissions(){
+  try{
+    const res = await apiGet('/api/admin/case-submissions');
+    if(res.error){ el('caseSubmissionsTable').querySelector('tbody').innerHTML = '<tr><td colspan="5">'+esc(res.error)+'</td></tr>'; return; }
+    const tbody = el('caseSubmissionsTable').querySelector('tbody');
+    const pending = res.filter(c=>c.status==='pending').length;
+    el('caseSubmissionsCount').textContent = pending + (pending===1?' pending':' pending');
+
+    tbody.innerHTML = res.map(c=>`
+      <tr>
+        <td>${esc(c.first_name||c.email)}</td>
+        <td>${esc(c.title)}</td>
+        <td><span style="font-size:12px;padding:3px 6px;border-radius:2px;${c.status==='approved'?'background:var(--bg2);color:var(--good)':'background:var(--line)'}">${c.status}</span></td>
+        <td style="font-size:13px;color:var(--gray)">${new Date(c.created_at).toLocaleDateString()}</td>
+        <td style="text-align:right">${c.status==='pending'?`<button class="btn ghost" onclick="approveCase(${c.id})">Approve</button> <button class="btn ghost" onclick="rejectCase(${c.id})">Reject</button>`:'—'}</td>
+      </tr>
+    `).join('');
+  }catch(err){ console.error(err); }
+}
+
+async function approveFramework(id){
+  try{
+    const res = await fetch(API_BASE+'/api/admin/solved-frameworks/'+id+'/approve',{method:'PATCH',headers:authHeaders()}).then(r=>r.json());
+    if(res.error){ toast(res.error); return; }
+    toast('Framework approved');
+    loadSolvedFrameworks();
+  }catch(err){ toast('Error approving framework'); console.error(err); }
+}
+
+async function rejectFramework(id){
+  try{
+    const res = await fetch(API_BASE+'/api/admin/solved-frameworks/'+id+'/reject',{method:'PATCH',headers:authHeaders()}).then(r=>r.json());
+    if(res.error){ toast(res.error); return; }
+    toast('Framework rejected');
+    loadSolvedFrameworks();
+  }catch(err){ toast('Error rejecting framework'); console.error(err); }
+}
+
+async function approveCase(id){
+  try{
+    const res = await fetch(API_BASE+'/api/admin/case-submissions/'+id+'/approve',{method:'PATCH',headers:authHeaders()}).then(r=>r.json());
+    if(res.error){ toast(res.error); return; }
+    toast('Case approved and added to bank');
+    loadCaseSubmissions();
+  }catch(err){ toast('Error approving case'); console.error(err); }
+}
+
+async function rejectCase(id){
+  try{
+    const res = await fetch(API_BASE+'/api/admin/case-submissions/'+id+'/reject',{method:'PATCH',headers:authHeaders()}).then(r=>r.json());
+    if(res.error){ toast(res.error); return; }
+    toast('Case rejected');
+    loadCaseSubmissions();
+  }catch(err){ toast('Error rejecting case'); console.error(err); }
+}
+
 /* ---------- settings ---------- */
 function wireSeg(id,setter){ const seg=el(id); seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); setter(b.dataset.v); saveSettings(); }); }
 function applySettingsToUI(){ $$('#timeSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.timeLimit)); $$('#rateSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.rate)); el('showText').checked=S.showText; el('clock').textContent=fmtClock(S.timeLimit); }
@@ -1898,7 +2210,7 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   loadSettings();
   await loadMarkingCriteria();
   // nav
-  $$('.navi[data-view]').forEach(n=>n.onclick=()=>{ if(n.dataset.view==='drill') showReady(); else if(n.dataset.view==='admin') showView('admin'); else showView('dashboard'); });
+  $$('.navi[data-view]').forEach(n=>n.onclick=()=>{ if(n.dataset.view==='drill') showReady(); else if(n.dataset.view==='admin') showView('admin'); else if(n.dataset.view==='creator') showView('creator'); else showView('dashboard'); });
   // admin
   $$('#adminTabs button').forEach(b=>b.onclick=()=>{
     $$('#adminTabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
@@ -1906,8 +2218,12 @@ window.addEventListener('DOMContentLoaded',async ()=>{
     el('adminCasesPane').style.display = b.dataset.tab==='cases' ? 'block' : 'none';
     el('adminCriteriaPane').style.display = b.dataset.tab==='criteria' ? 'block' : 'none';
     el('adminSystemPromptPane').style.display = b.dataset.tab==='system-prompt' ? 'block' : 'none';
+    el('adminSolvedFrameworksPane').style.display = b.dataset.tab==='solved-frameworks' ? 'block' : 'none';
+    el('adminCaseSubmissionsPane').style.display = b.dataset.tab==='case-submissions' ? 'block' : 'none';
     if(b.dataset.tab==='criteria') loadAdminCriteria();
     if(b.dataset.tab==='system-prompt') loadSystemPrompt();
+    if(b.dataset.tab==='solved-frameworks') loadSolvedFrameworks();
+    if(b.dataset.tab==='case-submissions') loadCaseSubmissions();
   });
   el('spSaveBtn').onclick=saveSystemPrompt;
   el('spResetBtn').onclick=resetSystemPrompt;
@@ -1921,12 +2237,23 @@ window.addEventListener('DOMContentLoaded',async ()=>{
     renderAdminCasesTable(filtered);
   });
 
+  // creator
+  $$('#creatorTabs button').forEach(b=>b.onclick=()=>{
+    $$('#creatorTabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    el('creatorFrameworkPane').style.display = b.dataset.tab==='frameworks' ? 'block' : 'none';
+    el('creatorCasePane').style.display = b.dataset.tab==='cases' ? 'block' : 'none';
+    el('creatorSubmissionsPane').style.display = b.dataset.tab==='submissions' ? 'block' : 'none';
+  });
+  el('submitFrameworkBtn').onclick=submitFramework;
+  el('submitCaseBtn').onclick=submitCase;
+  el('acctCreator').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('creator'); };
+
   // Account circle dropdown
   el('profileAv').onclick=(e)=>{ e.stopPropagation(); el('acctMenu').classList.toggle('open'); };
   document.addEventListener('click',()=>el('acctMenu').classList.remove('open'));
   el('acctMenu').addEventListener('click',e=>e.stopPropagation());
   el('acctSetup').onclick=()=>{ el('acctMenu').classList.remove('open'); openSetup(); };
-  el('acctAdmin').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('admin'); loadAdminUsers(); loadAdminCases(); loadAdminCriteria(); };
+  el('acctAdmin').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('admin'); loadAdminUsers(); loadAdminCases(); loadAdminCriteria(); loadSolvedFrameworks(); loadCaseSubmissions(); };
 
   el('closeSettings').onclick=()=>el('settingsModal').classList.remove('show');
   el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) el('settingsModal').classList.remove('show'); };
