@@ -24,4 +24,13 @@ function requireAdmin(req, res, next) {
   });
 }
 
-module.exports = { requireAuth, requireAdmin };
+function requireCreator(req, res, next) {
+  requireAuth(req, res, () => {
+    if (req.user.role !== 'creator' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Creator access required' });
+    }
+    next();
+  });
+}
+
+module.exports = { requireAuth, requireAdmin, requireCreator };
