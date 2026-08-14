@@ -99,6 +99,10 @@ async function initDB() {
         updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS bypass_approval BOOLEAN DEFAULT false;
+    `);
     console.log('✅ Database tables ready');
 
     await seedAdmins(client);
