@@ -64,12 +64,21 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS system_config (
+        id SERIAL PRIMARY KEY,
+        key VARCHAR(100) UNIQUE NOT NULL,
+        value TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
     `);
     console.log('✅ Database tables ready');
 
     await seedAdmins(client);
     await seedCases(client);
     await seedMarkingCriteria(client);
+    await seedSystemConfig(client);
   } catch (err) {
     console.error('❌ Database init error:', err.message);
     throw err;
@@ -181,6 +190,36 @@ async function seedMarkingCriteria(client) {
     );
   }
   console.log(`✅ Seeded ${criteria.length} marking criteria`);
+}
+
+async function seedSystemConfig(client) {
+  const { rows } = await client.query('SELECT COUNT(*)::int AS count FROM system_config');
+  if (rows[0].count > 0) return;
+
+  const defaultPrompt = `You are an expert case interview evaluator. Your role is to assess frameworks across four key dimensions:
+
+1. **Structure** - Does the framework use 3-5 distinct buckets, each with 4-5 supporting points? Evaluate whether the architecture is balanced and comprehensive.
+
+2. **MECE** - Are the buckets mutually exclusive (no overlap) and collectively exhaustive (covering all relevant dimensions)? Look for redundancy and critical gaps.
+
+3. **Succinct** - Are the points concise and deliverable? Each bullet should be a short phrase (under 12 words), not long sentences.
+
+4. **Relevant** - Are the points tailored to THIS case? Generic answers that could apply to any case are less valuable than those with specific client, industry, or financial anchors.
+
+Each dimension is scored as:
+- Strong (2 points): Meets or exceeds expectations
+- OK (1 point): Partially meets expectations, room for improvement
+- Weak (0 points): Below expectations
+
+Total score is out of 8, converted to a percentage. At 87%+, the framework is interview-ready. At 50-86%, it's solid but needs refinement. Below 50%, rework is needed.
+
+Focus feedback on what's working and what to address next, providing actionable guidance for improvement.`;
+
+  await client.query(
+    'INSERT INTO system_config (key, value) VALUES ($1, $2)',
+    ['system_prompt', defaultPrompt]
+  );
+  console.log('✅ Seeded default system prompt');
 }
 
 module.exports = { pool, initDB };

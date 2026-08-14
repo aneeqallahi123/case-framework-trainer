@@ -505,6 +505,7 @@
         <button data-tab="users" class="on">Users</button>
         <button data-tab="cases">Case bank</button>
         <button data-tab="criteria">Marking criteria</button>
+        <button data-tab="system-prompt">System prompt</button>
       </div>
 
       <div id="adminUsersPane">
@@ -535,6 +536,19 @@
         <div class="card flat">
           <h3>Marking criteria <span class="csub">Adjust scoring thresholds</span></h3>
           <div id="adminCriteriaList" style="margin-top:20px"></div>
+        </div>
+      </div>
+
+      <div id="adminSystemPromptPane" style="display:none">
+        <div class="card flat">
+          <h3>System prompt <span class="csub">Controls evaluation methodology and framing</span></h3>
+          <p style="margin:16px 0 0;color:var(--gray);font-size:14px">Edit the system prompt that guides how frameworks are evaluated. This defines the methodology, scoring philosophy, and qualitative guidance for marking.</p>
+          <textarea id="systemPromptEditor" style="margin:16px 0 0;width:100%;min-height:300px;padding:12px;border:1px solid var(--line);border-radius:2px;font-family:monospace;font-size:13px;resize:vertical"></textarea>
+          <div class="btnbar" style="margin-top:16px">
+            <button class="btn ghost" id="spResetBtn">Reset to default</button>
+            <button class="btn primary" id="spSaveBtn">Save prompt</button>
+          </div>
+          <div id="spStatus" style="margin-top:12px;font-size:13px;color:var(--gray)"></div>
         </div>
       </div>
     </section>
@@ -1795,6 +1809,70 @@ function readCriterionFields(name){
   return result;
 }
 
+/* ---------- system prompt ---------- */
+async function loadSystemPrompt(){
+  const container = el('spStatus');
+  const editor = el('systemPromptEditor');
+  container.textContent = 'Loading…';
+  try{
+    const res = await apiGet('/api/admin/system-config/system-prompt');
+    if(res.error){ container.textContent = res.error; return; }
+    editor.value = res.systemPrompt || '';
+    container.textContent = '';
+  }catch(err){
+    container.textContent = 'Could not load system prompt.';
+    console.error(err);
+  }
+}
+
+async function saveSystemPrompt(){
+  const editor = el('systemPromptEditor');
+  const status = el('spStatus');
+  const btn = el('spSaveBtn');
+  btn.disabled = true;
+  status.textContent = 'Saving…';
+  try{
+    const res = await fetch(API_BASE+'/api/admin/system-config/system-prompt',{
+      method:'PUT',
+      headers:authHeaders(),
+      body:JSON.stringify({systemPrompt:editor.value})
+    }).then(r=>r.json());
+    if(res.error){ status.textContent = 'Error: '+res.error; return; }
+    status.textContent = 'Saved successfully.';
+    setTimeout(()=>{ status.textContent = ''; }, 2500);
+  }catch(err){
+    status.textContent = 'Error saving prompt.';
+    console.error(err);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function resetSystemPrompt(){
+  if(!confirm('Reset to the default system prompt? Your current edits will be lost.')) return;
+  const defaultPrompt = `You are an expert case interview evaluator. Your role is to assess frameworks across four key dimensions:
+
+1. **Structure** - Does the framework use 3-5 distinct buckets, each with 4-5 supporting points? Evaluate whether the architecture is balanced and comprehensive.
+
+2. **MECE** - Are the buckets mutually exclusive (no overlap) and collectively exhaustive (covering all relevant dimensions)? Look for redundancy and critical gaps.
+
+3. **Succinct** - Are the points concise and deliverable? Each bullet should be a short phrase (under 12 words), not long sentences.
+
+4. **Relevant** - Are the points tailored to THIS case? Generic answers that could apply to any case are less valuable than those with specific client, industry, or financial anchors.
+
+Each dimension is scored as:
+- Strong (2 points): Meets or exceeds expectations
+- OK (1 point): Partially meets expectations, room for improvement
+- Weak (0 points): Below expectations
+
+Total score is out of 8, converted to a percentage. At 87%+, the framework is interview-ready. At 50-86%, it's solid but needs refinement. Below 50%, rework is needed.
+
+Focus feedback on what's working and what to address next, providing actionable guidance for improvement.`;
+
+  el('systemPromptEditor').value = defaultPrompt;
+  await saveSystemPrompt();
+}
+
 /* ---------- settings ---------- */
 function wireSeg(id,setter){ const seg=el(id); seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); setter(b.dataset.v); saveSettings(); }); }
 function applySettingsToUI(){ $$('#timeSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.timeLimit)); $$('#rateSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.rate)); el('showText').checked=S.showText; el('clock').textContent=fmtClock(S.timeLimit); }
@@ -1827,8 +1905,12 @@ window.addEventListener('DOMContentLoaded',async ()=>{
     el('adminUsersPane').style.display = b.dataset.tab==='users' ? 'block' : 'none';
     el('adminCasesPane').style.display = b.dataset.tab==='cases' ? 'block' : 'none';
     el('adminCriteriaPane').style.display = b.dataset.tab==='criteria' ? 'block' : 'none';
+    el('adminSystemPromptPane').style.display = b.dataset.tab==='system-prompt' ? 'block' : 'none';
     if(b.dataset.tab==='criteria') loadAdminCriteria();
+    if(b.dataset.tab==='system-prompt') loadSystemPrompt();
   });
+  el('spSaveBtn').onclick=saveSystemPrompt;
+  el('spResetBtn').onclick=resetSystemPrompt;
   el('adminAddCaseBtn').onclick=()=>openCaseModal(null);
   el('acCancel').onclick=closeCaseModal;
   el('acSave').onclick=saveCaseFromModal;

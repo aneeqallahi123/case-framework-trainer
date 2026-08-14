@@ -197,4 +197,45 @@ router.post('/marking-criteria/:name/reset', async (req, res) => {
   }
 });
 
+// ---- System Configuration ----
+
+// GET /api/admin/system-config/system-prompt
+router.get('/system-config/system-prompt', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT value FROM system_config WHERE key = $1',
+      ['system_prompt']
+    );
+    const value = result.rows.length > 0 ? result.rows[0].value : '';
+    res.json({ systemPrompt: value });
+  } catch (err) {
+    console.error('Get system prompt error:', err);
+    res.status(500).json({ error: 'Could not fetch system prompt' });
+  }
+});
+
+// PUT /api/admin/system-config/system-prompt
+router.put('/system-config/system-prompt', async (req, res) => {
+  const { systemPrompt } = req.body;
+  if (typeof systemPrompt !== 'string') {
+    return res.status(400).json({ error: 'System prompt must be a string' });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE system_config SET value = $1, updated_at = NOW() WHERE key = $2 RETURNING value, updated_at`,
+      [systemPrompt, 'system_prompt']
+    );
+    if (!result.rows.length) {
+      await pool.query(
+        'INSERT INTO system_config (key, value) VALUES ($1, $2) RETURNING value, updated_at',
+        ['system_prompt', systemPrompt]
+      );
+    }
+    res.json({ systemPrompt, message: 'System prompt updated successfully' });
+  } catch (err) {
+    console.error('Update system prompt error:', err);
+    res.status(500).json({ error: 'Could not update system prompt' });
+  }
+});
+
 module.exports = router;
