@@ -31,12 +31,12 @@ router.post('/signup', async (req, res) => {
 
     const user = result.rows[0];
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role, bypass_approval: user.bypass_approval },
       process.env.JWT_SECRET,
       { expiresIn: '30d' }
     );
 
-    res.json({ token, user: { id: user.id, email: user.email, firstName: user.first_name, role: user.role } });
+    res.json({ token, user: { id: user.id, email: user.email, firstName: user.first_name, role: user.role, bypassApproval: user.bypass_approval } });
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Something went wrong, please try again' });
@@ -65,12 +65,12 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role, bypass_approval: user.bypass_approval },
       process.env.JWT_SECRET,
       { expiresIn: '30d' }
     );
 
-    res.json({ token, user: { id: user.id, email: user.email, firstName: user.first_name, role: user.role } });
+    res.json({ token, user: { id: user.id, email: user.email, firstName: user.first_name, role: user.role, bypassApproval: user.bypass_approval } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Something went wrong, please try again' });
@@ -81,12 +81,12 @@ router.post('/login', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, first_name, role, created_at FROM users WHERE id = $1',
+      'SELECT id, email, first_name, role, bypass_approval, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ id: user.id, email: user.email, firstName: user.first_name, role: user.role });
+    res.json({ id: user.id, email: user.email, firstName: user.first_name, role: user.role, bypassApproval: user.bypass_approval });
   } catch (err) {
     res.status(500).json({ error: 'Something went wrong' });
   }

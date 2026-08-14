@@ -25,6 +25,7 @@ async function initDB() {
         password_hash VARCHAR(255) NOT NULL,
         first_name VARCHAR(100),
         role VARCHAR(20) DEFAULT 'user',
+        bypass_approval BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT NOW()
       );
 
@@ -50,6 +51,31 @@ async function initDB() {
         source VARCHAR(255),
         type VARCHAR(100),
         data JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS solved_frameworks (
+        id SERIAL PRIMARY KEY,
+        creator_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        case_id VARCHAR(100) REFERENCES cases(id),
+        framework JSONB NOT NULL,
+        status VARCHAR(20) DEFAULT 'pending',
+        version INTEGER DEFAULT 1,
+        approved_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS case_submissions (
+        id SERIAL PRIMARY KEY,
+        creator_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        source VARCHAR(255),
+        type VARCHAR(100),
+        data JSONB NOT NULL,
+        status VARCHAR(20) DEFAULT 'pending',
+        approved_by INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
