@@ -1650,6 +1650,7 @@ async function startDrill(){
   el('mainCrumb').style.display='none'; el('runCaseSrc').textContent=c.source||c.title||'';
   gotoStage('recite'); recitePrompt();
   Mic.ensure(); // warm up mic permission once
+  modalMode='set'; el('closeSettings').textContent='Done'; el('pauseNote').style.display='none'; applySettingsToUI(); el('settingsModal').classList.add('show');
 }
 function recitePrompt(){ const c=S.caseObj; const rb=el('replayBtn');
   el('toSummary').disabled=true; rb.disabled=true; rb.textContent='Loading…';
