@@ -875,7 +875,7 @@
       <div class="seg" id="rateSeg"><button data-v="0.9">Calm</button><button data-v="1" class="on">Normal</button><button data-v="1.1">Brisk</button></div>
       <label class="fld">Prompt text</label>
       <label class="toggle"><input type="checkbox" id="showText"> Show the prompt as text while it reads</label>
-      <div class="btnbar" style="justify-content:space-between"><button class="btn ghost" id="resetData" style="color:var(--red);border-color:var(--red)">Reset progress</button><button class="btn primary" id="closeSettings">Done</button></div>
+      <div class="btnbar" style="justify-content:space-between"><button class="btn ghost" id="cancelDrill" style="color:var(--red);border-color:var(--red);display:none">Cancel drill</button><button class="btn primary" id="closeSettings">Done</button></div>
     </div>
   </div>
   <div class="modal" id="confirmModal">
@@ -2649,11 +2649,11 @@ function endTimer(hard){ if(timerInt){clearInterval(timerInt);timerInt=null;} tS
 function remarkHits(){ for(let t=30;t<=tElapsed;t+=30){ const mk=$('#marks .mark[data-t="'+t+'"]'); if(mk)mk.classList.add('hit'); } }
 function inDrill(){ return el('viewDrill').style.display!=='none' && el('drillRun').style.display!=='none'; }
 function openSetup(){ if(inDrill()){ pauseSession(); }
-  else { modalMode='set'; el('closeSettings').textContent='Done'; el('pauseNote').style.display='none'; el('settingsModal').classList.add('show'); } }
+  else { modalMode='set'; el('closeSettings').textContent='Done'; el('pauseNote').style.display='none'; el('cancelDrill').style.display='none'; el('settingsModal').classList.add('show'); } }
 function pauseSession(){ modalMode='pause'; S.paused=true; TTS.stop(); Mic.hide();
   pauseWasTiming=!!timerInt; if(timerInt){ clearInterval(timerInt); timerInt=null; }
   if(tStarted) el('timerLog').textContent='|| Paused';
-  el('closeSettings').textContent='Resume drill'; el('pauseNote').style.display='block'; el('settingsModal').classList.add('show'); }
+  el('closeSettings').textContent='Resume drill'; el('pauseNote').style.display='block'; el('cancelDrill').style.display='block'; el('settingsModal').classList.add('show'); }
 function resumeSession(){ el('settingsModal').classList.remove('show'); S.paused=false;
   if(tStarted){ tLimit=S.timeLimit;
     if(tElapsed>=tLimit){ endTimer(true); return; }
@@ -2661,8 +2661,16 @@ function resumeSession(){ el('settingsModal').classList.remove('show'); S.paused
     el('ring').style.setProperty('--p',(tElapsed/tLimit)*100); el('timerLog').textContent='';
     if(pauseWasTiming) beginTick(); } }
 function closeSetup(){ if(modalMode==='pause') resumeSession(); else el('settingsModal').classList.remove('show'); }
+function cancelDrill(){
+  el('settingsModal').classList.remove('show');
+  if(timerInt){ clearInterval(timerInt); timerInt=null; }
+  TTS.stop(); Mic.hide();
+  S.paused=false;
+  showView('dashboard');
+}
 window.addEventListener('DOMContentLoaded',()=>{
   el('closeSettings').onclick=closeSetup;
+  el('cancelDrill').onclick=cancelDrill;
   el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) closeSetup(); };
   const pb=el('pauseBtn'); if(pb) pb.onclick=pauseSession;
 });
