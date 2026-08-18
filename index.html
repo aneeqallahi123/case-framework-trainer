@@ -280,6 +280,10 @@
 
   .modal{position:fixed;inset:0;background:rgba(26,26,26,.55);display:none;align-items:center;justify-content:center;z-index:70;backdrop-filter:blur(2px)}
   .modal.show{display:flex;animation:fadeIn .2s var(--ease)}
+  /* The confirm sits above any modal that opened it; a lighter scrim avoids
+     double-dimming the page when the two are stacked. */
+  #confirmModal{z-index:80}
+  #confirmModal.stacked{background:rgba(26,26,26,.28)}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
   .modal .box{background:#fff;border-radius:3px;padding:32px 34px;width:440px;max-width:92vw;box-shadow:var(--shadow-lg);animation:rise .22s var(--ease)}
   .modal h3{font-size:22px;font-weight:700}
@@ -828,6 +832,16 @@
       <div class="btnbar" style="justify-content:space-between"><button class="btn ghost" id="resetData" style="color:var(--red);border-color:var(--red)">Reset progress</button><button class="btn primary" id="closeSettings">Done</button></div>
     </div>
   </div>
+  <div class="modal" id="confirmModal">
+    <div class="box" style="width:420px">
+      <h3 id="confirmTitle">Are you sure?</h3>
+      <p class="muted" id="confirmBody" style="font-size:13.5px;margin-top:8px"></p>
+      <div class="btnbar" style="justify-content:flex-end">
+        <button class="btn ghost" id="confirmCancel">Cancel</button>
+        <button class="btn" id="confirmOk">Confirm</button>
+      </div>
+    </div>
+  </div>
   <div class="toast" id="toast"></div>
 
   <script>
@@ -1267,6 +1281,39 @@ const Beep={ ctx:null, _c(){ if(!this.ctx){ const AC=window.AudioContext||window
 /* ---------- toast ---------- */
 let toastT=null;
 function toast(m){ const t=el('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),4200); }
+
+/* ---------- in-app confirm (replaces native confirm()) ----------
+   Returns a promise resolving true/false. Destructive actions pass
+   danger:true to get the red confirm button. */
+function confirmDialog(title, body, {okText='Confirm', danger=false}={}){
+  return new Promise(resolve=>{
+    const m=el('confirmModal'), ok=el('confirmOk'), cancel=el('confirmCancel');
+    el('confirmTitle').textContent=title;
+    const b=el('confirmBody'); b.textContent=body||''; b.style.display=body?'':'none';
+    ok.textContent=okText;
+    ok.className='btn '+(danger?'red':'primary');
+    const prev=document.activeElement;
+    function close(v){
+      m.classList.remove('show');
+      document.removeEventListener('keydown',onKey,true);
+      ok.onclick=cancel.onclick=m.onclick=null;
+      if(prev&&prev.focus) prev.focus();
+      resolve(v);
+    }
+    function onKey(e){
+      if(e.key==='Escape'){ e.stopPropagation(); close(false); }
+      else if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); close(true); }
+    }
+    ok.onclick=()=>close(true);
+    cancel.onclick=()=>close(false);
+    m.onclick=e=>{ if(e.target===m) close(false); };
+    // Capture phase so the drill's global key handlers don't also fire.
+    document.addEventListener('keydown',onKey,true);
+    m.classList.toggle('stacked',!!document.querySelector('.modal.show'));
+    m.classList.add('show');
+    ok.focus();
+  });
+}
 
 /* ---------- helpers / engine (verified logic) ---------- */
 const STOP=new Set(('the a an of to and or for in on at by with from as is are be we they it our their this that these those will would should could can may might do does your his her its into about over under per via vs across also more most less than then so but if not no yes how what which who where when why between among within during each all any some other new'.split(' ')));
@@ -1749,7 +1796,7 @@ async function loadAdminUsers(){
     });
     tbody.querySelectorAll('[data-act="delete-user"]').forEach(btn=>btn.onclick=async(e)=>{
       const tr=e.target.closest('tr'), id=tr.dataset.id;
-      if(!confirm('Delete this user and all of their drill history? This cannot be undone.')) return;
+      if(!await confirmDialog('Delete this user?','The account and all of its drill history will be removed. This cannot be undone.',{okText:'Delete user',danger:true})) return;
       const res=await fetch(API_BASE+'/api/admin/users/'+id,{method:'DELETE',headers:authHeaders()}).then(r=>r.json());
       if(res.error){ toast(res.error); return; }
       loadAdminUsers();
@@ -1789,7 +1836,7 @@ function renderAdminCasesTable(cases){
   });
   tbody.querySelectorAll('[data-act="delete-case"]').forEach(btn=>btn.onclick=async(e)=>{
     const id=e.target.closest('tr').dataset.id;
-    if(!confirm('Delete this case from the bank? This cannot be undone.')) return;
+    if(!await confirmDialog('Delete this case?','It will be removed from the case bank. This cannot be undone.',{okText:'Delete case',danger:true})) return;
     const res=await fetch(API_BASE+'/api/admin/cases/'+id,{method:'DELETE',headers:authHeaders()}).then(r=>r.json());
     if(res.error){ toast(res.error); return; }
     loadAdminCases();
@@ -1871,7 +1918,7 @@ function renderAdminCriteria(criteria){
 
   container.querySelectorAll('[data-act="reset-criterion"]').forEach(btn=>btn.onclick=async(e)=>{
     const item = e.target.closest('.crit-item'), name = item.dataset.name;
-    if(!confirm(`Reset "${name}" to default values?`)) return;
+    if(!await confirmDialog('Reset criterion?',`"${name}" will be restored to its default values.`,{okText:'Reset',danger:true})) return;
     const res = await fetch(API_BASE+'/api/admin/marking-criteria/'+name+'/reset',{method:'POST',headers:authHeaders()}).then(r=>r.json());
     if(res.error){ toast(res.error); return; }
     _adminCriteriaCache[name] = res;
@@ -1991,7 +2038,7 @@ async function saveSystemPrompt(){
 }
 
 async function resetSystemPrompt(){
-  if(!confirm('Reset to the default system prompt? Your current edits will be lost.')) return;
+  if(!await confirmDialog('Reset system prompt?','The default prompt will be restored and your current edits will be lost.',{okText:'Reset prompt',danger:true})) return;
   const defaultPrompt = `You are an expert case interview evaluator. Your role is to assess frameworks across four key dimensions:
 
 1. **Structure** - Does the framework use 3-5 distinct buckets, each with 4-5 supporting points? Evaluate whether the architecture is balanced and comprehensive.
@@ -2136,7 +2183,7 @@ async function loadCreatorSubmissions(){
 
 async function deleteSubmission(btn){
   const [type,id] = btn.dataset.del.split(':');
-  if(!confirm('Delete this submission?')) return;
+  if(!await confirmDialog('Delete this submission?','This cannot be undone.',{okText:'Delete',danger:true})) return;
   try{
     const endpoint = type==='framework'?'/api/creator/solved-frameworks/':'/api/creator/case-submissions/';
     const res = await fetch(API_BASE+endpoint+id,{method:'DELETE',headers:authHeaders()}).then(r=>r.json());
@@ -2295,7 +2342,7 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   el('closeSettings').onclick=()=>el('settingsModal').classList.remove('show');
   el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) el('settingsModal').classList.remove('show'); };
   el('resetData').onclick=async ()=>{
-    if(!confirm('Erase all your drill history and scores?')) return;
+    if(!await confirmDialog('Reset progress?','This erases every drill, score and streak on your account, on all your devices. It cannot be undone.',{okText:'Reset progress',danger:true})) return;
     // Clear the server rows first — a local-only reset is undone by the next sync.
     const ok=await apiDelete('/api/drills');
     if(!ok){ toast('Could not reset progress — please try again.'); return; }
