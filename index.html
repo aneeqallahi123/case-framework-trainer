@@ -860,6 +860,13 @@
     const r = await fetch(API_BASE + path, { headers: authHeaders() });
     return r.json();
   }
+  // Resolves true only when the server confirms the delete.
+  async function apiDelete(path) {
+    try {
+      const r = await fetch(API_BASE + path, { method: 'DELETE', headers: authHeaders() });
+      return r.ok;
+    } catch (e) { return false; }
+  }
 
   // ---- Auth screen logic ----
   let _caseBankPromise = null;
@@ -911,10 +918,7 @@
     }).then(r => r.json()).catch(() => ({ error: 'Cannot reach server — is the backend running?' }));
     btn.disabled = false; btn.textContent = 'Sign in →';
     if (data.error) { err.textContent = data.error; return; }
-    AUTH = { token: data.token, user: data.user };
-    localStorage.setItem('cf_token', data.token);
-    localStorage.setItem('cf_user', JSON.stringify(data.user));
-    showApp();
+    startSession(data);
   };
 
   document.getElementById('signupBtn').onclick = async () => {
@@ -928,16 +932,26 @@
     }).then(r => r.json()).catch(() => ({ error: 'Cannot reach server — is the backend running?' }));
     btn.disabled = false; btn.textContent = 'Create account →';
     if (data.error) { err.textContent = data.error; return; }
+    startSession(data);
+  };
+
+  // Begin a session for a freshly authenticated user. Any progress cached by a
+  // previous account is dropped before the app renders, so nothing stale can be
+  // displayed in the window between sign-in and the server sync landing.
+  function startSession(data) {
+    clearAllLocalProgress();
     AUTH = { token: data.token, user: data.user };
     localStorage.setItem('cf_token', data.token);
     localStorage.setItem('cf_user', JSON.stringify(data.user));
+    loadSettings();
     showApp();
-  };
+  }
 
   document.getElementById('logoutBtn').onclick = () => {
     AUTH = { token: null, user: null };
     localStorage.removeItem('cf_token');
     localStorage.removeItem('cf_user');
+    clearAllLocalProgress();
     showAuth();
   };
 
@@ -954,17 +968,19 @@
     if (!AUTH.token) return;
     try {
       const drills = await apiGet('/api/drills');
+      // A non-array means the request failed — keep whatever is cached. A valid
+      // array is authoritative even when empty: a new account has no drills, and
+      // its dashboard must read zero rather than inherit the cache.
       if (!Array.isArray(drills)) return;
-      // Convert server format to local format
+      // Convert server format to local format. The server returns newest first;
+      // local history is oldest-first (renderReady reads the last entry).
       const history = drills.map(d => ({
         ts: new Date(d.created_at).getTime(),
         id: d.case_id, title: d.case_title, source: d.case_source, type: d.case_type,
         pct: d.score, levels: d.levels || {}, bullets: d.bullets || 0
-      }));
-      if (history.length > 0) {
-        saveHistory(history);
-        renderDashboard();
-      }
+      })).reverse();
+      saveHistory(history);
+      renderDashboard();
     } catch (e) { console.log('Could not sync history:', e); }
   }
 
@@ -1157,14 +1173,35 @@ const $ = (s)=>document.querySelector(s);
 const $$ = (s)=>Array.from(document.querySelectorAll(s));
 const el = (id)=>document.getElementById(id);
 
-const LS_SET='cd_settings_v1', LS_HIST='cd_history_v1';
 const S = { caseObj:null, timeLimit:180, rate:1, showText:false, structure:[], recorded:false, sumChecked:false };
 
-/* ---------- persistence ---------- */
-function loadSettings(){ try{ const s=JSON.parse(localStorage.getItem(LS_SET)||'{}'); S.timeLimit=s.timeLimit||180; S.rate=s.rate||1; S.showText=!!s.showText; }catch(e){} }
-function saveSettings(){ try{ localStorage.setItem(LS_SET,JSON.stringify({timeLimit:S.timeLimit,rate:S.rate,showText:S.showText})); }catch(e){} }
-function loadHistory(){ try{ return JSON.parse(localStorage.getItem(LS_HIST)||'[]'); }catch(e){ return []; } }
-function saveHistory(h){ try{ localStorage.setItem(LS_HIST,JSON.stringify(h)); }catch(e){} }
+/* ---------- persistence ----------
+   Cache keys are namespaced per account. Progress belongs to the signed-in user,
+   not the browser, so two accounts on one machine can never read each other's
+   entries even if a clear step is missed. The server remains the source of truth. */
+function userScope(){
+  try{ const u=JSON.parse(localStorage.getItem('cf_user')||'null'); return u&&u.id!=null?'u'+u.id:'anon'; }
+  catch(e){ return 'anon'; }
+}
+function setKey(){ return 'cd_settings_v1_'+userScope(); }
+function histKey(){ return 'cd_history_v1_'+userScope(); }
+function loadSettings(){ try{ const s=JSON.parse(localStorage.getItem(setKey())||'{}'); S.timeLimit=s.timeLimit||180; S.rate=s.rate||1; S.showText=!!s.showText; }catch(e){} }
+function saveSettings(){ try{ localStorage.setItem(setKey(),JSON.stringify({timeLimit:S.timeLimit,rate:S.rate,showText:S.showText})); }catch(e){} }
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem(histKey())||'[]'); }catch(e){ return []; } }
+function saveHistory(h){ try{ localStorage.setItem(histKey(),JSON.stringify(h)); }catch(e){} }
+
+/* Drop every cached progress key, including the pre-namespacing globals left
+   behind by older builds, so stale stats cannot survive an account switch. */
+function clearAllLocalProgress(){
+  try{
+    const stale=[];
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&(k.indexOf('cd_history_v1')===0||k.indexOf('cd_settings_v1')===0)) stale.push(k);
+    }
+    stale.forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
+}
 
 /* ---------- TTS (Deepgram Aura) ---------- */
 const TTS={ _audio:null, _abort:null, _gen:0,
@@ -2257,7 +2294,13 @@ window.addEventListener('DOMContentLoaded',async ()=>{
 
   el('closeSettings').onclick=()=>el('settingsModal').classList.remove('show');
   el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) el('settingsModal').classList.remove('show'); };
-  el('resetData').onclick=()=>{ if(confirm('Erase all your drill history and scores?')){ saveHistory([]); renderDashboard(); toast('Progress reset.'); } };
+  el('resetData').onclick=async ()=>{
+    if(!confirm('Erase all your drill history and scores?')) return;
+    // Clear the server rows first — a local-only reset is undone by the next sync.
+    const ok=await apiDelete('/api/drills');
+    if(!ok){ toast('Could not reset progress — please try again.'); return; }
+    saveHistory([]); renderDashboard(); toast('Progress reset.');
+  };
   el('newDrillBtn').onclick=showReady; el('ctaStart').onclick=showReady; el('startDrillBtn').onclick=startDrill;
 
   wireSeg('timeSeg',v=>{S.timeLimit=parseInt(v,10); el('clock').textContent=fmtClock(S.timeLimit);});
