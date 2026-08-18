@@ -98,6 +98,34 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS community_posts (
+        id SERIAL PRIMARY KEY,
+        case_id VARCHAR(50) REFERENCES cases(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        note TEXT,
+        status VARCHAR(20) DEFAULT 'open',
+        anonymous BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS community_comments (
+        id SERIAL PRIMARY KEY,
+        post_id INTEGER REFERENCES community_posts(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        body TEXT NOT NULL,
+        is_accepted BOOLEAN DEFAULT false,
+        anonymous BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS community_comment_votes (
+        comment_id INTEGER REFERENCES community_comments(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        PRIMARY KEY (comment_id, user_id)
+      );
     `);
 
     await client.query(`

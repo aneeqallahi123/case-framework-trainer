@@ -438,6 +438,7 @@
         <button class="navi on" data-view="dashboard">Dashboard</button>
         <button class="navi" data-view="drill">Drill</button>
         <button class="navi" id="navCreator" data-view="creator" style="display:none">Creator</button>
+        <button class="navi" data-view="community">Community</button>
       </nav>
       <div class="nav-right">
         <button class="btn red" id="newDrillBtn">New drill</button>
@@ -656,6 +657,56 @@
         </div>
       </div>
     </section>
+
+    <!-- COMMUNITY -->
+    <section id="viewCommunity" style="display:none">
+      <div id="communityFeedPane">
+        <div class="dash-head">
+          <div class="eyebrow">Community</div>
+          <h1>Confused on a case? Ask the group.</h1>
+          <p>Share a case you're stuck on and get feedback from others, or help someone out on theirs.</p>
+        </div>
+
+        <div class="btnbar" style="justify-content:space-between;margin-bottom:16px">
+          <div class="seg" id="communityStatusFilter">
+            <button data-status="" class="on">All</button>
+            <button data-status="open">Open</button>
+            <button data-status="resolved">Resolved</button>
+          </div>
+          <button class="btn primary" id="shareCaseBtn">Share a case</button>
+        </div>
+
+        <div id="communityFeedList">
+          <p style="color:var(--gray);text-align:center;padding:40px 20px">Loading community posts...</p>
+        </div>
+      </div>
+
+      <!-- Post detail -->
+      <div id="communityDetailPane" style="display:none">
+        <button class="btn ghost" id="communityBackBtn" style="margin-bottom:16px">← Back to feed</button>
+        <div id="communityDetailContent"></div>
+      </div>
+    </section>
+
+    <!-- Community: share a case modal -->
+    <div class="modal" id="shareCaseModal">
+      <div class="box">
+        <h3>Share a case you're confused on</h3>
+        <label class="fld">Select case</label>
+        <select id="shareCaseId" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:2px;font-family:var(--f)">
+          <option value="">— Choose a case —</option>
+        </select>
+        <label class="fld" style="margin-top:14px">What's confusing you?</label>
+        <textarea id="shareCaseNote" placeholder="e.g. I can't figure out how to structure the profitability tree here…" style="width:100%;min-height:100px;padding:12px;border:1px solid var(--line);border-radius:2px;font-family:var(--f);font-size:13px;resize:vertical"></textarea>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--gray)">
+          <input type="checkbox" id="shareCaseAnon"> Post anonymously
+        </label>
+        <div class="btnbar" style="justify-content:space-between;margin-top:16px">
+          <button class="btn ghost" id="shareCaseCancel">Cancel</button>
+          <button class="btn primary" id="shareCaseSave">Share</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Admin: add/edit case modal -->
     <div class="modal" id="adminCaseModal">
@@ -1557,13 +1608,15 @@ function showView(v){
   el('viewDrill').style.display=v==='drill'?'block':'none';
   el('viewAdmin').style.display=v==='admin'?'block':'none';
   el('viewCreator').style.display=v==='creator'?'block':'none';
+  el('viewCommunity').style.display=v==='community'?'block':'none';
   $$('.navi').forEach(n=>n.classList.toggle('on',n.dataset.view===v));
-  el('pageTitle').childNodes[0].nodeValue=v==='dashboard'?'Dashboard':(v==='admin'?'Admin':(v==='creator'?'Creator':'Drill'));
-  el('pageSub').textContent=v==='dashboard'?'Case framework practice':(v==='admin'?'Users & case bank':(v==='creator'?'Submit frameworks and cases':(S.caseObj?S.caseObj.source:'Live practice')));
+  el('pageTitle').childNodes[0].nodeValue=v==='dashboard'?'Dashboard':(v==='admin'?'Admin':(v==='creator'?'Creator':(v==='community'?'Community':'Drill')));
+  el('pageSub').textContent=v==='dashboard'?'Case framework practice':(v==='admin'?'Users & case bank':(v==='creator'?'Submit frameworks and cases':(v==='community'?"Share cases you're stuck on and help others":(S.caseObj?S.caseObj.source:'Live practice'))));
   if(v!=='drill') el('mainCrumb').style.display='';
   if(v==='dashboard'){ TTS.stop(); Mic.hide(); renderDashboard(); }
   if(v==='admin'){ TTS.stop(); Mic.hide(); loadAdminUsers(); loadAdminCases(); loadSolvedFrameworks(); loadCaseSubmissions(); }
   if(v==='creator'){ TTS.stop(); Mic.hide(); loadCreatorFrameworkCases(); loadCreatorSubmissions(); }
+  if(v==='community'){ TTS.stop(); Mic.hide(); showCommunityFeed(); }
 }
 function gotoStage(name){
   TTS.stop(); Mic.hide();
@@ -2193,6 +2246,171 @@ async function deleteSubmission(btn){
   }catch(err){ toast('Error deleting submission'); console.error(err); }
 }
 
+/* ---------- Community ---------- */
+let _communityStatusFilter = '';
+
+async function showCommunityFeed(){
+  el('communityFeedPane').style.display = 'block';
+  el('communityDetailPane').style.display = 'none';
+  await loadCommunityFeed();
+}
+
+async function loadCommunityFeed(){
+  const list = el('communityFeedList');
+  list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">Loading community posts...</p>';
+  try{
+    const q = _communityStatusFilter ? '?status='+encodeURIComponent(_communityStatusFilter) : '';
+    const posts = await apiGet('/api/community/posts'+q);
+    if(!Array.isArray(posts)){ list.innerHTML = '<p style="color:var(--gray)">Could not load community posts</p>'; return; }
+    if(posts.length === 0){ list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">No posts yet. Be the first to share a case!</p>'; return; }
+
+    list.innerHTML = posts.map(p=>`
+      <div style="border:1px solid var(--line);border-radius:2px;padding:14px;margin-bottom:10px;cursor:pointer" onclick="openCommunityPost(${p.id})">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+          <div>
+            <div style="font-weight:600">${esc(p.caseTitle)}</div>
+            <div style="font-size:13px;color:var(--gray);margin-top:2px">${esc(p.caseType||'')}${p.caseSource?' · '+esc(p.caseSource):''} · by ${esc(p.author)} · ${new Date(p.createdAt).toLocaleDateString()}</div>
+          </div>
+          <div style="font-size:12px;padding:3px 8px;border-radius:2px;white-space:nowrap;${p.status==='resolved'?'background:var(--bg2);color:var(--good)':'background:var(--line)'}">${p.status}</div>
+        </div>
+        ${p.note?`<p style="margin-top:10px;font-size:13.5px">${esc(p.note)}</p>`:''}
+        <div style="margin-top:10px;font-size:13px;color:var(--gray)">${p.commentCount} comment${p.commentCount===1?'':'s'}</div>
+      </div>
+    `).join('');
+  }catch(err){ list.innerHTML = '<p style="color:var(--gray)">Could not load community posts</p>'; console.error(err); }
+}
+
+async function openCommunityPost(id){
+  window._openCommunityPostId = id;
+  el('communityFeedPane').style.display = 'none';
+  el('communityDetailPane').style.display = 'block';
+  const content = el('communityDetailContent');
+  content.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">Loading...</p>';
+  try{
+    const post = await apiGet('/api/community/posts/'+id);
+    if(post.error){ content.innerHTML = '<p style="color:var(--gray)">'+esc(post.error)+'</p>'; return; }
+    renderCommunityDetail(post);
+  }catch(err){ content.innerHTML = '<p style="color:var(--gray)">Could not load post</p>'; console.error(err); }
+}
+
+function renderCommunityDetail(post){
+  const content = el('communityDetailContent');
+  const c = post.case || {};
+  content.innerHTML = `
+    <div class="card flat">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+        <h3>${esc(c.title||post.caseTitle||'Case')}</h3>
+        <div style="font-size:12px;padding:3px 8px;border-radius:2px;white-space:nowrap;${post.status==='resolved'?'background:var(--bg2);color:var(--good)':'background:var(--line)'}">${post.status}</div>
+      </div>
+      <div style="font-size:13px;color:var(--gray);margin-top:4px">${esc(c.type||'')}${c.source?' · '+esc(c.source):''} · shared by ${esc(post.author)}</div>
+      ${c.prompt?`<p style="margin-top:14px;white-space:pre-wrap">${esc(c.prompt)}</p>`:''}
+      ${post.note?`<div style="margin-top:14px;padding:12px;background:var(--bg2);border-radius:2px"><div style="font-size:12px;color:var(--gray);margin-bottom:4px">What they're confused about</div>${esc(post.note)}</div>`:''}
+      ${post.isOwner?`<div class="btnbar" style="margin-top:14px">
+        <button class="btn ghost" onclick="setCommunityPostStatus(${post.id}, '${post.status==='resolved'?'open':'resolved'}')">Mark as ${post.status==='resolved'?'open':'resolved'}</button>
+        <button class="btn ghost" onclick="deleteCommunityPost(${post.id})">Delete post</button>
+      </div>`:''}
+    </div>
+
+    <div class="card flat" style="margin-top:16px">
+      <h3>Comments (${post.comments.length})</h3>
+      <div style="margin-top:12px">
+        ${post.comments.length===0?'<p style="color:var(--gray)">No comments yet. Be the first to help out.</p>':post.comments.map(cm=>`
+          <div style="border:1px solid var(--line);border-radius:2px;padding:12px;margin-bottom:10px;${cm.isAccepted?'border-color:var(--good)':''}">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div style="font-size:13px;font-weight:600">${esc(cm.author)}${cm.isAccepted?' · <span style="color:var(--good)">Accepted answer</span>':''}</div>
+              <div style="font-size:12px;color:var(--gray)">${new Date(cm.createdAt).toLocaleDateString()}</div>
+            </div>
+            <p style="margin-top:8px;font-size:13.5px;white-space:pre-wrap">${esc(cm.body)}</p>
+            <div class="btnbar" style="margin-top:8px">
+              <button class="btn ghost" onclick="voteComment(${cm.id})">${cm.viewerVoted?'★':'☆'} Helpful (${cm.voteCount})</button>
+              ${post.isOwner && !cm.isAccepted?`<button class="btn ghost" onclick="acceptComment(${cm.id})">Mark as answer</button>`:''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <label class="fld" style="margin-top:14px">Add a comment</label>
+      <textarea id="communityCommentBody" placeholder="Share how you'd approach this…" style="width:100%;min-height:80px;padding:12px;border:1px solid var(--line);border-radius:2px;font-family:var(--f);font-size:13px;resize:vertical"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:var(--gray)">
+        <input type="checkbox" id="communityCommentAnon"> Post anonymously
+      </label>
+      <div class="btnbar" style="margin-top:10px">
+        <button class="btn primary" onclick="submitCommunityComment(${post.id})">Post comment</button>
+      </div>
+    </div>
+  `;
+}
+
+async function submitCommunityComment(postId){
+  const body = el('communityCommentBody').value.trim();
+  if(!body){ toast('Write a comment first'); return; }
+  const anonymous = el('communityCommentAnon').checked;
+  try{
+    const res = await apiPost('/api/community/posts/'+postId+'/comments', { body, anonymous });
+    if(res.error){ toast(res.error); return; }
+    openCommunityPost(postId);
+  }catch(err){ toast('Could not post comment'); console.error(err); }
+}
+
+async function voteComment(commentId){
+  try{
+    const res = await apiPost('/api/community/comments/'+commentId+'/vote', {});
+    if(res.error){ toast(res.error); return; }
+    const btn = event.target;
+    btn.textContent = (res.viewerVoted?'★':'☆')+' Helpful ('+res.voteCount+')';
+  }catch(err){ toast('Could not register vote'); console.error(err); }
+}
+
+async function acceptComment(commentId){
+  try{
+    const res = await apiPost('/api/community/comments/'+commentId+'/accept', {});
+    if(res.error){ toast(res.error); return; }
+    toast('Marked as accepted answer');
+    if(window._openCommunityPostId) openCommunityPost(window._openCommunityPostId);
+  }catch(err){ toast('Could not accept comment'); console.error(err); }
+}
+
+async function setCommunityPostStatus(postId, status){
+  try{
+    const res = await fetch(API_BASE+'/api/community/posts/'+postId,{method:'PATCH',headers:authHeaders(),body:JSON.stringify({status})}).then(r=>r.json());
+    if(res.error){ toast(res.error); return; }
+    openCommunityPost(postId);
+  }catch(err){ toast('Could not update post'); console.error(err); }
+}
+
+async function deleteCommunityPost(postId){
+  if(!await confirmDialog('Delete this post?','This cannot be undone.',{okText:'Delete',danger:true})) return;
+  const ok = await apiDelete('/api/community/posts/'+postId);
+  if(!ok){ toast('Could not delete post'); return; }
+  toast('Post deleted');
+  showCommunityFeed();
+}
+
+async function loadShareCaseOptions(){
+  try{
+    const cases = await apiGet('/api/cases');
+    if(!Array.isArray(cases)) return;
+    el('shareCaseId').innerHTML = '<option value="">— Choose a case —</option>' + cases.map(c=>`<option value="${esc(c.id)}">${esc(c.title)}</option>`).join('');
+  }catch(err){ console.error(err); }
+}
+
+async function submitSharedCase(){
+  const caseId = el('shareCaseId').value;
+  const note = el('shareCaseNote').value.trim();
+  const anonymous = el('shareCaseAnon').checked;
+  if(!caseId){ toast('Please select a case'); return; }
+  try{
+    const res = await apiPost('/api/community/posts', { caseId, note, anonymous });
+    if(res.error){ toast(res.error); return; }
+    el('shareCaseModal').classList.remove('show');
+    el('shareCaseId').value = '';
+    el('shareCaseNote').value = '';
+    el('shareCaseAnon').checked = false;
+    toast('Shared with the community');
+    loadCommunityFeed();
+  }catch(err){ toast('Could not share case'); console.error(err); }
+}
+
 async function loadSolvedFrameworks(){
   try{
     const res = await apiGet('/api/admin/solved-frameworks');
@@ -2294,7 +2512,7 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   loadSettings();
   await loadMarkingCriteria();
   // nav
-  $$('.navi[data-view]').forEach(n=>n.onclick=()=>{ if(n.dataset.view==='drill') showReady(); else if(n.dataset.view==='admin') showView('admin'); else if(n.dataset.view==='creator') showView('creator'); else showView('dashboard'); });
+  $$('.navi[data-view]').forEach(n=>n.onclick=()=>{ if(n.dataset.view==='drill') showReady(); else if(n.dataset.view==='admin') showView('admin'); else if(n.dataset.view==='creator') showView('creator'); else if(n.dataset.view==='community') showView('community'); else showView('dashboard'); });
   // admin
   $$('#adminTabs button').forEach(b=>b.onclick=()=>{
     $$('#adminTabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
@@ -2331,6 +2549,18 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   el('submitFrameworkBtn').onclick=submitFramework;
   el('submitCaseBtn').onclick=submitCase;
   el('acctCreator').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('creator'); };
+
+  // community
+  el('shareCaseBtn').onclick=()=>{ loadShareCaseOptions(); el('shareCaseModal').classList.add('show'); };
+  el('shareCaseCancel').onclick=()=>el('shareCaseModal').classList.remove('show');
+  el('shareCaseSave').onclick=submitSharedCase;
+  el('shareCaseModal').onclick=(e)=>{ if(e.target===el('shareCaseModal')) el('shareCaseModal').classList.remove('show'); };
+  el('communityBackBtn').onclick=showCommunityFeed;
+  $$('#communityStatusFilter button').forEach(b=>b.onclick=()=>{
+    $$('#communityStatusFilter button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    _communityStatusFilter = b.dataset.status;
+    loadCommunityFeed();
+  });
 
   // Account circle dropdown
   el('profileAv').onclick=(e)=>{ e.stopPropagation(); el('acctMenu').classList.toggle('open'); };

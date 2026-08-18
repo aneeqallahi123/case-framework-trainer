@@ -21,6 +21,7 @@ app.use('/api/transcribe', require('./routes/transcribe'));
 app.use('/api/cases', require('./routes/cases'));
 app.use('/api/creator', require('./routes/creator'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/community', require('./routes/community'));
 
 // Health check - Railway uses this to confirm the app is running
 app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
