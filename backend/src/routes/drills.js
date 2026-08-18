@@ -53,4 +53,18 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
+// DELETE /api/drills  - erase the current user's drill history
+router.delete('/', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM drill_results WHERE user_id = $1',
+      [req.user.id]
+    );
+    res.json({ deleted: result.rowCount });
+  } catch (err) {
+    console.error('Delete drills error:', err);
+    res.status(500).json({ error: 'Could not reset drill history' });
+  }
+});
+
 module.exports = router;
