@@ -2566,7 +2566,7 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   el('acctAdmin').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('admin'); loadAdminUsers(); loadAdminCases(); loadAdminCriteria(); loadSolvedFrameworks(); loadCaseSubmissions(); };
 
   el('closeSettings').onclick=closeSetup;
-  el('cancelDrill').onclick=cancelDrill;
+  const cancelBtn=el('cancelDrill'); if(cancelBtn) cancelBtn.onclick=cancelDrill;
   el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) closeSetup(); };
   el('resetData').onclick=async ()=>{
     if(!await confirmDialog('Reset progress?','This erases every drill, score and streak on your account, on all your devices. It cannot be undone.',{okText:'Reset progress',danger:true})) return;
