@@ -2568,14 +2568,7 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   el('closeSettings').onclick=closeSetup;
   const cancelBtn=el('cancelDrill'); if(cancelBtn) cancelBtn.onclick=cancelDrill;
   el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) closeSetup(); };
-  el('resetData').onclick=async ()=>{
-    if(!await confirmDialog('Reset progress?','This erases every drill, score and streak on your account, on all your devices. It cannot be undone.',{okText:'Reset progress',danger:true})) return;
-    // Clear the server rows first — a local-only reset is undone by the next sync.
-    const ok=await apiDelete('/api/drills');
-    if(!ok){ toast('Could not reset progress — please try again.'); return; }
-    saveHistory([]); renderDashboard(); toast('Progress reset.');
-  };
-  el('newDrillBtn').onclick=showReady; el('ctaStart').onclick=showReady; el('startDrillBtn').onclick=startDrill;
+el('newDrillBtn').onclick=showReady; el('ctaStart').onclick=showReady; el('startDrillBtn').onclick=startDrill;
 
   wireSeg('timeSeg',v=>{S.timeLimit=parseInt(v,10); el('clock').textContent=fmtClock(S.timeLimit);});
   wireSeg('rateSeg',v=>S.rate=parseFloat(v));
