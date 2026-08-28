@@ -2565,8 +2565,9 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   el('acctSetup').onclick=()=>{ el('acctMenu').classList.remove('open'); openSetup(); };
   el('acctAdmin').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('admin'); loadAdminUsers(); loadAdminCases(); loadAdminCriteria(); loadSolvedFrameworks(); loadCaseSubmissions(); };
 
-  el('closeSettings').onclick=()=>el('settingsModal').classList.remove('show');
-  el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) el('settingsModal').classList.remove('show'); };
+  el('closeSettings').onclick=closeSetup;
+  el('cancelDrill').onclick=cancelDrill;
+  el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) closeSetup(); };
   el('resetData').onclick=async ()=>{
     if(!await confirmDialog('Reset progress?','This erases every drill, score and streak on your account, on all your devices. It cannot be undone.',{okText:'Reset progress',danger:true})) return;
     // Clear the server rows first — a local-only reset is undone by the next sync.
@@ -2597,6 +2598,7 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   el('reAuto').onclick=()=>{ el('structText').value=autoStructure(el('fwText').value); renderPreview(); };
   el('runReview').onclick=runReview;
   el('nextDrill').onclick=startDrill; el('toDash').onclick=()=>showView('dashboard');
+  const pb=el('pauseBtn'); if(pb) pb.onclick=pauseSession;
 
   // keyboard: Enter advances primary action when not typing; Space toggles record on capture stages
   document.addEventListener('keydown',(e)=>{
@@ -2668,12 +2670,6 @@ function cancelDrill(){
   S.paused=false;
   showView('dashboard');
 }
-window.addEventListener('DOMContentLoaded',()=>{
-  el('closeSettings').onclick=closeSetup;
-  el('cancelDrill').onclick=cancelDrill;
-  el('settingsModal').onclick=(e)=>{ if(e.target===el('settingsModal')) closeSetup(); };
-  const pb=el('pauseBtn'); if(pb) pb.onclick=pauseSession;
-});
 
 </script>
 </body>
