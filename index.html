@@ -912,12 +912,22 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
+  function handleUnauth() {
+    localStorage.removeItem('cf_token');
+    localStorage.removeItem('cf_user');
+    AUTH = { token: null, user: null };
+    document.getElementById('authScreen').classList.remove('hidden');
+    toast('Session expired — please sign in again.');
+  }
+
   async function apiPost(path, body) {
     const r = await fetch(API_BASE + path, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+    if (r.status === 401) { handleUnauth(); return { error: 'Not logged in' }; }
     return r.json();
   }
   async function apiGet(path) {
     const r = await fetch(API_BASE + path, { headers: authHeaders() });
+    if (r.status === 401) { handleUnauth(); return { error: 'Not logged in' }; }
     return r.json();
   }
   // Resolves true only when the server confirms the delete.
