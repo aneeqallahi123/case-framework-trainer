@@ -91,39 +91,14 @@ function quoteIsGrounded(quote, transcript) {
 }
 
 async function generateJson(prompt) {
-  const model = process.env.MISTRAL_MODEL || 'mistral-small-latest';
-  const fallback = 'mistral-small-latest';
-  const key = process.env.MISTRAL_API_KEY;
-  if (!key) throw new Error('MISTRAL_API_KEY is not set');
-
-  const call = async (m) => {
-    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: m, messages: [{ role: 'user', content: prompt }], max_tokens: 8000 })
-    });
-    if (!res.ok) {
-      const body = await res.text();
-      const err = new Error(`Mistral ${res.status}: ${body}`);
-      err.status = res.status;
-      throw err;
-    }
-    return res.json();
-  };
-
-  let data;
-  try {
-    data = await call(model);
-  } catch (err) {
-    if (err.status === 404 || err.status === 503 || err.status === 429) {
-      console.warn(`Mistral model ${model} unavailable (${err.status}), falling back to ${fallback}`);
-      data = await call(fallback);
-    } else {
-      throw err;
-    }
-  }
-
-  const raw = data.choices?.[0]?.message?.content?.trim() || '';
+  const Anthropic = require('@anthropic-ai/sdk');
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const response = await client.messages.create({
+    model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
+    max_tokens: 8000,
+    messages: [{ role: 'user', content: prompt }]
+  });
+  const raw = response.content.find(b => b.type === 'text')?.text?.trim() || '';
   let cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
   cleaned = extractFirstJsonObject(cleaned) || cleaned;
   return { raw, parsed: JSON.parse(cleaned) };
@@ -275,9 +250,9 @@ router.post('/structure', requireAuth, async (req, res) => {
   }
 
   try {
-    if (!process.env.MISTRAL_API_KEY) {
-      console.error('Structure route: MISTRAL_API_KEY is not set');
-      return res.status(500).json({ error: 'AI structuring unavailable — MISTRAL_API_KEY not configured' });
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error('Structure route: ANTHROPIC_API_KEY is not set');
+      return res.status(500).json({ error: 'AI structuring unavailable — ANTHROPIC_API_KEY not configured' });
     }
 
     const example = getExampleForType(caseType);
