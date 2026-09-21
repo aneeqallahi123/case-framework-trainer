@@ -439,6 +439,7 @@
         <div class="authfield"><label>First name</label><input type="text" id="signupName" placeholder="Alex" autocomplete="given-name"></div>
         <div class="authfield"><label>Email</label><input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email"></div>
         <div class="authfield"><label>Password</label><input type="password" id="signupPassword" placeholder="At least 6 characters" autocomplete="new-password"></div>
+        <div class="authfield"><label>Confirm password</label><input type="password" id="signupPasswordConfirm" placeholder="Repeat your password" autocomplete="new-password"></div>
         <div class="autherr" id="signupErr"></div>
         <button class="btn primary" style="width:100%" id="signupBtn">Create account →</button>
         <div class="authswitch">Already have an account? <span id="goLogin">Sign in</span></div>
@@ -511,7 +512,7 @@
         <div>
           <div class="eyebrow">Practice</div>
           <h2 id="ctaTitle">Begin a drill</h2>
-          <p id="ctaText">A random case is drawn from a bank of 400, sourced from the Fuqua, Stern, Wharton, Yale, INSEAD, IESE and MBB casebooks and cases modeled on them. Hear the prompt, summarize it, build a framework within the time limit, and receive a score.</p>
+          <p id="ctaText">Draw a random case from 400+ real and modeled prompts. Summarize it, ask clarifiers, build a framework in the time limit, deliver it, and get a scored review.</p>
         </div>
         <div class="cta-right"><button class="btn red big" id="ctaStart">Open ready room →</button></div>
       </div>
@@ -609,7 +610,7 @@
       </div>
 
       <!-- Submit framework -->
-      <div id="creatorFrameworkPane" style="display:none">
+      <div id="creatorFrameworkPane">
         <div class="card flat">
           <h3>Submit a solved framework</h3>
           <p style="color:var(--gray);margin-top:6px">Choose a case and provide the framework you solved.</p>
@@ -631,7 +632,7 @@
       </div>
 
       <!-- Submit case -->
-      <div id="creatorCasePane">
+      <div id="creatorCasePane" style="display:none">
         <div class="card flat">
           <h3>Add a new case to the directory</h3>
           <p style="color:var(--gray);margin-top:6px">Create a new case and optionally provide a solved framework.</p>
@@ -796,7 +797,7 @@
           <div class="readygrid">
             <div class="rblock"><div class="rlbl">Drills logged</div><div class="rnum" id="readyCount">0</div></div>
             <div class="rblock"><div class="rlbl">Last score</div><div class="rnum" id="readyLast">—<small>/100</small></div></div>
-            <div class="rblock"><div class="rlbl">Focus areas · last 7</div><div class="rareas" id="readyAreas"></div></div>
+            <div class="rblock"><div class="rlbl">Weakest areas — last 7 drills</div><div class="rareas" id="readyAreas"></div></div>
           </div>
           <button class="btn red big" id="startDrillBtn">Start drill →</button>
         </div>
@@ -810,7 +811,7 @@
             <span class="run-sep">·</span>
             <span class="run-src" id="runCaseSrc"></span>
           </div>
-          <button class="btn ghost" id="pauseBtn">Pause</button>
+          <button class="btn" id="pauseBtn">Pause</button>
         </div>
         <div class="progress" id="progress">
           <div class="pstep" data-step="recite"><span class="pn">01</span>Prompt</div>
@@ -827,7 +828,8 @@
           <div class="card flat">
             <div style="display:flex;justify-content:space-between;align-items:center"><div class="stage-role">Interviewer</div><span id="reciteStatus" class="csub" style="margin:0"></span></div>
             <div class="promptbox" id="promptText"></div>
-            <div class="btnbar"><button class="btn ghost" id="replayBtn">Replay</button><button class="btn accent" id="toSummary" disabled>Summarize →</button></div>
+            <div class="btnbar"><button class="btn ghost" id="replayBtn">Replay</button><button class="btn accent" id="toSummary" disabled title="Wait for the prompt to finish playing">Summarize →</button></div>
+            <div style="margin-top:8px;font-size:12px;color:var(--gray2)"><span class="kbd">Enter</span> to advance once the prompt has played</div>
           </div>
         </section>
 
@@ -840,7 +842,8 @@
             <textarea id="sumText" placeholder="Record and speak — or type here…"></textarea>
             <div class="capmeta" id="sumMeta"><span class="live-dot"></span><span><b id="sumWords">0</b> words</span><span><b id="sumTime">0:00</b> talk time</span></div>
             <div class="interim" id="sumInterim"></div>
-            <div class="btnbar"><button class="btn rec" id="sumRec">● Record</button><button class="btn ghost" id="sumStop" disabled>Stop</button><button class="btn accent" id="sumDone">Check &amp; continue →</button></div>
+            <div class="btnbar"><button class="btn rec" id="sumRec">● Record</button><button class="btn ghost" id="sumStop" disabled>■ Stop</button><button class="btn accent" id="sumDone">Check &amp; continue →</button></div>
+            <div style="margin-top:8px;font-size:12px;color:var(--gray2)"><span class="kbd">Space</span> to record / stop &nbsp;·&nbsp; <span class="kbd">Enter</span> to advance</div>
             <div id="sumFbInline"></div>
           </div>
         </section>
@@ -853,7 +856,8 @@
             <div class="meter" id="clrMeter"></div>
             <textarea id="clrText" placeholder="One question per line, ending with a question mark…"></textarea>
             <div class="interim" id="clrInterim"></div>
-            <div class="btnbar"><button class="btn rec" id="clrRec">● Record</button><button class="btn ghost" id="clrStop" disabled>Stop</button><button class="btn" id="clrAnswer">Get answers</button><button class="btn accent" id="toTimer">Build framework →</button></div>
+            <div class="btnbar"><button class="btn rec" id="clrRec">● Record</button><button class="btn ghost" id="clrStop" disabled>■ Stop</button><button class="btn" id="clrAnswer">Get answers</button><button class="btn accent" id="toTimer">Build framework →</button></div>
+            <div style="margin-top:8px;font-size:12px;color:var(--gray2)"><span class="kbd">Space</span> to record / stop &nbsp;·&nbsp; <span class="kbd">Enter</span> to advance</div>
             <div id="clrAnswers"></div>
           </div>
         </section>
@@ -886,6 +890,7 @@
               <button class="btn rec" id="fwRec">● Record</button>
               <button class="btn ghost" id="fwStop" disabled>■ Stop &amp; transcribe</button>
             </div>
+            <div style="margin-top:8px;font-size:12px;color:var(--gray2)"><span class="kbd">Space</span> to record / stop &nbsp;·&nbsp; <span class="kbd">Enter</span> to advance when ready</div>
 
             <!-- Deepgram transcription status -->
             <div class="dg-status" id="dgStatus">
@@ -1029,6 +1034,7 @@
 
   function showAuth() {
     document.getElementById('authScreen').classList.remove('hidden');
+    setTimeout(() => { const f = document.getElementById('loginEmail'); if(f) f.focus(); }, 80);
   }
 
   document.getElementById('goSignup').onclick = () => {
@@ -1058,6 +1064,9 @@
     const btn = document.getElementById('signupBtn');
     const err = document.getElementById('signupErr');
     err.textContent = '';
+    const pw = document.getElementById('signupPassword').value;
+    const pwc = document.getElementById('signupPasswordConfirm').value;
+    if (pw !== pwc) { err.textContent = 'Passwords do not match.'; return; }
     btn.disabled = true; btn.textContent = 'Creating account…';
     const data = await fetch(API_BASE + '/api/auth/signup', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1092,7 +1101,7 @@
   ['loginEmail','loginPassword'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginBtn').click(); });
   });
-  ['signupName','signupEmail','signupPassword'].forEach(id => {
+  ['signupName','signupEmail','signupPassword','signupPasswordConfirm'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('signupBtn').click(); });
   });
 
@@ -1146,10 +1155,10 @@
       _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) _audioChunks.push(e.data); };
       _mediaRecorder.start(250);
 
-      recBtn.disabled = true; recBtn.classList.add('live');
+      recBtn.disabled = true; recBtn.classList.add('live'); recBtn.textContent = '● Recording…';
       stopBtn.disabled = false;
       meta.classList.add('recording');
-      interimEl.textContent = '🔴 Recording… speak your framework';
+      interimEl.textContent = 'Speak your framework delivery now';
       _recordStart = Date.now();
 
       _recordingTimer = setInterval(() => {
@@ -1176,7 +1185,7 @@
     const dgStatus = document.getElementById('dgStatus');
     const dgStatusText = document.getElementById('dgStatusText');
 
-    recBtn.disabled = false; recBtn.classList.remove('live');
+    recBtn.disabled = false; recBtn.classList.remove('live'); recBtn.textContent = '● Record';
     stopBtn.disabled = true;
     document.getElementById('fwMeta').classList.remove('recording');
     interimEl.textContent = '';
@@ -2925,7 +2934,12 @@ el('newDrillBtn').onclick=showReady; el('ctaStart').onclick=showReady; el('start
     const typing=/^(TEXTAREA|INPUT)$/.test(document.activeElement.tagName);
     const stage=$('#viewDrill .stage.show'); if(!stage) return;
     if(e.key==='Enter' && !typing){ const b=stage.querySelector('.btn.accent:not([disabled])'); if(b){ e.preventDefault(); b.click(); } }
-    if(e.code==='Space' && !typing){ const rec=stage.querySelector('.btn.rec'); if(rec){ e.preventDefault(); rec.click(); } }
+    if(e.code==='Space' && !typing){
+      e.preventDefault();
+      const recBtn=stage.querySelector('.btn.rec');
+      if(recBtn && !recBtn.disabled){ recBtn.click(); }
+      else { const stopBtn=stage.querySelector('[id$="Stop"]:not([disabled])'); if(stopBtn) stopBtn.click(); }
+    }
   });
 
   renderDashboard();
