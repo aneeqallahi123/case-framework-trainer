@@ -348,7 +348,7 @@ router.get('/members', async (req, res) => {
                JOIN community_posts p ON p.id = cm.post_id
                WHERE cm.user_id = u.id AND cm.is_accepted = true AND cm.anonymous = false) AS accepted_count,
               (SELECT COUNT(*)::int FROM drill_results dr WHERE dr.user_id = u.id) AS case_count,
-              (SELECT ROUND(AVG(dr.score) * 100.0 / 8)::int FROM drill_results dr WHERE dr.user_id = u.id) AS avg_score_pct
+              (SELECT ROUND(AVG(dr.score))::int FROM drill_results dr WHERE dr.user_id = u.id) AS avg_score_pct
        FROM users u
        ORDER BY post_count DESC, comment_count DESC, u.first_name ASC`
     );
@@ -391,7 +391,7 @@ router.get('/members/:id', async (req, res) => {
     const userResult = await pool.query(
       `SELECT u.id, u.first_name, u.created_at, u.show_stats,
               (SELECT COUNT(*)::int FROM drill_results dr WHERE dr.user_id = u.id) AS case_count,
-              (SELECT ROUND(AVG(dr.score) * 100.0 / 8)::int FROM drill_results dr WHERE dr.user_id = u.id) AS avg_score_pct
+              (SELECT ROUND(AVG(dr.score))::int FROM drill_results dr WHERE dr.user_id = u.id) AS avg_score_pct
        FROM users u WHERE u.id = $1`,
       [id]
     );
