@@ -90,73 +90,50 @@ function quoteIsGrounded(quote, transcript) {
   return matched / qWords.length >= 0.8;
 }
 
-// Returns true for Gemini errors that warrant a fallback to Groq
-// (unavailable, overloaded, deprecated model) vs errors that won't
-// be fixed by switching providers (bad key, network, parse failure).
-function isGeminiFallbackError(err) {
-  const status = err?.status;
-  return status === 503 || status === 429 || status === 404 || status === 500;
-}
+async function generateJson(prompt) {
+  const model = process.env.MISTRAL_MODEL || 'leanstral-1.5';
+  const fallback = 'mistral-small-latest';
+  const key = process.env.MISTRAL_API_KEY;
+  if (!key) throw new Error('MISTRAL_API_KEY is not set');
 
-async function generateJsonGemini(model, prompt) {
-  const result = await model.generateContent(prompt);
-  const finishReason = result.response.candidates?.[0]?.finishReason;
-  if (finishReason && finishReason !== 'STOP') {
-    console.error('Gemini stopped early, finishReason:', finishReason);
-  }
-  const raw = result.response.text().trim();
-  let cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-  cleaned = extractFirstJsonObject(cleaned) || cleaned;
-  return { raw, parsed: JSON.parse(cleaned) };
-}
+  const call = async (m) => {
+    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: m, messages: [{ role: 'user', content: prompt }], max_tokens: 8000 })
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      const err = new Error(`Mistral ${res.status}: ${body}`);
+      err.status = res.status;
+      throw err;
+    }
+    return res.json();
+  };
 
-async function generateJsonGroq(prompt) {
-  const Groq = require('groq-sdk');
-  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-  const completion = await groq.chat.completions.create({
-    model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
-    messages: [{ role: 'user', content: prompt }],
-    response_format: { type: 'json_object' },
-    max_tokens: 8000
-  });
-  const raw = completion.choices[0]?.message?.content?.trim() || '';
-  let cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-  cleaned = extractFirstJsonObject(cleaned) || cleaned;
-  return { raw, parsed: JSON.parse(cleaned) };
-}
-
-async function generateJson(model, prompt) {
-  if (!model) {
-    return await generateJsonGroq(prompt);
-  }
-  const delays = [2000, 5000, 10000]; // retry after 2s, 5s, 10s
-  let lastErr;
-  for (let attempt = 0; attempt <= delays.length; attempt++) {
-    try {
-      return await generateJsonGemini(model, prompt);
-    } catch (err) {
-      lastErr = err;
-      if (isGeminiFallbackError(err) && attempt < delays.length) {
-        console.warn(`Gemini unavailable (status ${err.status}), retrying in ${delays[attempt] / 1000}s… (attempt ${attempt + 1}/${delays.length})`);
-        await new Promise(r => setTimeout(r, delays[attempt]));
-      } else {
-        break;
-      }
+  let data;
+  try {
+    data = await call(model);
+  } catch (err) {
+    if (err.status === 404 || err.status === 503 || err.status === 429) {
+      console.warn(`Mistral model ${model} unavailable (${err.status}), falling back to ${fallback}`);
+      data = await call(fallback);
+    } else {
+      throw err;
     }
   }
-  // All Gemini retries exhausted — try Groq if available
-  if (isGeminiFallbackError(lastErr) && process.env.GROQ_API_KEY) {
-    console.warn('Gemini retries exhausted, falling back to Groq');
-    return await generateJsonGroq(prompt);
-  }
-  throw lastErr;
+
+  const raw = data.choices?.[0]?.message?.content?.trim() || '';
+  let cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+  cleaned = extractFirstJsonObject(cleaned) || cleaned;
+  return { raw, parsed: JSON.parse(cleaned) };
 }
 
 // STAGE 1 — extraction. Pulls a flat list of atomic points out of the transcript,
 // each anchored to a verbatim quote. Points whose quote can't be found in the
 // transcript are dropped by code (not by trusting the model), so nothing enters
 // stage 2 that wasn't actually said.
-async function extractPoints(model, transcript) {
+async function extractPoints(transcript) {
   const prompt = `A candidate just delivered a case interview framework out loud. Below is the raw transcript (messy — filler words, run-ons, restatements).
 
 Transcript:
@@ -179,7 +156,7 @@ For EACH point, give:
 Return ONLY JSON, no markdown fences:
 { "points": [ { "id": "p1", "text": "...", "quote": "...", "metric": null } ] }`;
 
-  const { raw, parsed } = await generateJson(model, prompt);
+  const { raw, parsed } = await generateJson(prompt);
   const points = Array.isArray(parsed.points) ? parsed.points : [];
 
   const grounded = [];
@@ -204,7 +181,7 @@ Return ONLY JSON, no markdown fences:
 // a MECE tree by referencing their ids; it cannot introduce new leaf content.
 // Bucket/grouping labels (nodes with no pointId) are the only freeform text
 // allowed, since those are structural, not content.
-async function structurePoints(model, { transcript, caseType, caseTitle, points, example }) {
+async function structurePoints({ transcript, caseType, caseTitle, points, example }) {
   const pointsList = points.map(p => `- id: ${p.id} | text: "${p.text}"${p.metric ? ` | metric: ${JSON.stringify(p.metric)}` : ''}`).join('\n');
 
   const prompt = `You are a McKinsey case interview coach who is an expert at building MECE issue trees — the kind found in real casebooks (Wharton, Yale, Darden, MBB).
@@ -259,7 +236,7 @@ Return ONLY JSON, no markdown fences:
 - Grouping nodes must have "pointId": null.
 - Be honest about quality — a small tree that faithfully reflects a thin answer should score lower on completeness than a large one, so there is no incentive to invent content.`;
 
-  const { raw, parsed } = await generateJson(model, prompt);
+  const { raw, parsed } = await generateJson(prompt);
   return { raw, structured: parsed };
 }
 
@@ -298,25 +275,17 @@ router.post('/structure', requireAuth, async (req, res) => {
   }
 
   try {
-    if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
-      console.error('Structure route: neither GEMINI_API_KEY nor GROQ_API_KEY is set');
-      return res.status(500).json({ error: 'AI structuring unavailable — no AI API key configured' });
+    if (!process.env.MISTRAL_API_KEY) {
+      console.error('Structure route: MISTRAL_API_KEY is not set');
+      return res.status(500).json({ error: 'AI structuring unavailable — MISTRAL_API_KEY not configured' });
     }
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
-    const genAI = process.env.GEMINI_API_KEY
-      ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-      : null;
-    const model = genAI ? genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
-      generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 }
-    }) : null;
 
     const example = getExampleForType(caseType);
 
     // Stage 1: extract atomic points and drop anything not grounded in the transcript.
     let extractRaw, grounded;
     try {
-      ({ grounded, raw: extractRaw } = await extractPoints(model, transcript));
+      ({ grounded, raw: extractRaw } = await extractPoints(transcript));
     } catch (parseErr) {
       console.error('Extraction JSON parse failed:', parseErr);
       return res.status(500).json({ error: 'Could not parse AI extraction response', raw: extractRaw });
@@ -329,7 +298,7 @@ router.post('/structure', requireAuth, async (req, res) => {
     // Stage 2: structure only the validated points into a tree.
     let structureRaw, structured;
     try {
-      ({ structured, raw: structureRaw } = await structurePoints(model, { transcript, caseType, caseTitle, points: grounded, example }));
+      ({ structured, raw: structureRaw } = await structurePoints({ transcript, caseType, caseTitle, points: grounded, example }));
     } catch (parseErr) {
       console.error('Structuring JSON parse failed:', parseErr);
       return res.status(500).json({ error: 'Could not parse AI structuring response', raw: structureRaw });
