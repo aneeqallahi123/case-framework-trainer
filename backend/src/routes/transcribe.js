@@ -307,7 +307,7 @@ router.post('/structure', requireAuth, async (req, res) => {
       ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
       : null;
     const model = genAI ? genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
+      model: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
       generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 }
     }) : null;
 
