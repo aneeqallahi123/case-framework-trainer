@@ -157,6 +157,10 @@ async function initDB() {
     `);
 
     await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS show_stats BOOLEAN DEFAULT true;
+    `);
+
+    await client.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS direct_conversations_pair_idx
       ON direct_conversations (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id));
     `);

@@ -36,7 +36,7 @@ router.post('/signup', async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    res.json({ token, user: { id: user.id, email: user.email, firstName: user.first_name, role: user.role, bypassApproval: user.bypass_approval } });
+    res.json({ token, user: { id: user.id, email: user.email, firstName: user.first_name, role: user.role, bypassApproval: user.bypass_approval, showStats: true } });
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Something went wrong, please try again' });
@@ -70,7 +70,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    res.json({ token, user: { id: user.id, email: user.email, firstName: user.first_name, role: user.role, bypassApproval: user.bypass_approval } });
+    res.json({ token, user: { id: user.id, email: user.email, firstName: user.first_name, role: user.role, bypassApproval: user.bypass_approval, showStats: user.show_stats !== false } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Something went wrong, please try again' });
@@ -81,14 +81,28 @@ router.post('/login', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, first_name, role, bypass_approval, created_at FROM users WHERE id = $1',
+      'SELECT id, email, first_name, role, bypass_approval, show_stats, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ id: user.id, email: user.email, firstName: user.first_name, role: user.role, bypassApproval: user.bypass_approval });
+    res.json({ id: user.id, email: user.email, firstName: user.first_name, role: user.role, bypassApproval: user.bypass_approval, showStats: user.show_stats });
   } catch (err) {
     res.status(500).json({ error: 'Something went wrong' });
+  }
+});
+
+// PATCH /api/auth/profile - update profile settings (e.g. stats visibility)
+router.patch('/profile', requireAuth, async (req, res) => {
+  const { showStats } = req.body;
+  if (typeof showStats !== 'boolean') {
+    return res.status(400).json({ error: 'showStats must be a boolean' });
+  }
+  try {
+    await pool.query('UPDATE users SET show_stats = $1 WHERE id = $2', [showStats, req.user.id]);
+    res.json({ showStats });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not update profile settings' });
   }
 });
 

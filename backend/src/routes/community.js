@@ -336,25 +336,44 @@ router.post('/comments/:id/accept', async (req, res) => {
 // GET /api/community/members - list all members with activity stats
 router.get('/members', async (req, res) => {
   try {
+    // Check if the viewing user has stats visibility enabled
+    const viewerResult = await pool.query('SELECT show_stats FROM users WHERE id = $1', [req.user.id]);
+    const viewerCanSeeStats = viewerResult.rows[0]?.show_stats !== false;
+
     const result = await pool.query(
-      `SELECT u.id, u.first_name, u.created_at,
+      `SELECT u.id, u.first_name, u.created_at, u.show_stats,
               (SELECT COUNT(*)::int FROM community_posts p WHERE p.user_id = u.id AND p.anonymous = false) AS post_count,
               (SELECT COUNT(*)::int FROM community_comments cm WHERE cm.user_id = u.id AND cm.anonymous = false) AS comment_count,
               (SELECT COUNT(*)::int FROM community_comments cm
                JOIN community_posts p ON p.id = cm.post_id
-               WHERE cm.user_id = u.id AND cm.is_accepted = true AND cm.anonymous = false) AS accepted_count
+               WHERE cm.user_id = u.id AND cm.is_accepted = true AND cm.anonymous = false) AS accepted_count,
+              (SELECT COUNT(*)::int FROM drill_results dr WHERE dr.user_id = u.id) AS case_count,
+              (SELECT ROUND(AVG(dr.score) * 100.0 / 8)::int FROM drill_results dr WHERE dr.user_id = u.id) AS avg_score_pct
        FROM users u
        ORDER BY post_count DESC, comment_count DESC, u.first_name ASC`
     );
 
-    res.json(result.rows.map(r => ({
-      id: r.id,
-      name: r.first_name || 'Member',
-      postCount: r.post_count,
-      commentCount: r.comment_count,
-      acceptedCount: r.accepted_count,
-      joinedAt: r.created_at
-    })));
+    const members = result.rows.map(r => {
+      const base = {
+        id: r.id,
+        name: r.first_name || 'Member',
+        postCount: r.post_count,
+        commentCount: r.comment_count,
+        acceptedCount: r.accepted_count,
+        joinedAt: r.created_at
+      };
+      if (!viewerCanSeeStats) {
+        base.statsLocked = 'viewer';
+      } else if (!r.show_stats) {
+        base.statsLocked = 'member';
+      } else {
+        base.caseCount = r.case_count;
+        base.avgScorePct = r.avg_score_pct;
+      }
+      return base;
+    });
+
+    res.json({ viewerCanSeeStats, members });
   } catch (err) {
     console.error('Get members error:', err);
     res.status(500).json({ error: 'Could not fetch members' });
@@ -366,8 +385,14 @@ router.get('/members/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
+    const viewerResult = await pool.query('SELECT show_stats FROM users WHERE id = $1', [req.user.id]);
+    const viewerCanSeeStats = viewerResult.rows[0]?.show_stats !== false;
+
     const userResult = await pool.query(
-      'SELECT id, first_name, created_at FROM users WHERE id = $1',
+      `SELECT u.id, u.first_name, u.created_at, u.show_stats,
+              (SELECT COUNT(*)::int FROM drill_results dr WHERE dr.user_id = u.id) AS case_count,
+              (SELECT ROUND(AVG(dr.score) * 100.0 / 8)::int FROM drill_results dr WHERE dr.user_id = u.id) AS avg_score_pct
+       FROM users u WHERE u.id = $1`,
       [id]
     );
     if (!userResult.rows.length) {
@@ -401,11 +426,23 @@ router.get('/members/:id', async (req, res) => {
       [id]
     );
 
+    const statsInfo = {};
+    if (!viewerCanSeeStats) {
+      statsInfo.statsLocked = 'viewer';
+    } else if (!user.show_stats) {
+      statsInfo.statsLocked = 'member';
+    } else {
+      statsInfo.caseCount = user.case_count;
+      statsInfo.avgScorePct = user.avg_score_pct;
+    }
+
     res.json({
       id: user.id,
       name: user.first_name || 'Member',
       joinedAt: user.created_at,
       isMe: user.id === req.user.id,
+      viewerCanSeeStats,
+      ...statsInfo,
       posts: postsResult.rows.map(p => ({
         id: p.id,
         note: p.note,
