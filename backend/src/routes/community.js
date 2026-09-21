@@ -25,14 +25,16 @@ router.get('/posts', async (req, res) => {
     const result = await pool.query(
       `SELECT p.id, p.case_id, p.note, p.status, p.anonymous, p.created_at,
               c.title AS case_title, c.type AS case_type, c.source AS case_source,
-              u.first_name AS author_first_name,
-              (SELECT COUNT(*)::int FROM community_comments cm WHERE cm.post_id = p.id) AS comment_count
+              u.first_name AS author_first_name, u.id AS author_id,
+              (SELECT COUNT(*)::int FROM community_comments cm WHERE cm.post_id = p.id) AS comment_count,
+              (SELECT COUNT(*)::int FROM community_post_votes pv WHERE pv.post_id = p.id) AS vote_count,
+              EXISTS(SELECT 1 FROM community_post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $${params.length + 1}) AS viewer_voted
        FROM community_posts p
        JOIN cases c ON c.id = p.case_id
        JOIN users u ON u.id = p.user_id
        ${where}
        ORDER BY p.created_at DESC`,
-      params
+      [...params, req.user.id]
     );
 
     const posts = result.rows.map(r => ({
@@ -44,7 +46,10 @@ router.get('/posts', async (req, res) => {
       note: r.note,
       status: r.status,
       author: r.anonymous ? 'Anonymous' : r.author_first_name || 'Someone',
+      authorId: r.anonymous ? null : r.author_id,
       commentCount: r.comment_count,
+      voteCount: r.vote_count,
+      viewerVoted: r.viewer_voted,
       createdAt: r.created_at
     }));
 
@@ -90,12 +95,14 @@ router.get('/posts/:id', async (req, res) => {
     const postResult = await pool.query(
       `SELECT p.id, p.case_id, p.note, p.status, p.anonymous, p.user_id, p.created_at,
               c.data AS case_data,
-              u.first_name AS author_first_name
+              u.first_name AS author_first_name,
+              (SELECT COUNT(*)::int FROM community_post_votes pv WHERE pv.post_id = p.id) AS vote_count,
+              EXISTS(SELECT 1 FROM community_post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $2) AS viewer_voted
        FROM community_posts p
        JOIN cases c ON c.id = p.case_id
        JOIN users u ON u.id = p.user_id
        WHERE p.id = $1`,
-      [id]
+      [id, req.user.id]
     );
     if (!postResult.rows.length) {
       return res.status(404).json({ error: 'Post not found' });
@@ -122,13 +129,17 @@ router.get('/posts/:id', async (req, res) => {
       status: row.status,
       anonymous: row.anonymous,
       author: row.anonymous ? 'Anonymous' : row.author_first_name || 'Someone',
+      authorId: row.anonymous ? null : row.user_id,
       isOwner: row.user_id === req.user.id,
+      voteCount: row.vote_count,
+      viewerVoted: row.viewer_voted,
       createdAt: row.created_at,
       comments: commentsResult.rows.map(c => ({
         id: c.id,
         body: c.body,
         isAccepted: c.is_accepted,
         author: c.anonymous ? 'Anonymous' : c.author_first_name || 'Someone',
+        authorId: c.anonymous ? null : c.user_id,
         isOwner: c.user_id === req.user.id,
         voteCount: c.vote_count,
         viewerVoted: c.viewer_voted,
@@ -188,6 +199,38 @@ router.delete('/posts/:id', async (req, res) => {
   } catch (err) {
     console.error('Delete community post error:', err);
     res.status(500).json({ error: 'Could not delete post' });
+  }
+});
+
+// POST /api/community/posts/:id/vote - toggle upvote on a post
+router.post('/posts/:id/vote', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const postExists = await pool.query('SELECT id FROM community_posts WHERE id = $1', [id]);
+    if (!postExists.rows.length) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const existing = await pool.query(
+      'SELECT 1 FROM community_post_votes WHERE post_id = $1 AND user_id = $2',
+      [id, req.user.id]
+    );
+
+    if (existing.rows.length) {
+      await pool.query('DELETE FROM community_post_votes WHERE post_id = $1 AND user_id = $2', [id, req.user.id]);
+    } else {
+      await pool.query('INSERT INTO community_post_votes (post_id, user_id) VALUES ($1, $2)', [id, req.user.id]);
+    }
+
+    const countResult = await pool.query(
+      'SELECT COUNT(*)::int AS count FROM community_post_votes WHERE post_id = $1',
+      [id]
+    );
+    res.json({ voteCount: countResult.rows[0].count, viewerVoted: !existing.rows.length });
+  } catch (err) {
+    console.error('Vote post error:', err);
+    res.status(500).json({ error: 'Could not register vote' });
   }
 });
 
@@ -285,6 +328,301 @@ router.post('/comments/:id/accept', async (req, res) => {
   } catch (err) {
     console.error('Accept comment error:', err);
     res.status(500).json({ error: 'Could not accept comment' });
+  }
+});
+
+// ─── Members ────────────────────────────────────────────────────────────────
+
+// GET /api/community/members - list all members with activity stats
+router.get('/members', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.first_name, u.created_at,
+              (SELECT COUNT(*)::int FROM community_posts p WHERE p.user_id = u.id AND p.anonymous = false) AS post_count,
+              (SELECT COUNT(*)::int FROM community_comments cm WHERE cm.user_id = u.id AND cm.anonymous = false) AS comment_count,
+              (SELECT COUNT(*)::int FROM community_comments cm
+               JOIN community_posts p ON p.id = cm.post_id
+               WHERE cm.user_id = u.id AND cm.is_accepted = true AND cm.anonymous = false) AS accepted_count
+       FROM users u
+       ORDER BY post_count DESC, comment_count DESC, u.first_name ASC`
+    );
+
+    res.json(result.rows.map(r => ({
+      id: r.id,
+      name: r.first_name || 'Member',
+      postCount: r.post_count,
+      commentCount: r.comment_count,
+      acceptedCount: r.accepted_count,
+      joinedAt: r.created_at
+    })));
+  } catch (err) {
+    console.error('Get members error:', err);
+    res.status(500).json({ error: 'Could not fetch members' });
+  }
+});
+
+// GET /api/community/members/:id - member profile with their public activity
+router.get('/members/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const userResult = await pool.query(
+      'SELECT id, first_name, created_at FROM users WHERE id = $1',
+      [id]
+    );
+    if (!userResult.rows.length) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+    const user = userResult.rows[0];
+
+    const postsResult = await pool.query(
+      `SELECT p.id, p.note, p.status, p.created_at,
+              c.title AS case_title, c.type AS case_type, c.source AS case_source,
+              (SELECT COUNT(*)::int FROM community_comments cm WHERE cm.post_id = p.id) AS comment_count,
+              (SELECT COUNT(*)::int FROM community_post_votes pv WHERE pv.post_id = p.id) AS vote_count
+       FROM community_posts p
+       JOIN cases c ON c.id = p.case_id
+       WHERE p.user_id = $1 AND p.anonymous = false
+       ORDER BY p.created_at DESC`,
+      [id]
+    );
+
+    const commentsResult = await pool.query(
+      `SELECT cm.id, cm.body, cm.is_accepted, cm.created_at,
+              c.title AS case_title,
+              p.id AS post_id,
+              (SELECT COUNT(*)::int FROM community_comment_votes v WHERE v.comment_id = cm.id) AS vote_count
+       FROM community_comments cm
+       JOIN community_posts p ON p.id = cm.post_id
+       JOIN cases c ON c.id = p.case_id
+       WHERE cm.user_id = $1 AND cm.anonymous = false
+       ORDER BY cm.created_at DESC
+       LIMIT 20`,
+      [id]
+    );
+
+    res.json({
+      id: user.id,
+      name: user.first_name || 'Member',
+      joinedAt: user.created_at,
+      isMe: user.id === req.user.id,
+      posts: postsResult.rows.map(p => ({
+        id: p.id,
+        note: p.note,
+        status: p.status,
+        caseTitle: p.case_title,
+        caseType: p.case_type,
+        caseSource: p.case_source,
+        commentCount: p.comment_count,
+        voteCount: p.vote_count,
+        createdAt: p.created_at
+      })),
+      comments: commentsResult.rows.map(c => ({
+        id: c.id,
+        body: c.body,
+        isAccepted: c.is_accepted,
+        caseTitle: c.case_title,
+        postId: c.post_id,
+        voteCount: c.vote_count,
+        createdAt: c.created_at
+      }))
+    });
+  } catch (err) {
+    console.error('Get member profile error:', err);
+    res.status(500).json({ error: 'Could not fetch member profile' });
+  }
+});
+
+// ─── Direct Messages ─────────────────────────────────────────────────────────
+
+// GET /api/community/conversations - list user's conversations
+router.get('/conversations', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT dc.id, dc.updated_at,
+              CASE WHEN dc.user1_id = $1 THEN dc.user2_id ELSE dc.user1_id END AS other_user_id,
+              CASE WHEN dc.user1_id = $1 THEN u2.first_name ELSE u1.first_name END AS other_name,
+              (SELECT dm.body FROM direct_messages dm WHERE dm.conversation_id = dc.id ORDER BY dm.created_at DESC LIMIT 1) AS last_message,
+              (SELECT dm.created_at FROM direct_messages dm WHERE dm.conversation_id = dc.id ORDER BY dm.created_at DESC LIMIT 1) AS last_message_at,
+              (SELECT COUNT(*)::int FROM direct_messages dm WHERE dm.conversation_id = dc.id AND dm.sender_id != $1 AND dm.read_at IS NULL) AS unread_count
+       FROM direct_conversations dc
+       JOIN users u1 ON u1.id = dc.user1_id
+       JOIN users u2 ON u2.id = dc.user2_id
+       WHERE dc.user1_id = $1 OR dc.user2_id = $1
+       ORDER BY dc.updated_at DESC`,
+      [req.user.id]
+    );
+
+    res.json(result.rows.map(r => ({
+      id: r.id,
+      otherUserId: r.other_user_id,
+      otherName: r.other_name || 'Member',
+      lastMessage: r.last_message,
+      lastMessageAt: r.last_message_at,
+      unreadCount: r.unread_count,
+      updatedAt: r.updated_at
+    })));
+  } catch (err) {
+    console.error('Get conversations error:', err);
+    res.status(500).json({ error: 'Could not fetch conversations' });
+  }
+});
+
+// GET /api/community/conversations/unread-count - total unread across all conversations
+router.get('/conversations/unread-count', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM direct_messages dm
+       JOIN direct_conversations dc ON dc.id = dm.conversation_id
+       WHERE (dc.user1_id = $1 OR dc.user2_id = $1)
+         AND dm.sender_id != $1
+         AND dm.read_at IS NULL`,
+      [req.user.id]
+    );
+    res.json({ count: result.rows[0].count });
+  } catch (err) {
+    console.error('Unread count error:', err);
+    res.status(500).json({ error: 'Could not fetch unread count' });
+  }
+});
+
+// POST /api/community/conversations - start or find a conversation with another user
+router.post('/conversations', async (req, res) => {
+  const { userId } = req.body;
+  if (!userId || userId === req.user.id) {
+    return res.status(400).json({ error: 'Invalid user' });
+  }
+
+  try {
+    const userCheck = await pool.query('SELECT id, first_name FROM users WHERE id = $1', [userId]);
+    if (!userCheck.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const existing = await pool.query(
+      `SELECT id FROM direct_conversations
+       WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1)`,
+      [req.user.id, userId]
+    );
+
+    if (existing.rows.length) {
+      return res.json({ id: existing.rows[0].id, existed: true });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO direct_conversations (user1_id, user2_id) VALUES ($1, $2) RETURNING id`,
+      [req.user.id, userId]
+    );
+
+    res.status(201).json({ id: result.rows[0].id, existed: false });
+  } catch (err) {
+    console.error('Start conversation error:', err);
+    res.status(500).json({ error: 'Could not start conversation' });
+  }
+});
+
+// GET /api/community/conversations/:id/messages - get messages + mark incoming as read
+router.get('/conversations/:id/messages', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const convCheck = await pool.query(
+      'SELECT id, user1_id, user2_id FROM direct_conversations WHERE id = $1',
+      [id]
+    );
+    if (!convCheck.rows.length) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+    const conv = convCheck.rows[0];
+    if (conv.user1_id !== req.user.id && conv.user2_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Mark incoming messages as read
+    await pool.query(
+      `UPDATE direct_messages SET read_at = NOW()
+       WHERE conversation_id = $1 AND sender_id != $2 AND read_at IS NULL`,
+      [id, req.user.id]
+    );
+
+    const otherUserId = conv.user1_id === req.user.id ? conv.user2_id : conv.user1_id;
+    const otherUser = await pool.query('SELECT first_name FROM users WHERE id = $1', [otherUserId]);
+
+    const messages = await pool.query(
+      `SELECT dm.id, dm.body, dm.sender_id, dm.read_at, dm.created_at,
+              u.first_name AS sender_name
+       FROM direct_messages dm
+       JOIN users u ON u.id = dm.sender_id
+       WHERE dm.conversation_id = $1
+       ORDER BY dm.created_at ASC`,
+      [id]
+    );
+
+    res.json({
+      conversationId: id,
+      otherUserId,
+      otherName: otherUser.rows[0]?.first_name || 'Member',
+      messages: messages.rows.map(m => ({
+        id: m.id,
+        body: m.body,
+        senderId: m.sender_id,
+        senderName: m.sender_name,
+        isMe: m.sender_id === req.user.id,
+        readAt: m.read_at,
+        createdAt: m.created_at
+      }))
+    });
+  } catch (err) {
+    console.error('Get messages error:', err);
+    res.status(500).json({ error: 'Could not fetch messages' });
+  }
+});
+
+// POST /api/community/conversations/:id/messages - send a message
+router.post('/conversations/:id/messages', async (req, res) => {
+  const { id } = req.params;
+  const { body } = req.body;
+  if (!body || !body.trim()) {
+    return res.status(400).json({ error: 'Message body is required' });
+  }
+
+  try {
+    const convCheck = await pool.query(
+      'SELECT id, user1_id, user2_id FROM direct_conversations WHERE id = $1',
+      [id]
+    );
+    if (!convCheck.rows.length) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+    const conv = convCheck.rows[0];
+    if (conv.user1_id !== req.user.id && conv.user2_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO direct_messages (conversation_id, sender_id, body)
+       VALUES ($1, $2, $3)
+       RETURNING id, body, sender_id, created_at`,
+      [id, req.user.id, body.trim()]
+    );
+
+    await pool.query(
+      'UPDATE direct_conversations SET updated_at = NOW() WHERE id = $1',
+      [id]
+    );
+
+    const msg = result.rows[0];
+    res.status(201).json({
+      id: msg.id,
+      body: msg.body,
+      senderId: msg.sender_id,
+      isMe: true,
+      createdAt: msg.created_at
+    });
+  } catch (err) {
+    console.error('Send message error:', err);
+    res.status(500).json({ error: 'Could not send message' });
   }
 });
 

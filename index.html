@@ -291,6 +291,21 @@
   .seg button{border:0;border-right:1px solid var(--line);background:#fff;color:var(--gray);font-family:var(--f);font-size:12.5px;font-weight:600;padding:10px 15px;cursor:pointer;letter-spacing:.04em;transition:background .15s,color .15s}
   .seg button:last-child{border-right:0}
   .seg button.on{background:var(--red);color:#fff}
+  .community-tab{border:0;background:transparent;font-family:var(--f);font-size:14px;font-weight:500;color:var(--gray);padding:10px 18px 12px;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;margin-bottom:-1px}
+  .community-tab:hover{color:var(--ink)}
+  .community-tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--red)}
+  .member-card{border:1px solid var(--line);border-radius:3px;padding:16px;cursor:pointer;transition:box-shadow .15s,border-color .15s;display:flex;align-items:center;gap:14px}
+  .member-card:hover{border-color:var(--ink);box-shadow:var(--shadow-sm)}
+  .member-av{width:40px;height:40px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px;flex-shrink:0}
+  .msg-row{border-bottom:1px solid var(--line);padding:14px 0;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background .1s}
+  .msg-row:hover{background:var(--bg2)}
+  .chat-bubble{max-width:72%;padding:10px 14px;border-radius:12px;font-size:13.5px;line-height:1.5;margin-bottom:8px;word-break:break-word}
+  .chat-bubble.me{background:var(--ink);color:#fff;border-bottom-right-radius:3px;align-self:flex-end;margin-left:auto}
+  .chat-bubble.them{background:var(--bg2);color:var(--ink);border-bottom-left-radius:3px}
+  .chat-time{font-size:11px;color:var(--gray2);margin-bottom:4px;text-align:center}
+  #chatMessagesBox{display:flex;flex-direction:column;padding:16px;min-height:300px;max-height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:3px;margin-bottom:12px}
+  .vote-btn{background:none;border:1px solid var(--line);border-radius:2px;padding:4px 10px;font-family:var(--f);font-size:12px;cursor:pointer;color:var(--gray);transition:all .15s}
+  .vote-btn:hover,.vote-btn.voted{background:var(--ink);color:#fff;border-color:var(--ink)}
   label.fld{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray2);margin:20px 0 8px;font-weight:600}
   .toggle{display:inline-flex;align-items:center;gap:10px;font-size:14px;color:var(--ink);cursor:pointer}
   .toggle input{accent-color:var(--red);width:16px;height:16px}
@@ -438,7 +453,7 @@
         <button class="navi on" data-view="dashboard">Dashboard</button>
         <button class="navi" data-view="drill">Drill</button>
         <button class="navi" id="navCreator" data-view="creator" style="display:none">Creator</button>
-        <button class="navi" data-view="community">Community</button>
+        <button class="navi" data-view="community">Community<span id="dmBadge" style="display:none;background:var(--red);color:#fff;border-radius:50%;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;margin-left:5px;vertical-align:middle"></span></button>
       </nav>
       <div class="nav-right">
         <button class="btn red" id="newDrillBtn">New drill</button>
@@ -658,6 +673,17 @@
 
     <!-- COMMUNITY -->
     <section id="viewCommunity" style="display:none">
+
+      <!-- Community sub-nav -->
+      <div style="border-bottom:1px solid var(--line);margin-bottom:20px">
+        <div style="display:flex;gap:0">
+          <button class="community-tab on" data-ctab="feed">Feed</button>
+          <button class="community-tab" data-ctab="members">Members</button>
+          <button class="community-tab" data-ctab="messages">Messages <span id="msgTabBadge" style="display:none;background:var(--red);color:#fff;border-radius:50%;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;margin-left:4px;vertical-align:middle"></span></button>
+        </div>
+      </div>
+
+      <!-- FEED pane -->
       <div id="communityFeedPane">
         <div class="dash-head">
           <h1>Confused on a case? Ask the group.</h1>
@@ -683,6 +709,41 @@
         <button class="btn ghost" id="communityBackBtn" style="margin-bottom:16px">← Back to feed</button>
         <div id="communityDetailContent"></div>
       </div>
+
+      <!-- MEMBERS pane -->
+      <div id="communityMembersPane" style="display:none">
+        <div class="dash-head">
+          <h1>Community Members</h1>
+          <p>Everyone on Caseroom. Click a member to see their activity.</p>
+        </div>
+        <div id="communityMembersList">
+          <p style="color:var(--gray);text-align:center;padding:40px 20px">Loading members...</p>
+        </div>
+      </div>
+
+      <!-- Member profile sub-pane -->
+      <div id="communityMemberProfilePane" style="display:none">
+        <button class="btn ghost" id="memberProfileBackBtn" style="margin-bottom:16px">← Back to members</button>
+        <div id="communityMemberProfileContent"></div>
+      </div>
+
+      <!-- MESSAGES pane -->
+      <div id="communityMessagesPane" style="display:none">
+        <div id="communityConvListView">
+          <div class="dash-head">
+            <h1>Messages</h1>
+            <p>Direct conversations with other community members.</p>
+          </div>
+          <div id="communityConvList">
+            <p style="color:var(--gray);text-align:center;padding:40px 20px">Loading conversations...</p>
+          </div>
+        </div>
+        <div id="communityConvChatView" style="display:none">
+          <button class="btn ghost" id="convChatBackBtn" style="margin-bottom:16px">← Back to messages</button>
+          <div id="communityConvChatContent"></div>
+        </div>
+      </div>
+
     </section>
 
     <!-- Community: share a case modal -->
@@ -962,6 +1023,8 @@
     document.getElementById('navCreator').style.display = u?.role === 'creator' || u?.role === 'admin' ? '' : 'none';
     loadCaseBank();
     syncHistoryFromServer();
+    setTimeout(()=>{ if(typeof refreshDMBadge==='function') refreshDMBadge(); }, 800);
+    setInterval(()=>{ if(typeof refreshDMBadge==='function') refreshDMBadge(); }, 60000);
   }
 
   function showAuth() {
@@ -1622,7 +1685,7 @@ function showView(v){
   if(v==='dashboard'){ TTS.stop(); Mic.hide(); renderDashboard(); }
   if(v==='admin'){ TTS.stop(); Mic.hide(); loadAdminUsers(); loadAdminCases(); loadSolvedFrameworks(); loadCaseSubmissions(); }
   if(v==='creator'){ TTS.stop(); Mic.hide(); loadCreatorFrameworkCases(); loadCreatorSubmissions(); }
-  if(v==='community'){ TTS.stop(); Mic.hide(); showCommunityFeed(); }
+  if(v==='community'){ TTS.stop(); Mic.hide(); showCommunityTab(_activeCommunityTab||'feed'); refreshDMBadge(); }
 }
 function gotoStage(name){
   TTS.stop(); Mic.hide();
@@ -2254,12 +2317,26 @@ async function deleteSubmission(btn){
 
 /* ---------- Community ---------- */
 let _communityStatusFilter = '';
+let _activeCommunityTab = 'feed';
+
+function showCommunityTab(tab){
+  _activeCommunityTab = tab;
+  $$('.community-tab').forEach(b=>b.classList.toggle('on', b.dataset.ctab===tab));
+  el('communityFeedPane').style.display = 'none';
+  el('communityDetailPane').style.display = 'none';
+  el('communityMembersPane').style.display = 'none';
+  el('communityMemberProfilePane').style.display = 'none';
+  el('communityMessagesPane').style.display = 'none';
+  if(tab==='feed'){ el('communityFeedPane').style.display='block'; loadCommunityFeed(); }
+  if(tab==='members'){ el('communityMembersPane').style.display='block'; loadCommunityMembers(); }
+  if(tab==='messages'){ el('communityMessagesPane').style.display='block'; showConvListView(); }
+}
 
 async function showCommunityFeed(){
-  el('communityFeedPane').style.display = 'block';
-  el('communityDetailPane').style.display = 'none';
-  await loadCommunityFeed();
+  showCommunityTab('feed');
 }
+
+/* ── Feed ─────────────────────────────────────────── */
 
 async function loadCommunityFeed(){
   const list = el('communityFeedList');
@@ -2271,16 +2348,23 @@ async function loadCommunityFeed(){
     if(posts.length === 0){ list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">No posts yet. Be the first to share a case!</p>'; return; }
 
     list.innerHTML = posts.map(p=>`
-      <div style="border:1px solid var(--line);border-radius:2px;padding:14px;margin-bottom:10px;cursor:pointer" onclick="openCommunityPost(${p.id})">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
-          <div>
+      <div style="border:1px solid var(--line);border-radius:3px;padding:16px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div style="flex:1;cursor:pointer" onclick="openCommunityPost(${p.id})">
             <div style="font-weight:600">${esc(p.caseTitle)}</div>
-            <div style="font-size:13px;color:var(--gray);margin-top:2px">${esc(p.caseType||'')}${p.caseSource?' · '+esc(p.caseSource):''} · by ${esc(p.author)} · ${new Date(p.createdAt).toLocaleDateString()}</div>
+            <div style="font-size:13px;color:var(--gray);margin-top:2px">
+              ${esc(p.caseType||'')}${p.caseSource?' · '+esc(p.caseSource):''}
+              · by ${p.authorId?`<span style="color:var(--ink);font-weight:500;cursor:pointer" onclick="event.stopPropagation();openMemberProfile(${p.authorId})">${esc(p.author)}</span>`:esc(p.author)}
+              · ${new Date(p.createdAt).toLocaleDateString()}
+            </div>
           </div>
           <div style="font-size:12px;padding:3px 8px;border-radius:2px;white-space:nowrap;${p.status==='resolved'?'background:var(--bg2);color:var(--good)':'background:var(--line)'}">${p.status}</div>
         </div>
-        ${p.note?`<p style="margin-top:10px;font-size:13.5px">${esc(p.note)}</p>`:''}
-        <div style="margin-top:10px;font-size:13px;color:var(--gray)">${p.commentCount} comment${p.commentCount===1?'':'s'}</div>
+        ${p.note?`<p style="margin-top:10px;font-size:13.5px;cursor:pointer" onclick="openCommunityPost(${p.id})">${esc(p.note)}</p>`:''}
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+          <button class="vote-btn${p.viewerVoted?' voted':''}" onclick="votePost(${p.id},this)">▲ ${p.voteCount}</button>
+          <span style="font-size:13px;color:var(--gray);cursor:pointer" onclick="openCommunityPost(${p.id})">💬 ${p.commentCount} comment${p.commentCount===1?'':'s'}</span>
+        </div>
       </div>
     `).join('');
   }catch(err){ list.innerHTML = '<p style="color:var(--gray)">Could not load community posts</p>'; console.error(err); }
@@ -2302,15 +2386,22 @@ async function openCommunityPost(id){
 function renderCommunityDetail(post){
   const content = el('communityDetailContent');
   const c = post.case || {};
+  const authorLink = post.authorId
+    ? `<span style="color:var(--ink);font-weight:500;cursor:pointer;text-decoration:underline" onclick="openMemberProfile(${post.authorId})">${esc(post.author)}</span>`
+    : esc(post.author);
   content.innerHTML = `
     <div class="card flat">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
         <h3>${esc(c.title||post.caseTitle||'Case')}</h3>
         <div style="font-size:12px;padding:3px 8px;border-radius:2px;white-space:nowrap;${post.status==='resolved'?'background:var(--bg2);color:var(--good)':'background:var(--line)'}">${post.status}</div>
       </div>
-      <div style="font-size:13px;color:var(--gray);margin-top:4px">${esc(c.type||'')}${c.source?' · '+esc(c.source):''} · shared by ${esc(post.author)}</div>
+      <div style="font-size:13px;color:var(--gray);margin-top:4px">${esc(c.type||'')}${c.source?' · '+esc(c.source):''} · shared by ${authorLink}</div>
       ${c.prompt?`<p style="margin-top:14px;white-space:pre-wrap">${esc(c.prompt)}</p>`:''}
       ${post.note?`<div style="margin-top:14px;padding:12px;background:var(--bg2);border-radius:2px"><div style="font-size:12px;color:var(--gray);margin-bottom:4px">What they're confused about</div>${esc(post.note)}</div>`:''}
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+        <button class="vote-btn${post.viewerVoted?' voted':''}" id="postVoteBtn" onclick="votePost(${post.id},this)">▲ ${post.voteCount} upvote${post.voteCount===1?'':'s'}</button>
+        ${post.authorId && !post.isOwner?`<button class="btn ghost" onclick="startDMWithUser(${post.authorId})">Message ${esc(post.author)}</button>`:''}
+      </div>
       ${post.isOwner?`<div class="btnbar" style="margin-top:14px">
         <button class="btn ghost" onclick="setCommunityPostStatus(${post.id}, '${post.status==='resolved'?'open':'resolved'}')">Mark as ${post.status==='resolved'?'open':'resolved'}</button>
         <button class="btn ghost" onclick="deleteCommunityPost(${post.id})">Delete post</button>
@@ -2320,31 +2411,45 @@ function renderCommunityDetail(post){
     <div class="card flat" style="margin-top:16px">
       <h3>Comments (${post.comments.length})</h3>
       <div style="margin-top:12px">
-        ${post.comments.length===0?'<p style="color:var(--gray)">No comments yet. Be the first to help out.</p>':post.comments.map(cm=>`
-          <div style="border:1px solid var(--line);border-radius:2px;padding:12px;margin-bottom:10px;${cm.isAccepted?'border-color:var(--good)':''}">
+        ${post.comments.length===0?'<p style="color:var(--gray)">No comments yet. Be the first to help out.</p>':post.comments.map(cm=>{
+          const cmAuthorLink = cm.authorId
+            ? `<span style="cursor:pointer;text-decoration:underline" onclick="openMemberProfile(${cm.authorId})">${esc(cm.author)}</span>`
+            : esc(cm.author);
+          return `
+          <div style="border:1px solid ${cm.isAccepted?'var(--good)':'var(--line)'};border-radius:3px;padding:12px;margin-bottom:10px">
             <div style="display:flex;justify-content:space-between;align-items:baseline">
-              <div style="font-size:13px;font-weight:600">${esc(cm.author)}${cm.isAccepted?' · <span style="color:var(--good)">Accepted answer</span>':''}</div>
+              <div style="font-size:13px;font-weight:600">${cmAuthorLink}${cm.isAccepted?' · <span style="color:var(--good)">✓ Accepted answer</span>':''}</div>
               <div style="font-size:12px;color:var(--gray)">${new Date(cm.createdAt).toLocaleDateString()}</div>
             </div>
             <p style="margin-top:8px;font-size:13.5px;white-space:pre-wrap">${esc(cm.body)}</p>
             <div class="btnbar" style="margin-top:8px">
-              <button class="btn ghost" onclick="voteComment(${cm.id})">${cm.viewerVoted?'★':'☆'} Helpful (${cm.voteCount})</button>
+              <button class="vote-btn${cm.viewerVoted?' voted':''}" onclick="voteComment(${cm.id},this)">▲ Helpful (${cm.voteCount})</button>
               ${post.isOwner && !cm.isAccepted?`<button class="btn ghost" onclick="acceptComment(${cm.id})">Mark as answer</button>`:''}
+              ${cm.authorId && !cm.isOwner?`<button class="btn ghost" onclick="startDMWithUser(${cm.authorId})">Message</button>`:''}
             </div>
-          </div>
-        `).join('')}
+          </div>`;
+        }).join('')}
       </div>
 
       <label class="fld" style="margin-top:14px">Add a comment</label>
       <textarea id="communityCommentBody" placeholder="Share how you'd approach this…" style="width:100%;min-height:80px;padding:12px;border:1px solid var(--line);border-radius:2px;font-family:var(--f);font-size:13px;resize:vertical"></textarea>
       <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:var(--gray)">
-        <input type="checkbox" id="communityCommentAnon"> Post anonymously
+        <input type="checkbox" id="communityCommentAnon"> Post anonymously (won't show on your profile)
       </label>
       <div class="btnbar" style="margin-top:10px">
         <button class="btn primary" onclick="submitCommunityComment(${post.id})">Post comment</button>
       </div>
     </div>
   `;
+}
+
+async function votePost(postId, btn){
+  try{
+    const res = await apiPost('/api/community/posts/'+postId+'/vote', {});
+    if(res.error){ toast(res.error); return; }
+    btn.textContent = '▲ '+res.voteCount+(el('postVoteBtn')===btn?' upvote'+(res.voteCount===1?'':'s'):'');
+    btn.classList.toggle('voted', res.viewerVoted);
+  }catch(err){ toast('Could not register vote'); }
 }
 
 async function submitCommunityComment(postId){
@@ -2358,12 +2463,12 @@ async function submitCommunityComment(postId){
   }catch(err){ toast('Could not post comment'); console.error(err); }
 }
 
-async function voteComment(commentId){
+async function voteComment(commentId, btn){
   try{
     const res = await apiPost('/api/community/comments/'+commentId+'/vote', {});
     if(res.error){ toast(res.error); return; }
-    const btn = event.target;
-    btn.textContent = (res.viewerVoted?'★':'☆')+' Helpful ('+res.voteCount+')';
+    btn.textContent = '▲ Helpful ('+res.voteCount+')';
+    btn.classList.toggle('voted', res.viewerVoted);
   }catch(err){ toast('Could not register vote'); console.error(err); }
 }
 
@@ -2389,7 +2494,7 @@ async function deleteCommunityPost(postId){
   const ok = await apiDelete('/api/community/posts/'+postId);
   if(!ok){ toast('Could not delete post'); return; }
   toast('Post deleted');
-  showCommunityFeed();
+  showCommunityTab('feed');
 }
 
 async function loadShareCaseOptions(){
@@ -2415,6 +2520,202 @@ async function submitSharedCase(){
     toast('Shared with the community');
     loadCommunityFeed();
   }catch(err){ toast('Could not share case'); console.error(err); }
+}
+
+/* ── Members ─────────────────────────────────────── */
+
+async function loadCommunityMembers(){
+  const list = el('communityMembersList');
+  list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">Loading...</p>';
+  try{
+    const members = await apiGet('/api/community/members');
+    if(!Array.isArray(members)){ list.innerHTML = '<p style="color:var(--gray)">Could not load members</p>'; return; }
+    list.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:4px">
+      ${members.map(m=>`
+        <div class="member-card" onclick="openMemberProfile(${m.id})">
+          <div class="member-av">${esc((m.name||'M').slice(0,1).toUpperCase())}</div>
+          <div>
+            <div style="font-weight:600">${esc(m.name)}</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:2px">${m.postCount} post${m.postCount===1?'':'s'} · ${m.commentCount} comment${m.commentCount===1?'':'s'}${m.acceptedCount>0?' · '+m.acceptedCount+' accepted':''}</div>
+            <div style="font-size:11px;color:var(--gray2);margin-top:2px">Joined ${new Date(m.joinedAt).toLocaleDateString('en',{month:'short',year:'numeric'})}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }catch(err){ list.innerHTML = '<p style="color:var(--gray)">Could not load members</p>'; console.error(err); }
+}
+
+async function openMemberProfile(userId){
+  el('communityMembersPane').style.display = 'none';
+  el('communityFeedPane').style.display = 'none';
+  el('communityDetailPane').style.display = 'none';
+  el('communityMemberProfilePane').style.display = 'block';
+  const content = el('communityMemberProfileContent');
+  content.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">Loading profile...</p>';
+  try{
+    const profile = await apiGet('/api/community/members/'+userId);
+    if(profile.error){ content.innerHTML = '<p style="color:var(--gray)">'+esc(profile.error)+'</p>'; return; }
+    renderMemberProfile(profile);
+  }catch(err){ content.innerHTML = '<p style="color:var(--gray)">Could not load profile</p>'; console.error(err); }
+}
+
+function renderMemberProfile(profile){
+  const content = el('communityMemberProfileContent');
+  const isMe = profile.isMe;
+  content.innerHTML = `
+    <div class="card flat" style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+      <div class="member-av" style="width:56px;height:56px;font-size:22px">${esc((profile.name||'M').slice(0,1).toUpperCase())}</div>
+      <div style="flex:1">
+        <h2 style="font-size:20px">${esc(profile.name)}</h2>
+        <div style="font-size:13px;color:var(--gray);margin-top:4px">
+          Joined ${new Date(profile.joinedAt).toLocaleDateString('en',{month:'long',year:'numeric'})}
+          · ${profile.posts.length} public post${profile.posts.length===1?'':'s'}
+          · ${profile.comments.length} public comment${profile.comments.length===1?'':'s'}
+        </div>
+      </div>
+      ${!isMe?`<button class="btn primary" onclick="startDMWithUser(${profile.id})">Message</button>`:''}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-weight:600;margin-bottom:10px">Posts</div>
+        ${profile.posts.length===0?'<p style="color:var(--gray);font-size:13px">No public posts yet.</p>':profile.posts.map(p=>`
+          <div style="border:1px solid var(--line);border-radius:3px;padding:12px;margin-bottom:8px;cursor:pointer" onclick="openCommunityPost(${p.id})">
+            <div style="font-weight:600;font-size:13.5px">${esc(p.caseTitle)}</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:3px">${esc(p.caseType||'')}${p.caseSource?' · '+esc(p.caseSource):''}</div>
+            ${p.note?`<p style="font-size:13px;color:var(--gray);margin-top:6px">${esc(p.note.slice(0,80))}${p.note.length>80?'…':''}</p>`:''}
+            <div style="font-size:12px;color:var(--gray2);margin-top:6px">▲ ${p.voteCount} · 💬 ${p.commentCount} · ${new Date(p.createdAt).toLocaleDateString()}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:10px">Recent comments</div>
+        ${profile.comments.length===0?'<p style="color:var(--gray);font-size:13px">No public comments yet.</p>':profile.comments.map(c=>`
+          <div style="border:1px solid ${c.isAccepted?'var(--good)':'var(--line)'};border-radius:3px;padding:12px;margin-bottom:8px;cursor:pointer" onclick="openCommunityPost(${c.postId})">
+            <div style="font-size:12px;color:var(--gray);margin-bottom:4px">on "${esc(c.caseTitle)}"${c.isAccepted?' · <span style="color:var(--good)">✓ Accepted</span>':''}</div>
+            <p style="font-size:13px">${esc(c.body.slice(0,100))}${c.body.length>100?'…':''}</p>
+            <div style="font-size:12px;color:var(--gray2);margin-top:6px">▲ ${c.voteCount} · ${new Date(c.createdAt).toLocaleDateString()}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ── Direct Messages ─────────────────────────────── */
+
+async function startDMWithUser(userId){
+  try{
+    const res = await apiPost('/api/community/conversations', { userId });
+    if(res.error){ toast(res.error); return; }
+    showCommunityTab('messages');
+    openConversation(res.id);
+  }catch(err){ toast('Could not open conversation'); console.error(err); }
+}
+
+async function showConvListView(){
+  el('communityConvListView').style.display = 'block';
+  el('communityConvChatView').style.display = 'none';
+  const list = el('communityConvList');
+  list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">Loading...</p>';
+  try{
+    const convs = await apiGet('/api/community/conversations');
+    if(!Array.isArray(convs)){ list.innerHTML = '<p style="color:var(--gray)">Could not load conversations</p>'; return; }
+    if(convs.length===0){
+      list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">No messages yet. Find someone in <a href="#" onclick="showCommunityTab(\'members\')">Members</a> and send them a message.</p>';
+      return;
+    }
+    list.innerHTML = convs.map(cv=>`
+      <div class="msg-row" onclick="openConversation(${cv.id})">
+        <div class="member-av" style="width:38px;height:38px;font-size:14px;flex-shrink:0">${esc((cv.otherName||'M').slice(0,1).toUpperCase())}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div style="font-weight:600">${esc(cv.otherName)}</div>
+            <div style="font-size:12px;color:var(--gray2)">${cv.lastMessageAt?new Date(cv.lastMessageAt).toLocaleDateString():''}</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">${cv.lastMessage?esc(cv.lastMessage.slice(0,60))+(cv.lastMessage.length>60?'…':''):'No messages yet'}</div>
+        </div>
+        ${cv.unreadCount>0?`<div style="background:var(--red);color:#fff;border-radius:50%;font-size:11px;font-weight:700;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 4px">${cv.unreadCount}</div>`:''}
+      </div>
+    `).join('');
+  }catch(err){ list.innerHTML = '<p style="color:var(--gray)">Could not load conversations</p>'; console.error(err); }
+}
+
+let _activeConvId = null;
+let _chatPollTimer = null;
+
+async function openConversation(convId){
+  _activeConvId = convId;
+  el('communityConvListView').style.display = 'none';
+  el('communityConvChatView').style.display = 'block';
+  await loadConversationMessages(convId);
+  refreshDMBadge();
+}
+
+async function loadConversationMessages(convId){
+  const chatContent = el('communityConvChatContent');
+  try{
+    const data = await apiGet('/api/community/conversations/'+convId+'/messages');
+    if(data.error){ chatContent.innerHTML = '<p style="color:var(--gray)">'+esc(data.error)+'</p>'; return; }
+    renderChat(data);
+  }catch(err){ chatContent.innerHTML = '<p style="color:var(--gray)">Could not load messages</p>'; console.error(err); }
+}
+
+function renderChat(data){
+  const chatContent = el('communityConvChatContent');
+  chatContent.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div class="member-av" style="width:36px;height:36px;font-size:13px">${esc((data.otherName||'M').slice(0,1).toUpperCase())}</div>
+      <div>
+        <div style="font-weight:600">${esc(data.otherName)}</div>
+        <div style="font-size:12px;color:var(--gray);cursor:pointer" onclick="openMemberProfile(${data.otherUserId})">View profile</div>
+      </div>
+    </div>
+    <div id="chatMessagesBox">
+      ${data.messages.length===0?'<p style="color:var(--gray);text-align:center;margin:auto">Start the conversation!</p>':renderChatMessages(data.messages)}
+    </div>
+    <div style="display:flex;gap:8px">
+      <textarea id="chatMsgInput" placeholder="Write a message…" rows="2" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:2px;font-family:var(--f);font-size:13px;resize:none" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage(${data.conversationId})}"></textarea>
+      <button class="btn primary" onclick="sendChatMessage(${data.conversationId})" style="align-self:flex-end">Send</button>
+    </div>
+    <div style="font-size:12px;color:var(--gray2);margin-top:6px">Press Enter to send · Shift+Enter for new line</div>
+  `;
+  const box = el('chatMessagesBox');
+  if(box) box.scrollTop = box.scrollHeight;
+}
+
+function renderChatMessages(messages){
+  let html = '';
+  let lastDate = '';
+  messages.forEach(m=>{
+    const d = new Date(m.createdAt).toLocaleDateString();
+    if(d!==lastDate){ html+=`<div class="chat-time">${d}</div>`; lastDate=d; }
+    html+=`<div class="chat-bubble ${m.isMe?'me':'them'}">${esc(m.body)}</div>`;
+  });
+  return html;
+}
+
+async function sendChatMessage(convId){
+  const input = el('chatMsgInput');
+  const body = input.value.trim();
+  if(!body) return;
+  input.value = '';
+  try{
+    const res = await apiPost('/api/community/conversations/'+convId+'/messages', { body });
+    if(res.error){ toast(res.error); return; }
+    await loadConversationMessages(convId);
+  }catch(err){ toast('Could not send message'); console.error(err); }
+}
+
+async function refreshDMBadge(){
+  try{
+    const res = await apiGet('/api/community/conversations/unread-count');
+    const count = res.count || 0;
+    el('dmBadge').style.display = count>0 ? 'inline-block' : 'none';
+    el('dmBadge').textContent = count>9 ? '9+' : count;
+    el('msgTabBadge').style.display = count>0 ? 'inline-block' : 'none';
+    el('msgTabBadge').textContent = count>9 ? '9+' : count;
+  }catch(e){}
 }
 
 async function loadSolvedFrameworks(){
@@ -2556,17 +2857,32 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   el('submitCaseBtn').onclick=submitCase;
   el('acctCreator').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('creator'); };
 
-  // community
+  // community tabs
+  $$('.community-tab').forEach(b=>b.onclick=()=>showCommunityTab(b.dataset.ctab));
+
+  // community feed
   el('shareCaseBtn').onclick=()=>{ loadShareCaseOptions(); el('shareCaseModal').classList.add('show'); };
   el('shareCaseCancel').onclick=()=>el('shareCaseModal').classList.remove('show');
   el('shareCaseSave').onclick=submitSharedCase;
   el('shareCaseModal').onclick=(e)=>{ if(e.target===el('shareCaseModal')) el('shareCaseModal').classList.remove('show'); };
-  el('communityBackBtn').onclick=showCommunityFeed;
+  el('communityBackBtn').onclick=()=>showCommunityTab('feed');
   $$('#communityStatusFilter button').forEach(b=>b.onclick=()=>{
     $$('#communityStatusFilter button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
     _communityStatusFilter = b.dataset.status;
     loadCommunityFeed();
   });
+
+  // community members back
+  el('memberProfileBackBtn').onclick=()=>{
+    el('communityMemberProfilePane').style.display='none';
+    el('communityMembersPane').style.display='block';
+  };
+
+  // community messages back
+  el('convChatBackBtn').onclick=()=>{
+    _activeConvId=null;
+    showConvListView();
+  };
 
   // Account circle dropdown
   el('profileAv').onclick=(e)=>{ e.stopPropagation(); el('acctMenu').classList.toggle('open'); };
