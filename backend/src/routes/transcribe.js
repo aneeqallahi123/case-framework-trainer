@@ -90,7 +90,15 @@ function quoteIsGrounded(quote, transcript) {
   return matched / qWords.length >= 0.8;
 }
 
-async function generateJson(model, prompt) {
+// Returns true for Gemini errors that warrant a fallback to Groq
+// (unavailable, overloaded, deprecated model) vs errors that won't
+// be fixed by switching providers (bad key, network, parse failure).
+function isGeminiFallbackError(err) {
+  const status = err?.status;
+  return status === 503 || status === 429 || status === 404 || status === 500;
+}
+
+async function generateJsonGemini(model, prompt) {
   const result = await model.generateContent(prompt);
   const finishReason = result.response.candidates?.[0]?.finishReason;
   if (finishReason && finishReason !== 'STOP') {
@@ -100,6 +108,37 @@ async function generateJson(model, prompt) {
   let cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
   cleaned = extractFirstJsonObject(cleaned) || cleaned;
   return { raw, parsed: JSON.parse(cleaned) };
+}
+
+async function generateJsonGroq(prompt) {
+  const Groq = require('groq-sdk');
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  const completion = await groq.chat.completions.create({
+    model: process.env.GROQ_MODEL || 'compound-beta',
+    messages: [{ role: 'user', content: prompt }],
+    response_format: { type: 'json_object' },
+    max_tokens: 8000
+  });
+  const raw = completion.choices[0]?.message?.content?.trim() || '';
+  let cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+  cleaned = extractFirstJsonObject(cleaned) || cleaned;
+  return { raw, parsed: JSON.parse(cleaned) };
+}
+
+async function generateJson(model, prompt) {
+  if (!model) {
+    // No Gemini model configured — go straight to Groq
+    return await generateJsonGroq(prompt);
+  }
+  try {
+    return await generateJsonGemini(model, prompt);
+  } catch (err) {
+    if (isGeminiFallbackError(err) && process.env.GROQ_API_KEY) {
+      console.warn('Gemini unavailable (status ' + err.status + '), falling back to Groq');
+      return await generateJsonGroq(prompt);
+    }
+    throw err;
+  }
 }
 
 // STAGE 1 — extraction. Pulls a flat list of atomic points out of the transcript,
@@ -248,16 +287,18 @@ router.post('/structure', requireAuth, async (req, res) => {
   }
 
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      console.error('Structure route: GEMINI_API_KEY is not set');
-      return res.status(500).json({ error: 'AI structuring unavailable — API key not configured' });
+    if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
+      console.error('Structure route: neither GEMINI_API_KEY nor GROQ_API_KEY is set');
+      return res.status(500).json({ error: 'AI structuring unavailable — no AI API key configured' });
     }
     const { GoogleGenerativeAI } = require('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
+    const genAI = process.env.GEMINI_API_KEY
+      ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+      : null;
+    const model = genAI ? genAI.getGenerativeModel({
       model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
       generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 }
-    });
+    }) : null;
 
     const example = getExampleForType(caseType);
 
