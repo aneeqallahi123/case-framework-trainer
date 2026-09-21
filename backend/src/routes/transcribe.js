@@ -127,18 +127,29 @@ async function generateJsonGroq(prompt) {
 
 async function generateJson(model, prompt) {
   if (!model) {
-    // No Gemini model configured — go straight to Groq
     return await generateJsonGroq(prompt);
   }
-  try {
-    return await generateJsonGemini(model, prompt);
-  } catch (err) {
-    if (isGeminiFallbackError(err) && process.env.GROQ_API_KEY) {
-      console.warn('Gemini unavailable (status ' + err.status + '), falling back to Groq');
-      return await generateJsonGroq(prompt);
+  const delays = [2000, 5000, 10000]; // retry after 2s, 5s, 10s
+  let lastErr;
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      return await generateJsonGemini(model, prompt);
+    } catch (err) {
+      lastErr = err;
+      if (isGeminiFallbackError(err) && attempt < delays.length) {
+        console.warn(`Gemini unavailable (status ${err.status}), retrying in ${delays[attempt] / 1000}s… (attempt ${attempt + 1}/${delays.length})`);
+        await new Promise(r => setTimeout(r, delays[attempt]));
+      } else {
+        break;
+      }
     }
-    throw err;
   }
+  // All Gemini retries exhausted — try Groq if available
+  if (isGeminiFallbackError(lastErr) && process.env.GROQ_API_KEY) {
+    console.warn('Gemini retries exhausted, falling back to Groq');
+    return await generateJsonGroq(prompt);
+  }
+  throw lastErr;
 }
 
 // STAGE 1 — extraction. Pulls a flat list of atomic points out of the transcript,
