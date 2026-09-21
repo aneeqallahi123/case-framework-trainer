@@ -91,7 +91,7 @@ function quoteIsGrounded(quote, transcript) {
 }
 
 async function generateJson(prompt) {
-  const model = process.env.MISTRAL_MODEL || 'leanstral-1.5';
+  const model = process.env.MISTRAL_MODEL || 'mistral-small-latest';
   const fallback = 'mistral-small-latest';
   const key = process.env.MISTRAL_API_KEY;
   if (!key) throw new Error('MISTRAL_API_KEY is not set');
