@@ -120,7 +120,15 @@ Transcript:
 
 ## Your job
 
-Break this transcript down into a flat list of atomic points — each point is one distinct idea the candidate expressed (e.g. "look at customer segmentation", "revenue went from 10k to 12k units", "check fixed vs variable costs"). Do not organize or group them yet — just extract, one item per distinct idea. Merge only exact restatements of the same idea into one point (if they said it twice in different words, that's still one point).
+Extract the **terminal analytical areas** the candidate named — the actual leaf-level things they said they would examine. These are the specific, concrete areas of analysis (e.g. "price sensitivity", "labor costs", "average items per transaction").
+
+## What NOT to extract
+- Structural announcements that introduce a container the candidate immediately breaks down further. For example, if they say "within revenue I'll look at price and volume — within price I'll look at price sensitivity and average price per category", then "revenue" and "price" are containers, NOT extraction points. Extract only "price sensitivity" and "average price per category".
+- Meta-commentary like "I'll be thinking about X and Y" is NOT a point when X and Y are themselves broken down into sub-areas.
+- Do not extract a parent bucket as a separate point if the candidate explicitly lists its sub-components.
+
+## What TO extract
+Only the terminal leaves — the most specific analytical areas the candidate mentioned that are NOT further broken down by the candidate themselves.
 
 For EACH point, give:
 - "text": a short, clean paraphrase of the idea (a business phrase, 2-8 words)
@@ -131,6 +139,7 @@ For EACH point, give:
 - Every point must be traceable to words the candidate actually said. Do not add points for ideas that weren't spoken, even standard/expected ones.
 - "quote" must be copied verbatim from the transcript — not reworded, not summarized. This is what makes the point verifiable.
 - If the candidate only said 2 things, return 2 points. Do not pad the list.
+- A MECE tree has containers (Revenue, Costs) that are NOT leaf points — only the terminal items under them are leaf points.
 
 Return ONLY JSON, no markdown fences:
 { "points": [ { "id": "p1", "text": "...", "quote": "...", "metric": null } ] }`;
@@ -168,18 +177,24 @@ async function structurePoints({ transcript, caseType, caseTitle, points, exampl
 Case: "${caseTitle || 'Unknown case'}"
 Case type: ${caseType || 'general'}
 
-A candidate delivered a framework verbally. It has already been broken into these validated atomic points (extracted from their actual words — you may NOT add, remove, reword the meaning of, or split/merge these further):
+A candidate delivered a framework verbally. It has already been broken into these validated atomic LEAF points (the most terminal analysis areas the candidate mentioned — extracted from their actual words):
 
 ${pointsList}
 
 ## Your job
 
-Organize these points into a hierarchical MECE issue tree — a root question that branches into top-level issues, which may branch further into sub-issues, exactly like a consultant would draw it on paper. Use the order and any nesting cues in how the points were listed/grouped to infer structure (e.g. points about the same theme belong under the same branch).
+Organize ONLY these points into a hierarchical MECE issue tree. In a proper MECE issue tree:
+- The ROOT is the central question being analyzed
+- INTERMEDIATE nodes are grouping containers (e.g. "Revenue", "Costs", "Variable Costs") — they have NO pointId
+- LEAF nodes are the terminal analysis areas — each must reference exactly one pointId from the list above
 
-- Every point above MUST appear as exactly one leaf node in the tree, referencing its "pointId". Do not drop any point and do not invent new leaves.
-- You MAY create intermediate grouping nodes (branches with no pointId) to organize points under a shared theme — e.g. if points p2 and p3 are both about revenue, you can create a "Revenue" branch containing them. Grouping labels should be short, punchy business phrases (2-6 words).
-- A leaf node's "label" should be the point's own "text" field, verbatim from the list above — do not reword it further.
-- Do not add any node that isn't either a leaf from the list above or a grouping node for organizing them.
+Rules:
+- Every point above MUST appear as exactly one leaf node in the tree. Do not drop any.
+- Do NOT invent new leaf nodes. The only new nodes you may add are intermediate grouping containers.
+- Grouping labels should be short business phrases (2-5 words) that name the category, NOT describe an action (use "Variable Costs" not "Analyze variable costs").
+- A leaf node's "label" must match the point's "text" field verbatim — do not reword.
+- Infer the grouping structure from how the candidate presented the points (the sequence and logical relationships in the transcript).
+- Only as many top-level branches as naturally emerge from the points — do not pad.
 
 ## Reference example (STYLE ONLY — how deep nesting typically goes, how grouping nodes work. Do NOT borrow its actual branch names or content)
 
