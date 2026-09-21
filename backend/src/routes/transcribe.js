@@ -92,7 +92,11 @@ function quoteIsGrounded(quote, transcript) {
 
 async function generateJson(prompt) {
   const Anthropic = require('@anthropic-ai/sdk');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const clientOpts = { apiKey: process.env.ANTHROPIC_API_KEY };
+  if (process.env.ANTHROPIC_WORKSPACE_ID) {
+    clientOpts.defaultHeaders = { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID };
+  }
+  const client = new Anthropic(clientOpts);
   const response = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
     max_tokens: 8000,
