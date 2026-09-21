@@ -310,6 +310,27 @@
   .toggle{display:inline-flex;align-items:center;gap:10px;font-size:14px;color:var(--ink);cursor:pointer}
   .toggle input{accent-color:var(--red);width:16px;height:16px}
 
+  /* ---- custom searchable case picker ---- */
+  .case-picker{position:relative;width:100%}
+  .case-picker-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1px solid var(--line);border-radius:2px;background:#fff;cursor:pointer;font-family:var(--f);font-size:14px;color:var(--ink);transition:border-color .15s,box-shadow .15s;text-align:left;gap:10px}
+  .case-picker-trigger:hover{border-color:#bbb}
+  .case-picker-trigger.open{border-color:var(--red);box-shadow:0 0 0 3px rgba(204,0,0,.1)}
+  .case-picker-trigger .cpt-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+  .case-picker-trigger .cpt-label.placeholder{color:var(--gray2)}
+  .case-picker-trigger .cpt-arrow{flex:0 0 16px;color:var(--gray2);transition:transform .18s var(--ease);font-size:11px}
+  .case-picker-trigger.open .cpt-arrow{transform:rotate(180deg)}
+  .case-picker-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:3px;box-shadow:var(--shadow-lg);z-index:120;display:none;flex-direction:column;overflow:hidden;max-height:320px}
+  .case-picker-dropdown.open{display:flex;animation:menuIn .15s var(--ease)}
+  .case-picker-search{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;flex:0 0 auto}
+  .case-picker-search input{flex:1;border:0;outline:none;font-family:var(--f);font-size:14px;color:var(--ink);background:transparent}
+  .case-picker-search input::placeholder{color:var(--gray2)}
+  .case-picker-search .cps-icon{color:var(--gray2);font-size:14px;flex:0 0 auto}
+  .case-picker-list{overflow-y:auto;flex:1}
+  .case-picker-opt{padding:10px 14px;font-size:14px;cursor:pointer;color:var(--ink);transition:background .1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .case-picker-opt:hover,.case-picker-opt.focused{background:var(--bg2)}
+  .case-picker-opt.selected{font-weight:600;color:var(--red)}
+  .case-picker-empty{padding:14px;font-size:13px;color:var(--gray2);text-align:center}
+
   #viewDashboard.enter>*{opacity:0;animation:rise .45s var(--ease) forwards}
   #viewDashboard.enter>*:nth-child(2){animation-delay:.07s}
   #viewDashboard.enter>*:nth-child(3){animation-delay:.14s}
@@ -616,9 +637,20 @@
           <p style="color:var(--gray);margin-top:6px">Choose a case and provide the framework you solved.</p>
 
           <label class="fld" style="margin-top:20px">Select case</label>
-          <select id="creatorFrameworkCaseId" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:2px;font-family:var(--f)">
-            <option value="">— Choose a case —</option>
-          </select>
+          <div class="case-picker" id="pickerCreatorFramework">
+            <button type="button" class="case-picker-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="cpt-label placeholder">— Choose a case —</span>
+              <span class="cpt-arrow">▼</span>
+            </button>
+            <div class="case-picker-dropdown" role="listbox">
+              <div class="case-picker-search">
+                <span class="cps-icon">🔍</span>
+                <input type="text" placeholder="Search cases…" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="case-picker-list"></div>
+            </div>
+          </div>
+          <input type="hidden" id="creatorFrameworkCaseId" value="">
 
           <label class="fld" style="margin-top:14px">Framework</label>
           <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">Paste your framework structure (JSON or text format)</p>
@@ -752,9 +784,20 @@
       <div class="box">
         <h3>Share a case you're confused on</h3>
         <label class="fld">Select case</label>
-        <select id="shareCaseId" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:2px;font-family:var(--f)">
-          <option value="">— Choose a case —</option>
-        </select>
+        <div class="case-picker" id="pickerShareCase">
+          <button type="button" class="case-picker-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="cpt-label placeholder">— Choose a case —</span>
+            <span class="cpt-arrow">▼</span>
+          </button>
+          <div class="case-picker-dropdown" role="listbox">
+            <div class="case-picker-search">
+              <span class="cps-icon">🔍</span>
+              <input type="text" placeholder="Search cases…" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="case-picker-list"></div>
+          </div>
+        </div>
+        <input type="hidden" id="shareCaseId" value="">
         <label class="fld" style="margin-top:14px">What's confusing you?</label>
         <textarea id="shareCaseNote" placeholder="e.g. I can't figure out how to structure the profitability tree here…" style="width:100%;min-height:100px;padding:12px;border:1px solid var(--line);border-radius:2px;font-family:var(--f);font-size:13px;resize:vertical"></textarea>
         <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--gray)">
@@ -2197,9 +2240,8 @@ Focus feedback on what's working and what to address next, providing actionable 
 async function loadCreatorFrameworkCases(){
   try{
     const cases = await apiGet('/api/cases');
-    if(cases.error){ el('creatorFrameworkCaseId').innerHTML = '<option>Error loading cases</option>'; return; }
-    const select = el('creatorFrameworkCaseId');
-    select.innerHTML = '<option value="">— Choose a case —</option>' + cases.map(c=>`<option value="${esc(c.id)}">${esc(c.title)}</option>`).join('');
+    if(cases.error){ return; }
+    if(_pickerCreatorFramework) _pickerCreatorFramework.setCases(cases);
   }catch(err){ console.error(err); }
 }
 
@@ -2230,7 +2272,7 @@ async function submitFramework(){
     status.textContent = 'Framework submitted!';
     status.style.color = 'var(--good)';
     el('creatorFrameworkText').value = '';
-    el('creatorFrameworkCaseId').value = '';
+    if(_pickerCreatorFramework) _pickerCreatorFramework.reset();
     setTimeout(()=>{ status.textContent = ''; }, 2500);
   }catch(err){
     status.textContent = 'Error submitting framework';
@@ -2325,6 +2367,64 @@ async function deleteSubmission(btn){
 }
 
 /* ---------- Community ---------- */
+/* ---------- CasePicker: searchable dropdown ---------- */
+function makeCasePicker(wrapperId, hiddenInputId, placeholder) {
+  const wrap = el(wrapperId);
+  const hidden = el(hiddenInputId);
+  const trigger = wrap.querySelector('.case-picker-trigger');
+  const dropdown = wrap.querySelector('.case-picker-dropdown');
+  const searchInput = wrap.querySelector('.case-picker-search input');
+  const list = wrap.querySelector('.case-picker-list');
+  const label = wrap.querySelector('.cpt-label');
+
+  let _cases = [], _selectedId = '', _open = false;
+
+  function render(q) {
+    const f = q ? _cases.filter(c => (c.title||'').toLowerCase().includes(q.toLowerCase()) || (c.type||'').toLowerCase().includes(q.toLowerCase())) : _cases;
+    if (!f.length) { list.innerHTML = '<div class="case-picker-empty">'+(q ? 'No cases match "'+esc(q)+'"' : 'No cases loaded yet')+'</div>'; return; }
+    list.innerHTML = f.map(c => '<div class="case-picker-opt'+(c.id===_selectedId?' selected':'')+'" data-id="'+esc(c.id)+'" data-title="'+esc(c.title)+'" tabindex="-1">'+esc(c.title)+(c.type?'<span style="font-size:12px;color:var(--gray2);margin-left:8px">'+esc(c.type.replace(/_/g,' '))+'</span>':'')+'</div>').join('');
+    list.querySelectorAll('.case-picker-opt').forEach(opt => opt.onclick = () => select(opt.dataset.id, opt.dataset.title));
+  }
+
+  function select(id, title) {
+    _selectedId = id;
+    hidden.value = id;
+    label.textContent = title || placeholder;
+    label.classList.toggle('placeholder', !id);
+    close();
+  }
+
+  function open() {
+    _open = true;
+    dropdown.classList.add('open');
+    trigger.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+    searchInput.value = '';
+    render('');
+    setTimeout(() => searchInput.focus(), 30);
+  }
+
+  function close() {
+    _open = false;
+    dropdown.classList.remove('open');
+    trigger.classList.remove('open');
+    trigger.setAttribute('aria-expanded', 'false');
+  }
+
+  trigger.onclick = (e) => { e.stopPropagation(); _open ? close() : open(); };
+  searchInput.addEventListener('input', () => render(searchInput.value));
+  searchInput.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  document.addEventListener('click', e => { if (_open && !wrap.contains(e.target)) close(); });
+
+  return {
+    setCases(cases) { _cases = cases; if (_open) render(searchInput.value||''); },
+    getValue() { return hidden.value; },
+    reset() { _selectedId = ''; hidden.value = ''; label.textContent = placeholder; label.classList.add('placeholder'); }
+  };
+}
+
+let _pickerCreatorFramework, _pickerShareCase;
+
 let _communityStatusFilter = '';
 let _activeCommunityTab = 'feed';
 
@@ -2510,7 +2610,7 @@ async function loadShareCaseOptions(){
   try{
     const cases = await apiGet('/api/cases');
     if(!Array.isArray(cases)) return;
-    el('shareCaseId').innerHTML = '<option value="">— Choose a case —</option>' + cases.map(c=>`<option value="${esc(c.id)}">${esc(c.title)}</option>`).join('');
+    if(_pickerShareCase) _pickerShareCase.setCases(cases);
   }catch(err){ console.error(err); }
 }
 
@@ -2523,7 +2623,7 @@ async function submitSharedCase(){
     const res = await apiPost('/api/community/posts', { caseId, note, anonymous });
     if(res.error){ toast(res.error); return; }
     el('shareCaseModal').classList.remove('show');
-    el('shareCaseId').value = '';
+    if(_pickerShareCase) _pickerShareCase.reset();
     el('shareCaseNote').value = '';
     el('shareCaseAnon').checked = false;
     toast('Shared with the community');
@@ -2825,6 +2925,8 @@ async function loadMarkingCriteria(){
 
 /* ---------- init ---------- */
 window.addEventListener('DOMContentLoaded',async ()=>{
+  _pickerCreatorFramework = makeCasePicker('pickerCreatorFramework', 'creatorFrameworkCaseId', '— Choose a case —');
+  _pickerShareCase = makeCasePicker('pickerShareCase', 'shareCaseId', '— Choose a case —');
   loadSettings();
   await loadMarkingCriteria();
   // nav
