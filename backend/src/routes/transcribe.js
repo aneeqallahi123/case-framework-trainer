@@ -114,7 +114,7 @@ async function generateJsonGroq(prompt) {
   const Groq = require('groq-sdk');
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   const completion = await groq.chat.completions.create({
-    model: process.env.GROQ_MODEL || 'compound-beta',
+    model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
     max_tokens: 8000
