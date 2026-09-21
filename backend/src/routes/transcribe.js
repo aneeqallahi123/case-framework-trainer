@@ -248,6 +248,10 @@ router.post('/structure', requireAuth, async (req, res) => {
   }
 
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('Structure route: GEMINI_API_KEY is not set');
+      return res.status(500).json({ error: 'AI structuring unavailable — API key not configured' });
+    }
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
@@ -284,12 +288,12 @@ router.post('/structure', requireAuth, async (req, res) => {
     // fidelity guaranteed rather than merely requested.
     const knownIds = new Set(grounded.map(p => p.id));
     const usedIds = new Set();
-    const cleanedTree = validateAndCleanTree(structured.tree, knownIds, usedIds);
+    const cleanedTree = validateAndCleanTree(structured?.tree, knownIds, usedIds);
 
     // Anything the candidate said but the model failed to place in the tree
     // is real content too — surface it instead of silently dropping it.
     const missing = grounded.filter(p => !usedIds.has(p.id));
-    if (missing.length) {
+    if (missing.length && cleanedTree) {
       console.warn(`Structure: ${missing.length} extracted point(s) never placed in tree:`, missing.map(p => p.text));
       cleanedTree.children = cleanedTree.children || [];
       cleanedTree.children.push({
@@ -298,9 +302,11 @@ router.post('/structure', requireAuth, async (req, res) => {
         metric: null,
         children: missing.map(p => ({ label: p.text, pointId: p.id, metric: p.metric || null, children: [] }))
       });
+    } else if (missing.length) {
+      console.warn(`Structure: ${missing.length} extracted point(s) unplaced and tree is null — points:`, missing.map(p => p.text));
     }
 
-    structured.tree = cleanedTree;
+    if (structured) structured.tree = cleanedTree;
     res.json({ structured });
   } catch (err) {
     console.error('Structure route error:', err);
