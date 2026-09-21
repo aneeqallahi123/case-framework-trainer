@@ -126,10 +126,43 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT NOW(),
         PRIMARY KEY (comment_id, user_id)
       );
+
+      CREATE TABLE IF NOT EXISTS community_post_votes (
+        post_id INTEGER REFERENCES community_posts(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        PRIMARY KEY (post_id, user_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS direct_conversations (
+        id SERIAL PRIMARY KEY,
+        user1_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        user2_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS direct_messages (
+        id SERIAL PRIMARY KEY,
+        conversation_id INTEGER REFERENCES direct_conversations(id) ON DELETE CASCADE,
+        sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        body TEXT NOT NULL,
+        read_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
     `);
 
     await client.query(`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS bypass_approval BOOLEAN DEFAULT false;
+    `);
+
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS show_stats BOOLEAN DEFAULT true;
+    `);
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS direct_conversations_pair_idx
+      ON direct_conversations (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id));
     `);
     console.log('✅ Database tables ready');
 

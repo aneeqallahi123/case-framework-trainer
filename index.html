@@ -291,9 +291,55 @@
   .seg button{border:0;border-right:1px solid var(--line);background:#fff;color:var(--gray);font-family:var(--f);font-size:12.5px;font-weight:600;padding:10px 15px;cursor:pointer;letter-spacing:.04em;transition:background .15s,color .15s}
   .seg button:last-child{border-right:0}
   .seg button.on{background:var(--red);color:#fff}
+  .community-tab{border:0;background:transparent;font-family:var(--f);font-size:14px;font-weight:500;color:var(--gray);padding:10px 18px 12px;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;margin-bottom:-1px}
+  .community-tab:hover{color:var(--ink)}
+  .community-tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--red)}
+  .member-card{border:1px solid var(--line);border-radius:3px;padding:16px;cursor:pointer;transition:box-shadow .15s,border-color .15s;display:flex;align-items:center;gap:14px}
+  .member-card:hover{border-color:var(--ink);box-shadow:var(--shadow-sm)}
+  .member-av{width:40px;height:40px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px;flex-shrink:0}
+  .msg-row{border-bottom:1px solid var(--line);padding:14px 0;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background .1s}
+  .msg-row:hover{background:var(--bg2)}
+  .chat-bubble{max-width:72%;padding:10px 14px;border-radius:12px;font-size:13.5px;line-height:1.5;margin-bottom:8px;word-break:break-word}
+  .chat-bubble.me{background:var(--ink);color:#fff;border-bottom-right-radius:3px;align-self:flex-end;margin-left:auto}
+  .chat-bubble.them{background:var(--bg2);color:var(--ink);border-bottom-left-radius:3px}
+  .chat-time{font-size:11px;color:var(--gray2);margin-bottom:4px;text-align:center}
+  #chatMessagesBox{display:flex;flex-direction:column;padding:16px;min-height:300px;max-height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:3px;margin-bottom:12px}
+  .vote-btn{background:none;border:1px solid var(--line);border-radius:2px;padding:4px 10px;font-family:var(--f);font-size:12px;cursor:pointer;color:var(--gray);transition:all .15s}
+  .vote-btn:hover,.vote-btn.voted{background:var(--ink);color:#fff;border-color:var(--ink)}
   label.fld{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray2);margin:20px 0 8px;font-weight:600}
   .toggle{display:inline-flex;align-items:center;gap:10px;font-size:14px;color:var(--ink);cursor:pointer}
   .toggle input{accent-color:var(--red);width:16px;height:16px}
+  .toggle-switch{cursor:pointer}
+  .toggle-switch input{display:none}
+  .toggle-track{display:inline-block;width:40px;height:22px;background:var(--line);border-radius:11px;position:relative;transition:background .18s}
+  .toggle-switch input:checked+.toggle-track{background:var(--good,#22c55e)}
+  .toggle-track::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .18s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .toggle-switch input:checked+.toggle-track::after{left:21px}
+  .stats-badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--gray);margin-top:4px}
+  .stats-badge .stat-item{background:var(--bg2);border-radius:2px;padding:1px 6px;font-size:11px}
+  .stats-locked{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--gray2);margin-top:4px;opacity:.7}
+  .stats-nudge{background:var(--bg2);border:1px solid var(--line);border-radius:3px;padding:10px 14px;font-size:13px;color:var(--gray);margin-bottom:16px}
+
+  /* ---- custom searchable case picker ---- */
+  .case-picker{position:relative;width:100%}
+  .case-picker-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1px solid var(--line);border-radius:2px;background:#fff;cursor:pointer;font-family:var(--f);font-size:14px;color:var(--ink);transition:border-color .15s,box-shadow .15s;text-align:left;gap:10px}
+  .case-picker-trigger:hover{border-color:#bbb}
+  .case-picker-trigger.open{border-color:var(--red);box-shadow:0 0 0 3px rgba(204,0,0,.1)}
+  .case-picker-trigger .cpt-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+  .case-picker-trigger .cpt-label.placeholder{color:var(--gray2)}
+  .case-picker-trigger .cpt-arrow{flex:0 0 16px;color:var(--gray2);transition:transform .18s var(--ease);font-size:11px}
+  .case-picker-trigger.open .cpt-arrow{transform:rotate(180deg)}
+  .case-picker-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:3px;box-shadow:var(--shadow-lg);z-index:120;display:none;flex-direction:column;overflow:hidden;max-height:320px}
+  .case-picker-dropdown.open{display:flex;animation:menuIn .15s var(--ease)}
+  .case-picker-search{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;flex:0 0 auto}
+  .case-picker-search input{flex:1;border:0;outline:none;font-family:var(--f);font-size:14px;color:var(--ink);background:transparent}
+  .case-picker-search input::placeholder{color:var(--gray2)}
+  .case-picker-search .cps-icon{color:var(--gray2);font-size:14px;flex:0 0 auto}
+  .case-picker-list{overflow-y:auto;flex:1}
+  .case-picker-opt{padding:10px 14px;font-size:14px;cursor:pointer;color:var(--ink);transition:background .1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .case-picker-opt:hover,.case-picker-opt.focused{background:var(--bg2)}
+  .case-picker-opt.selected{font-weight:600;color:var(--red)}
+  .case-picker-empty{padding:14px;font-size:13px;color:var(--gray2);text-align:center}
 
   #viewDashboard.enter>*{opacity:0;animation:rise .45s var(--ease) forwards}
   #viewDashboard.enter>*:nth-child(2){animation-delay:.07s}
@@ -424,6 +470,7 @@
         <div class="authfield"><label>First name</label><input type="text" id="signupName" placeholder="Alex" autocomplete="given-name"></div>
         <div class="authfield"><label>Email</label><input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email"></div>
         <div class="authfield"><label>Password</label><input type="password" id="signupPassword" placeholder="At least 6 characters" autocomplete="new-password"></div>
+        <div class="authfield"><label>Confirm password</label><input type="password" id="signupPasswordConfirm" placeholder="Repeat your password" autocomplete="new-password"></div>
         <div class="autherr" id="signupErr"></div>
         <button class="btn primary" style="width:100%" id="signupBtn">Create account →</button>
         <div class="authswitch">Already have an account? <span id="goLogin">Sign in</span></div>
@@ -438,7 +485,7 @@
         <button class="navi on" data-view="dashboard">Dashboard</button>
         <button class="navi" data-view="drill">Drill</button>
         <button class="navi" id="navCreator" data-view="creator" style="display:none">Creator</button>
-        <button class="navi" data-view="community">Community</button>
+        <button class="navi" data-view="community">Community<span id="dmBadge" style="display:none;background:var(--red);color:#fff;border-radius:50%;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;margin-left:5px;vertical-align:middle"></span></button>
       </nav>
       <div class="nav-right">
         <button class="btn red" id="newDrillBtn">New drill</button>
@@ -450,6 +497,7 @@
               <div class="acct-user-email" id="acctEmail"></div>
             </div>
             <button class="acct-item" id="acctSetup">Setup</button>
+            <button class="acct-item" id="acctPrivacy">Profile &amp; Privacy</button>
             <button class="acct-item" id="acctCreator" style="display:none">Creator hub</button>
             <button class="acct-item" id="acctAdmin" style="display:none">Admin</button>
             <div class="acct-sep"></div>
@@ -496,7 +544,7 @@
         <div>
           <div class="eyebrow">Practice</div>
           <h2 id="ctaTitle">Begin a drill</h2>
-          <p id="ctaText">A random case is drawn from a bank of 400, sourced from the Fuqua, Stern, Wharton, Yale, INSEAD, IESE and MBB casebooks and cases modeled on them. Hear the prompt, summarize it, build a framework within the time limit, and receive a score.</p>
+          <p id="ctaText">Draw a random case from 400+ real and modeled prompts. Summarize it, ask clarifiers, build a framework in the time limit, deliver it, and get a scored review.</p>
         </div>
         <div class="cta-right"><button class="btn red big" id="ctaStart">Open ready room →</button></div>
       </div>
@@ -594,15 +642,26 @@
       </div>
 
       <!-- Submit framework -->
-      <div id="creatorFrameworkPane" style="display:none">
+      <div id="creatorFrameworkPane">
         <div class="card flat">
           <h3>Submit a solved framework</h3>
           <p style="color:var(--gray);margin-top:6px">Choose a case and provide the framework you solved.</p>
 
           <label class="fld" style="margin-top:20px">Select case</label>
-          <select id="creatorFrameworkCaseId" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:2px;font-family:var(--f)">
-            <option value="">— Choose a case —</option>
-          </select>
+          <div class="case-picker" id="pickerCreatorFramework">
+            <button type="button" class="case-picker-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="cpt-label placeholder">— Choose a case —</span>
+              <span class="cpt-arrow">▼</span>
+            </button>
+            <div class="case-picker-dropdown" role="listbox">
+              <div class="case-picker-search">
+                <span class="cps-icon">🔍</span>
+                <input type="text" placeholder="Search cases…" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="case-picker-list"></div>
+            </div>
+          </div>
+          <input type="hidden" id="creatorFrameworkCaseId" value="">
 
           <label class="fld" style="margin-top:14px">Framework</label>
           <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">Paste your framework structure (JSON or text format)</p>
@@ -616,7 +675,7 @@
       </div>
 
       <!-- Submit case -->
-      <div id="creatorCasePane">
+      <div id="creatorCasePane" style="display:none">
         <div class="card flat">
           <h3>Add a new case to the directory</h3>
           <p style="color:var(--gray);margin-top:6px">Create a new case and optionally provide a solved framework.</p>
@@ -658,6 +717,17 @@
 
     <!-- COMMUNITY -->
     <section id="viewCommunity" style="display:none">
+
+      <!-- Community sub-nav -->
+      <div style="border-bottom:1px solid var(--line);margin-bottom:20px">
+        <div style="display:flex;gap:0">
+          <button class="community-tab on" data-ctab="feed">Feed</button>
+          <button class="community-tab" data-ctab="members">Members</button>
+          <button class="community-tab" data-ctab="messages">Messages <span id="msgTabBadge" style="display:none;background:var(--red);color:#fff;border-radius:50%;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;margin-left:4px;vertical-align:middle"></span></button>
+        </div>
+      </div>
+
+      <!-- FEED pane -->
       <div id="communityFeedPane">
         <div class="dash-head">
           <h1>Confused on a case? Ask the group.</h1>
@@ -683,6 +753,41 @@
         <button class="btn ghost" id="communityBackBtn" style="margin-bottom:16px">← Back to feed</button>
         <div id="communityDetailContent"></div>
       </div>
+
+      <!-- MEMBERS pane -->
+      <div id="communityMembersPane" style="display:none">
+        <div class="dash-head">
+          <h1>Community Members</h1>
+          <p>Everyone on Caseroom. Click a member to see their activity.</p>
+        </div>
+        <div id="communityMembersList">
+          <p style="color:var(--gray);text-align:center;padding:40px 20px">Loading members...</p>
+        </div>
+      </div>
+
+      <!-- Member profile sub-pane -->
+      <div id="communityMemberProfilePane" style="display:none">
+        <button class="btn ghost" id="memberProfileBackBtn" style="margin-bottom:16px">← Back to members</button>
+        <div id="communityMemberProfileContent"></div>
+      </div>
+
+      <!-- MESSAGES pane -->
+      <div id="communityMessagesPane" style="display:none">
+        <div id="communityConvListView">
+          <div class="dash-head">
+            <h1>Messages</h1>
+            <p>Direct conversations with other community members.</p>
+          </div>
+          <div id="communityConvList">
+            <p style="color:var(--gray);text-align:center;padding:40px 20px">Loading conversations...</p>
+          </div>
+        </div>
+        <div id="communityConvChatView" style="display:none">
+          <button class="btn ghost" id="convChatBackBtn" style="margin-bottom:16px">← Back to messages</button>
+          <div id="communityConvChatContent"></div>
+        </div>
+      </div>
+
     </section>
 
     <!-- Community: share a case modal -->
@@ -690,9 +795,20 @@
       <div class="box">
         <h3>Share a case you're confused on</h3>
         <label class="fld">Select case</label>
-        <select id="shareCaseId" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:2px;font-family:var(--f)">
-          <option value="">— Choose a case —</option>
-        </select>
+        <div class="case-picker" id="pickerShareCase">
+          <button type="button" class="case-picker-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="cpt-label placeholder">— Choose a case —</span>
+            <span class="cpt-arrow">▼</span>
+          </button>
+          <div class="case-picker-dropdown" role="listbox">
+            <div class="case-picker-search">
+              <span class="cps-icon">🔍</span>
+              <input type="text" placeholder="Search cases…" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="case-picker-list"></div>
+          </div>
+        </div>
+        <input type="hidden" id="shareCaseId" value="">
         <label class="fld" style="margin-top:14px">What's confusing you?</label>
         <textarea id="shareCaseNote" placeholder="e.g. I can't figure out how to structure the profitability tree here…" style="width:100%;min-height:100px;padding:12px;border:1px solid var(--line);border-radius:2px;font-family:var(--f);font-size:13px;resize:vertical"></textarea>
         <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--gray)">
@@ -735,7 +851,7 @@
           <div class="readygrid">
             <div class="rblock"><div class="rlbl">Drills logged</div><div class="rnum" id="readyCount">0</div></div>
             <div class="rblock"><div class="rlbl">Last score</div><div class="rnum" id="readyLast">—<small>/100</small></div></div>
-            <div class="rblock"><div class="rlbl">Focus areas · last 7</div><div class="rareas" id="readyAreas"></div></div>
+            <div class="rblock"><div class="rlbl">Weakest areas — last 7 drills</div><div class="rareas" id="readyAreas"></div></div>
           </div>
           <button class="btn red big" id="startDrillBtn">Start drill →</button>
         </div>
@@ -749,7 +865,7 @@
             <span class="run-sep">·</span>
             <span class="run-src" id="runCaseSrc"></span>
           </div>
-          <button class="btn ghost" id="pauseBtn">Pause</button>
+          <button class="btn" id="pauseBtn">Pause</button>
         </div>
         <div class="progress" id="progress">
           <div class="pstep" data-step="recite"><span class="pn">01</span>Prompt</div>
@@ -766,7 +882,8 @@
           <div class="card flat">
             <div style="display:flex;justify-content:space-between;align-items:center"><div class="stage-role">Interviewer</div><span id="reciteStatus" class="csub" style="margin:0"></span></div>
             <div class="promptbox" id="promptText"></div>
-            <div class="btnbar"><button class="btn ghost" id="replayBtn">Replay</button><button class="btn accent" id="toSummary" disabled>Summarize →</button></div>
+            <div class="btnbar"><button class="btn ghost" id="replayBtn">Replay</button><button class="btn accent" id="toSummary" disabled title="Wait for the prompt to finish playing">Summarize →</button></div>
+            <div style="margin-top:8px;font-size:12px;color:var(--gray2)"><span class="kbd">Enter</span> to advance once the prompt has played</div>
           </div>
         </section>
 
@@ -779,7 +896,8 @@
             <textarea id="sumText" placeholder="Record and speak — or type here…"></textarea>
             <div class="capmeta" id="sumMeta"><span class="live-dot"></span><span><b id="sumWords">0</b> words</span><span><b id="sumTime">0:00</b> talk time</span></div>
             <div class="interim" id="sumInterim"></div>
-            <div class="btnbar"><button class="btn rec" id="sumRec">● Record</button><button class="btn ghost" id="sumStop" disabled>Stop</button><button class="btn accent" id="sumDone">Check &amp; continue →</button></div>
+            <div class="btnbar"><button class="btn rec" id="sumRec">● Record</button><button class="btn ghost" id="sumStop" disabled>■ Stop</button><button class="btn accent" id="sumDone">Check &amp; continue →</button></div>
+            <div style="margin-top:8px;font-size:12px;color:var(--gray2)"><span class="kbd">Space</span> to record / stop &nbsp;·&nbsp; <span class="kbd">Enter</span> to advance</div>
             <div id="sumFbInline"></div>
           </div>
         </section>
@@ -792,7 +910,8 @@
             <div class="meter" id="clrMeter"></div>
             <textarea id="clrText" placeholder="One question per line, ending with a question mark…"></textarea>
             <div class="interim" id="clrInterim"></div>
-            <div class="btnbar"><button class="btn rec" id="clrRec">● Record</button><button class="btn ghost" id="clrStop" disabled>Stop</button><button class="btn" id="clrAnswer">Get answers</button><button class="btn accent" id="toTimer">Build framework →</button></div>
+            <div class="btnbar"><button class="btn rec" id="clrRec">● Record</button><button class="btn ghost" id="clrStop" disabled>■ Stop</button><button class="btn" id="clrAnswer">Get answers</button><button class="btn accent" id="toTimer">Build framework →</button></div>
+            <div style="margin-top:8px;font-size:12px;color:var(--gray2)"><span class="kbd">Space</span> to record / stop &nbsp;·&nbsp; <span class="kbd">Enter</span> to advance</div>
             <div id="clrAnswers"></div>
           </div>
         </section>
@@ -825,6 +944,7 @@
               <button class="btn rec" id="fwRec">● Record</button>
               <button class="btn ghost" id="fwStop" disabled>■ Stop &amp; transcribe</button>
             </div>
+            <div style="margin-top:8px;font-size:12px;color:var(--gray2)"><span class="kbd">Space</span> to record / stop &nbsp;·&nbsp; <span class="kbd">Enter</span> to advance when ready</div>
 
             <!-- Deepgram transcription status -->
             <div class="dg-status" id="dgStatus">
@@ -888,6 +1008,29 @@
       </div>
     </div>
   </div>
+  <!-- Profile & Privacy settings modal -->
+  <div class="modal" id="profileSettingsModal">
+    <div class="box" style="width:460px">
+      <h3>Profile &amp; Privacy</h3>
+      <p class="muted" style="font-size:13.5px;margin-top:4px">Control what others can see on your community profile.</p>
+      <div style="margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:3px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div>
+            <div style="font-weight:600;font-size:14px">Show my performance stats</div>
+            <div style="font-size:12.5px;color:var(--gray);margin-top:3px">Displays your total case count and average score on your community profile and member card.</div>
+          </div>
+          <label class="toggle-switch" id="statsVisibilityToggle" style="flex-shrink:0">
+            <input type="checkbox" id="statsVisibilityInput">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+      <div class="btnbar" style="justify-content:flex-end;margin-top:20px">
+        <button class="btn ghost" id="closeProfileSettings">Done</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -912,12 +1055,22 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
+  function handleUnauth() {
+    localStorage.removeItem('cf_token');
+    localStorage.removeItem('cf_user');
+    AUTH = { token: null, user: null };
+    document.getElementById('authScreen').classList.remove('hidden');
+    toast('Session expired — please sign in again.');
+  }
+
   async function apiPost(path, body) {
     const r = await fetch(API_BASE + path, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+    if (r.status === 401) { handleUnauth(); return { error: 'Not logged in' }; }
     return r.json();
   }
   async function apiGet(path) {
     const r = await fetch(API_BASE + path, { headers: authHeaders() });
+    if (r.status === 401) { handleUnauth(); return { error: 'Not logged in' }; }
     return r.json();
   }
   // Resolves true only when the server confirms the delete.
@@ -952,10 +1105,20 @@
     document.getElementById('navCreator').style.display = u?.role === 'creator' || u?.role === 'admin' ? '' : 'none';
     loadCaseBank();
     syncHistoryFromServer();
+    setTimeout(()=>{ if(typeof refreshDMBadge==='function') refreshDMBadge(); }, 800);
+    setInterval(()=>{ if(typeof refreshDMBadge==='function') refreshDMBadge(); }, 60000);
+    // Refresh user data in the background to pick up server-side fields (e.g. showStats)
+    apiGet('/api/auth/me').then(me => {
+      if(me && !me.error){
+        AUTH.user = {...AUTH.user, ...me};
+        localStorage.setItem('cf_user', JSON.stringify(AUTH.user));
+      }
+    }).catch(()=>{});
   }
 
   function showAuth() {
     document.getElementById('authScreen').classList.remove('hidden');
+    setTimeout(() => { const f = document.getElementById('loginEmail'); if(f) f.focus(); }, 80);
   }
 
   document.getElementById('goSignup').onclick = () => {
@@ -985,6 +1148,9 @@
     const btn = document.getElementById('signupBtn');
     const err = document.getElementById('signupErr');
     err.textContent = '';
+    const pw = document.getElementById('signupPassword').value;
+    const pwc = document.getElementById('signupPasswordConfirm').value;
+    if (pw !== pwc) { err.textContent = 'Passwords do not match.'; return; }
     btn.disabled = true; btn.textContent = 'Creating account…';
     const data = await fetch(API_BASE + '/api/auth/signup', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1019,7 +1185,7 @@
   ['loginEmail','loginPassword'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginBtn').click(); });
   });
-  ['signupName','signupEmail','signupPassword'].forEach(id => {
+  ['signupName','signupEmail','signupPassword','signupPasswordConfirm'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('signupBtn').click(); });
   });
 
@@ -1073,10 +1239,10 @@
       _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) _audioChunks.push(e.data); };
       _mediaRecorder.start(250);
 
-      recBtn.disabled = true; recBtn.classList.add('live');
+      recBtn.disabled = true; recBtn.classList.add('live'); recBtn.textContent = '● Recording…';
       stopBtn.disabled = false;
       meta.classList.add('recording');
-      interimEl.textContent = '🔴 Recording… speak your framework';
+      interimEl.textContent = 'Speak your framework delivery now';
       _recordStart = Date.now();
 
       _recordingTimer = setInterval(() => {
@@ -1103,7 +1269,7 @@
     const dgStatus = document.getElementById('dgStatus');
     const dgStatusText = document.getElementById('dgStatusText');
 
-    recBtn.disabled = false; recBtn.classList.remove('live');
+    recBtn.disabled = false; recBtn.classList.remove('live'); recBtn.textContent = '● Record';
     stopBtn.disabled = true;
     document.getElementById('fwMeta').classList.remove('recording');
     interimEl.textContent = '';
@@ -1612,7 +1778,7 @@ function showView(v){
   if(v==='dashboard'){ TTS.stop(); Mic.hide(); renderDashboard(); }
   if(v==='admin'){ TTS.stop(); Mic.hide(); loadAdminUsers(); loadAdminCases(); loadSolvedFrameworks(); loadCaseSubmissions(); }
   if(v==='creator'){ TTS.stop(); Mic.hide(); loadCreatorFrameworkCases(); loadCreatorSubmissions(); }
-  if(v==='community'){ TTS.stop(); Mic.hide(); showCommunityFeed(); }
+  if(v==='community'){ TTS.stop(); Mic.hide(); showCommunityTab(_activeCommunityTab||'feed'); refreshDMBadge(); }
 }
 function gotoStage(name){
   TTS.stop(); Mic.hide();
@@ -2115,9 +2281,8 @@ Focus feedback on what's working and what to address next, providing actionable 
 async function loadCreatorFrameworkCases(){
   try{
     const cases = await apiGet('/api/cases');
-    if(cases.error){ el('creatorFrameworkCaseId').innerHTML = '<option>Error loading cases</option>'; return; }
-    const select = el('creatorFrameworkCaseId');
-    select.innerHTML = '<option value="">— Choose a case —</option>' + cases.map(c=>`<option value="${esc(c.id)}">${esc(c.title)}</option>`).join('');
+    if(cases.error){ return; }
+    if(_pickerCreatorFramework) _pickerCreatorFramework.setCases(cases);
   }catch(err){ console.error(err); }
 }
 
@@ -2148,7 +2313,7 @@ async function submitFramework(){
     status.textContent = 'Framework submitted!';
     status.style.color = 'var(--good)';
     el('creatorFrameworkText').value = '';
-    el('creatorFrameworkCaseId').value = '';
+    if(_pickerCreatorFramework) _pickerCreatorFramework.reset();
     setTimeout(()=>{ status.textContent = ''; }, 2500);
   }catch(err){
     status.textContent = 'Error submitting framework';
@@ -2243,13 +2408,85 @@ async function deleteSubmission(btn){
 }
 
 /* ---------- Community ---------- */
+/* ---------- CasePicker: searchable dropdown ---------- */
+function makeCasePicker(wrapperId, hiddenInputId, placeholder) {
+  const wrap = el(wrapperId);
+  const hidden = el(hiddenInputId);
+  const trigger = wrap.querySelector('.case-picker-trigger');
+  const dropdown = wrap.querySelector('.case-picker-dropdown');
+  const searchInput = wrap.querySelector('.case-picker-search input');
+  const list = wrap.querySelector('.case-picker-list');
+  const label = wrap.querySelector('.cpt-label');
+
+  let _cases = [], _selectedId = '', _open = false;
+
+  function render(q) {
+    const f = q ? _cases.filter(c => (c.title||'').toLowerCase().includes(q.toLowerCase()) || (c.type||'').toLowerCase().includes(q.toLowerCase())) : _cases;
+    if (!f.length) { list.innerHTML = '<div class="case-picker-empty">'+(q ? 'No cases match "'+esc(q)+'"' : 'No cases loaded yet')+'</div>'; return; }
+    list.innerHTML = f.map(c => '<div class="case-picker-opt'+(c.id===_selectedId?' selected':'')+'" data-id="'+esc(c.id)+'" data-title="'+esc(c.title)+'" tabindex="-1">'+esc(c.title)+(c.type?'<span style="font-size:12px;color:var(--gray2);margin-left:8px">'+esc(c.type.replace(/_/g,' '))+'</span>':'')+'</div>').join('');
+    list.querySelectorAll('.case-picker-opt').forEach(opt => opt.onclick = () => select(opt.dataset.id, opt.dataset.title));
+  }
+
+  function select(id, title) {
+    _selectedId = id;
+    hidden.value = id;
+    label.textContent = title || placeholder;
+    label.classList.toggle('placeholder', !id);
+    close();
+  }
+
+  function open() {
+    _open = true;
+    dropdown.classList.add('open');
+    trigger.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+    searchInput.value = '';
+    render('');
+    setTimeout(() => searchInput.focus(), 30);
+  }
+
+  function close() {
+    _open = false;
+    dropdown.classList.remove('open');
+    trigger.classList.remove('open');
+    trigger.setAttribute('aria-expanded', 'false');
+  }
+
+  trigger.onclick = (e) => { e.stopPropagation(); _open ? close() : open(); };
+  searchInput.addEventListener('input', () => render(searchInput.value));
+  searchInput.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  document.addEventListener('click', e => { if (_open && !wrap.contains(e.target)) close(); });
+
+  return {
+    setCases(cases) { _cases = cases; if (_open) render(searchInput.value||''); },
+    getValue() { return hidden.value; },
+    reset() { _selectedId = ''; hidden.value = ''; label.textContent = placeholder; label.classList.add('placeholder'); }
+  };
+}
+
+let _pickerCreatorFramework, _pickerShareCase;
+
 let _communityStatusFilter = '';
+let _activeCommunityTab = 'feed';
+
+function showCommunityTab(tab){
+  _activeCommunityTab = tab;
+  $$('.community-tab').forEach(b=>b.classList.toggle('on', b.dataset.ctab===tab));
+  el('communityFeedPane').style.display = 'none';
+  el('communityDetailPane').style.display = 'none';
+  el('communityMembersPane').style.display = 'none';
+  el('communityMemberProfilePane').style.display = 'none';
+  el('communityMessagesPane').style.display = 'none';
+  if(tab==='feed'){ el('communityFeedPane').style.display='block'; loadCommunityFeed(); }
+  if(tab==='members'){ el('communityMembersPane').style.display='block'; loadCommunityMembers(); }
+  if(tab==='messages'){ el('communityMessagesPane').style.display='block'; showConvListView(); }
+}
 
 async function showCommunityFeed(){
-  el('communityFeedPane').style.display = 'block';
-  el('communityDetailPane').style.display = 'none';
-  await loadCommunityFeed();
+  showCommunityTab('feed');
 }
+
+/* ── Feed ─────────────────────────────────────────── */
 
 async function loadCommunityFeed(){
   const list = el('communityFeedList');
@@ -2261,16 +2498,23 @@ async function loadCommunityFeed(){
     if(posts.length === 0){ list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">No posts yet. Be the first to share a case!</p>'; return; }
 
     list.innerHTML = posts.map(p=>`
-      <div style="border:1px solid var(--line);border-radius:2px;padding:14px;margin-bottom:10px;cursor:pointer" onclick="openCommunityPost(${p.id})">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
-          <div>
+      <div style="border:1px solid var(--line);border-radius:3px;padding:16px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div style="flex:1;cursor:pointer" onclick="openCommunityPost(${p.id})">
             <div style="font-weight:600">${esc(p.caseTitle)}</div>
-            <div style="font-size:13px;color:var(--gray);margin-top:2px">${esc(p.caseType||'')}${p.caseSource?' · '+esc(p.caseSource):''} · by ${esc(p.author)} · ${new Date(p.createdAt).toLocaleDateString()}</div>
+            <div style="font-size:13px;color:var(--gray);margin-top:2px">
+              ${esc(p.caseType||'')}${p.caseSource?' · '+esc(p.caseSource):''}
+              · by ${p.authorId?`<span style="color:var(--ink);font-weight:500;cursor:pointer" onclick="event.stopPropagation();openMemberProfile(${p.authorId})">${esc(p.author)}</span>`:esc(p.author)}
+              · ${new Date(p.createdAt).toLocaleDateString()}
+            </div>
           </div>
           <div style="font-size:12px;padding:3px 8px;border-radius:2px;white-space:nowrap;${p.status==='resolved'?'background:var(--bg2);color:var(--good)':'background:var(--line)'}">${p.status}</div>
         </div>
-        ${p.note?`<p style="margin-top:10px;font-size:13.5px">${esc(p.note)}</p>`:''}
-        <div style="margin-top:10px;font-size:13px;color:var(--gray)">${p.commentCount} comment${p.commentCount===1?'':'s'}</div>
+        ${p.note?`<p style="margin-top:10px;font-size:13.5px;cursor:pointer" onclick="openCommunityPost(${p.id})">${esc(p.note)}</p>`:''}
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+          <button class="vote-btn${p.viewerVoted?' voted':''}" onclick="votePost(${p.id},this)">▲ ${p.voteCount}</button>
+          <span style="font-size:13px;color:var(--gray);cursor:pointer" onclick="openCommunityPost(${p.id})">💬 ${p.commentCount} comment${p.commentCount===1?'':'s'}</span>
+        </div>
       </div>
     `).join('');
   }catch(err){ list.innerHTML = '<p style="color:var(--gray)">Could not load community posts</p>'; console.error(err); }
@@ -2292,15 +2536,22 @@ async function openCommunityPost(id){
 function renderCommunityDetail(post){
   const content = el('communityDetailContent');
   const c = post.case || {};
+  const authorLink = post.authorId
+    ? `<span style="color:var(--ink);font-weight:500;cursor:pointer;text-decoration:underline" onclick="openMemberProfile(${post.authorId})">${esc(post.author)}</span>`
+    : esc(post.author);
   content.innerHTML = `
     <div class="card flat">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
         <h3>${esc(c.title||post.caseTitle||'Case')}</h3>
         <div style="font-size:12px;padding:3px 8px;border-radius:2px;white-space:nowrap;${post.status==='resolved'?'background:var(--bg2);color:var(--good)':'background:var(--line)'}">${post.status}</div>
       </div>
-      <div style="font-size:13px;color:var(--gray);margin-top:4px">${esc(c.type||'')}${c.source?' · '+esc(c.source):''} · shared by ${esc(post.author)}</div>
+      <div style="font-size:13px;color:var(--gray);margin-top:4px">${esc(c.type||'')}${c.source?' · '+esc(c.source):''} · shared by ${authorLink}</div>
       ${c.prompt?`<p style="margin-top:14px;white-space:pre-wrap">${esc(c.prompt)}</p>`:''}
       ${post.note?`<div style="margin-top:14px;padding:12px;background:var(--bg2);border-radius:2px"><div style="font-size:12px;color:var(--gray);margin-bottom:4px">What they're confused about</div>${esc(post.note)}</div>`:''}
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+        <button class="vote-btn${post.viewerVoted?' voted':''}" id="postVoteBtn" onclick="votePost(${post.id},this)">▲ ${post.voteCount} upvote${post.voteCount===1?'':'s'}</button>
+        ${post.authorId && !post.isOwner?`<button class="btn ghost" onclick="startDMWithUser(${post.authorId})">Message ${esc(post.author)}</button>`:''}
+      </div>
       ${post.isOwner?`<div class="btnbar" style="margin-top:14px">
         <button class="btn ghost" onclick="setCommunityPostStatus(${post.id}, '${post.status==='resolved'?'open':'resolved'}')">Mark as ${post.status==='resolved'?'open':'resolved'}</button>
         <button class="btn ghost" onclick="deleteCommunityPost(${post.id})">Delete post</button>
@@ -2310,31 +2561,45 @@ function renderCommunityDetail(post){
     <div class="card flat" style="margin-top:16px">
       <h3>Comments (${post.comments.length})</h3>
       <div style="margin-top:12px">
-        ${post.comments.length===0?'<p style="color:var(--gray)">No comments yet. Be the first to help out.</p>':post.comments.map(cm=>`
-          <div style="border:1px solid var(--line);border-radius:2px;padding:12px;margin-bottom:10px;${cm.isAccepted?'border-color:var(--good)':''}">
+        ${post.comments.length===0?'<p style="color:var(--gray)">No comments yet. Be the first to help out.</p>':post.comments.map(cm=>{
+          const cmAuthorLink = cm.authorId
+            ? `<span style="cursor:pointer;text-decoration:underline" onclick="openMemberProfile(${cm.authorId})">${esc(cm.author)}</span>`
+            : esc(cm.author);
+          return `
+          <div style="border:1px solid ${cm.isAccepted?'var(--good)':'var(--line)'};border-radius:3px;padding:12px;margin-bottom:10px">
             <div style="display:flex;justify-content:space-between;align-items:baseline">
-              <div style="font-size:13px;font-weight:600">${esc(cm.author)}${cm.isAccepted?' · <span style="color:var(--good)">Accepted answer</span>':''}</div>
+              <div style="font-size:13px;font-weight:600">${cmAuthorLink}${cm.isAccepted?' · <span style="color:var(--good)">✓ Accepted answer</span>':''}</div>
               <div style="font-size:12px;color:var(--gray)">${new Date(cm.createdAt).toLocaleDateString()}</div>
             </div>
             <p style="margin-top:8px;font-size:13.5px;white-space:pre-wrap">${esc(cm.body)}</p>
             <div class="btnbar" style="margin-top:8px">
-              <button class="btn ghost" onclick="voteComment(${cm.id})">${cm.viewerVoted?'★':'☆'} Helpful (${cm.voteCount})</button>
+              <button class="vote-btn${cm.viewerVoted?' voted':''}" onclick="voteComment(${cm.id},this)">▲ Helpful (${cm.voteCount})</button>
               ${post.isOwner && !cm.isAccepted?`<button class="btn ghost" onclick="acceptComment(${cm.id})">Mark as answer</button>`:''}
+              ${cm.authorId && !cm.isOwner?`<button class="btn ghost" onclick="startDMWithUser(${cm.authorId})">Message</button>`:''}
             </div>
-          </div>
-        `).join('')}
+          </div>`;
+        }).join('')}
       </div>
 
       <label class="fld" style="margin-top:14px">Add a comment</label>
       <textarea id="communityCommentBody" placeholder="Share how you'd approach this…" style="width:100%;min-height:80px;padding:12px;border:1px solid var(--line);border-radius:2px;font-family:var(--f);font-size:13px;resize:vertical"></textarea>
       <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:var(--gray)">
-        <input type="checkbox" id="communityCommentAnon"> Post anonymously
+        <input type="checkbox" id="communityCommentAnon"> Post anonymously (won't show on your profile)
       </label>
       <div class="btnbar" style="margin-top:10px">
         <button class="btn primary" onclick="submitCommunityComment(${post.id})">Post comment</button>
       </div>
     </div>
   `;
+}
+
+async function votePost(postId, btn){
+  try{
+    const res = await apiPost('/api/community/posts/'+postId+'/vote', {});
+    if(res.error){ toast(res.error); return; }
+    btn.textContent = '▲ '+res.voteCount+(el('postVoteBtn')===btn?' upvote'+(res.voteCount===1?'':'s'):'');
+    btn.classList.toggle('voted', res.viewerVoted);
+  }catch(err){ toast('Could not register vote'); }
 }
 
 async function submitCommunityComment(postId){
@@ -2348,12 +2613,12 @@ async function submitCommunityComment(postId){
   }catch(err){ toast('Could not post comment'); console.error(err); }
 }
 
-async function voteComment(commentId){
+async function voteComment(commentId, btn){
   try{
     const res = await apiPost('/api/community/comments/'+commentId+'/vote', {});
     if(res.error){ toast(res.error); return; }
-    const btn = event.target;
-    btn.textContent = (res.viewerVoted?'★':'☆')+' Helpful ('+res.voteCount+')';
+    btn.textContent = '▲ Helpful ('+res.voteCount+')';
+    btn.classList.toggle('voted', res.viewerVoted);
   }catch(err){ toast('Could not register vote'); console.error(err); }
 }
 
@@ -2379,14 +2644,14 @@ async function deleteCommunityPost(postId){
   const ok = await apiDelete('/api/community/posts/'+postId);
   if(!ok){ toast('Could not delete post'); return; }
   toast('Post deleted');
-  showCommunityFeed();
+  showCommunityTab('feed');
 }
 
 async function loadShareCaseOptions(){
   try{
     const cases = await apiGet('/api/cases');
     if(!Array.isArray(cases)) return;
-    el('shareCaseId').innerHTML = '<option value="">— Choose a case —</option>' + cases.map(c=>`<option value="${esc(c.id)}">${esc(c.title)}</option>`).join('');
+    if(_pickerShareCase) _pickerShareCase.setCases(cases);
   }catch(err){ console.error(err); }
 }
 
@@ -2399,12 +2664,265 @@ async function submitSharedCase(){
     const res = await apiPost('/api/community/posts', { caseId, note, anonymous });
     if(res.error){ toast(res.error); return; }
     el('shareCaseModal').classList.remove('show');
-    el('shareCaseId').value = '';
+    if(_pickerShareCase) _pickerShareCase.reset();
     el('shareCaseNote').value = '';
     el('shareCaseAnon').checked = false;
     toast('Shared with the community');
     loadCommunityFeed();
   }catch(err){ toast('Could not share case'); console.error(err); }
+}
+
+/* ── Members ─────────────────────────────────────── */
+
+function renderStatsBadge(m, viewerCanSeeStats){
+  if(!viewerCanSeeStats) return `<div class="stats-locked">🔒 Stats hidden · <a href="#" style="color:var(--gray2)" onclick="event.preventDefault();openProfileSettings()">Enable in Profile &amp; Privacy</a></div>`;
+  if(m.statsLocked === 'member') return `<div class="stats-locked">🔒 Stats private</div>`;
+  if(m.caseCount != null) return `<div class="stats-badge"><span class="stat-item">${m.caseCount} case${m.caseCount===1?'':'s'}</span>${m.avgScorePct!=null?`<span class="stat-item">avg ${m.avgScorePct}%</span>`:''}</div>`;
+  return '';
+}
+
+async function loadCommunityMembers(){
+  const list = el('communityMembersList');
+  list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">Loading...</p>';
+  try{
+    const data = await apiGet('/api/community/members');
+    const members = data.members || data; // backwards compat
+    const viewerCanSeeStats = data.viewerCanSeeStats !== false;
+    if(!Array.isArray(members)){ list.innerHTML = '<p style="color:var(--gray)">Could not load members</p>'; return; }
+
+    const nudge = !viewerCanSeeStats ? `<div class="stats-nudge">💡 <strong>See how others are doing.</strong> Enable your stats visibility in <a href="#" onclick="event.preventDefault();openProfileSettings()">Profile &amp; Privacy</a> to view performance stats for community members who have chosen to share them.</div>` : '';
+
+    list.innerHTML = nudge + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:4px">
+      ${members.map(m=>`
+        <div class="member-card" onclick="openMemberProfile(${m.id})">
+          <div class="member-av">${esc((m.name||'M').slice(0,1).toUpperCase())}</div>
+          <div style="flex:1">
+            <div style="font-weight:600">${esc(m.name)}</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:2px">${m.postCount} post${m.postCount===1?'':'s'} · ${m.commentCount} comment${m.commentCount===1?'':'s'}${m.acceptedCount>0?' · '+m.acceptedCount+' accepted':''}</div>
+            ${renderStatsBadge(m, viewerCanSeeStats)}
+            <div style="font-size:11px;color:var(--gray2);margin-top:2px">Joined ${new Date(m.joinedAt).toLocaleDateString('en',{month:'short',year:'numeric'})}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }catch(err){ list.innerHTML = '<p style="color:var(--gray)">Could not load members</p>'; console.error(err); }
+}
+
+async function openMemberProfile(userId){
+  el('communityMembersPane').style.display = 'none';
+  el('communityFeedPane').style.display = 'none';
+  el('communityDetailPane').style.display = 'none';
+  el('communityMemberProfilePane').style.display = 'block';
+  const content = el('communityMemberProfileContent');
+  content.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">Loading profile...</p>';
+  try{
+    const profile = await apiGet('/api/community/members/'+userId);
+    if(profile.error){ content.innerHTML = '<p style="color:var(--gray)">'+esc(profile.error)+'</p>'; return; }
+    renderMemberProfile(profile);
+  }catch(err){ content.innerHTML = '<p style="color:var(--gray)">Could not load profile</p>'; console.error(err); }
+}
+
+function renderProfileStatsSection(profile){
+  const viewerCanSeeStats = profile.viewerCanSeeStats !== false;
+  const isMe = profile.isMe;
+
+  if(isMe){
+    const own = AUTH.user?.showStats !== false;
+    if(own && profile.caseCount != null){
+      return `<div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+        <div style="background:var(--bg2);border-radius:3px;padding:8px 14px;text-align:center">
+          <div style="font-size:22px;font-weight:700">${profile.caseCount}</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px">cases completed</div>
+        </div>
+        ${profile.avgScorePct!=null?`<div style="background:var(--bg2);border-radius:3px;padding:8px 14px;text-align:center">
+          <div style="font-size:22px;font-weight:700">${profile.avgScorePct}%</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px">average score</div>
+        </div>`:''}
+        <div style="display:flex;align-items:center;font-size:12px;color:var(--gray2)">Visible to community · <a href="#" style="margin-left:4px;color:var(--gray)" onclick="event.preventDefault();el('communityMemberProfilePane').style.display='none';openProfileSettings()">change</a></div>
+      </div>`;
+    }
+    return `<div style="font-size:12.5px;color:var(--gray2);margin-top:6px">Your stats are hidden · <a href="#" style="color:var(--gray)" onclick="event.preventDefault();el('communityMemberProfilePane').style.display='none';openProfileSettings()">show them in Profile &amp; Privacy</a></div>`;
+  }
+
+  if(!viewerCanSeeStats){
+    return `<div style="margin-top:8px"><div class="stats-nudge" style="margin-bottom:0">🔒 Enable your stats visibility in <a href="#" onclick="event.preventDefault();openProfileSettings()">Profile &amp; Privacy</a> to see others' performance stats.</div></div>`;
+  }
+  if(profile.statsLocked === 'member'){
+    return `<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;color:var(--gray2)">🔒 Stats private</div>`;
+  }
+  if(profile.caseCount != null){
+    return `<div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+      <div style="background:var(--bg2);border-radius:3px;padding:8px 14px;text-align:center">
+        <div style="font-size:22px;font-weight:700">${profile.caseCount}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:2px">cases completed</div>
+      </div>
+      ${profile.avgScorePct!=null?`<div style="background:var(--bg2);border-radius:3px;padding:8px 14px;text-align:center">
+        <div style="font-size:22px;font-weight:700">${profile.avgScorePct}%</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:2px">average score</div>
+      </div>`:''}
+    </div>`;
+  }
+  return '';
+}
+
+function renderMemberProfile(profile){
+  const content = el('communityMemberProfileContent');
+  const isMe = profile.isMe;
+  content.innerHTML = `
+    <div class="card flat" style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px">
+      <div class="member-av" style="width:56px;height:56px;font-size:22px;flex-shrink:0">${esc((profile.name||'M').slice(0,1).toUpperCase())}</div>
+      <div style="flex:1">
+        <h2 style="font-size:20px">${esc(profile.name)}</h2>
+        <div style="font-size:13px;color:var(--gray);margin-top:4px">
+          Joined ${new Date(profile.joinedAt).toLocaleDateString('en',{month:'long',year:'numeric'})}
+          · ${profile.posts.length} public post${profile.posts.length===1?'':'s'}
+          · ${profile.comments.length} public comment${profile.comments.length===1?'':'s'}
+        </div>
+        ${renderProfileStatsSection(profile)}
+      </div>
+      ${!isMe?`<button class="btn primary" onclick="startDMWithUser(${profile.id})">Message</button>`:''}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-weight:600;margin-bottom:10px">Posts</div>
+        ${profile.posts.length===0?'<p style="color:var(--gray);font-size:13px">No public posts yet.</p>':profile.posts.map(p=>`
+          <div style="border:1px solid var(--line);border-radius:3px;padding:12px;margin-bottom:8px;cursor:pointer" onclick="openCommunityPost(${p.id})">
+            <div style="font-weight:600;font-size:13.5px">${esc(p.caseTitle)}</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:3px">${esc(p.caseType||'')}${p.caseSource?' · '+esc(p.caseSource):''}</div>
+            ${p.note?`<p style="font-size:13px;color:var(--gray);margin-top:6px">${esc(p.note.slice(0,80))}${p.note.length>80?'…':''}</p>`:''}
+            <div style="font-size:12px;color:var(--gray2);margin-top:6px">▲ ${p.voteCount} · 💬 ${p.commentCount} · ${new Date(p.createdAt).toLocaleDateString()}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:10px">Recent comments</div>
+        ${profile.comments.length===0?'<p style="color:var(--gray);font-size:13px">No public comments yet.</p>':profile.comments.map(c=>`
+          <div style="border:1px solid ${c.isAccepted?'var(--good)':'var(--line)'};border-radius:3px;padding:12px;margin-bottom:8px;cursor:pointer" onclick="openCommunityPost(${c.postId})">
+            <div style="font-size:12px;color:var(--gray);margin-bottom:4px">on "${esc(c.caseTitle)}"${c.isAccepted?' · <span style="color:var(--good)">✓ Accepted</span>':''}</div>
+            <p style="font-size:13px">${esc(c.body.slice(0,100))}${c.body.length>100?'…':''}</p>
+            <div style="font-size:12px;color:var(--gray2);margin-top:6px">▲ ${c.voteCount} · ${new Date(c.createdAt).toLocaleDateString()}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ── Direct Messages ─────────────────────────────── */
+
+async function startDMWithUser(userId){
+  try{
+    const res = await apiPost('/api/community/conversations', { userId });
+    if(res.error){ toast(res.error); return; }
+    showCommunityTab('messages');
+    openConversation(res.id);
+  }catch(err){ toast('Could not open conversation'); console.error(err); }
+}
+
+async function showConvListView(){
+  el('communityConvListView').style.display = 'block';
+  el('communityConvChatView').style.display = 'none';
+  const list = el('communityConvList');
+  list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">Loading...</p>';
+  try{
+    const convs = await apiGet('/api/community/conversations');
+    if(!Array.isArray(convs)){ list.innerHTML = '<p style="color:var(--gray)">Could not load conversations</p>'; return; }
+    if(convs.length===0){
+      list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:40px 20px">No messages yet. Find someone in <a href="#" onclick="showCommunityTab(\'members\')">Members</a> and send them a message.</p>';
+      return;
+    }
+    list.innerHTML = convs.map(cv=>`
+      <div class="msg-row" onclick="openConversation(${cv.id})">
+        <div class="member-av" style="width:38px;height:38px;font-size:14px;flex-shrink:0">${esc((cv.otherName||'M').slice(0,1).toUpperCase())}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div style="font-weight:600">${esc(cv.otherName)}</div>
+            <div style="font-size:12px;color:var(--gray2)">${cv.lastMessageAt?new Date(cv.lastMessageAt).toLocaleDateString():''}</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">${cv.lastMessage?esc(cv.lastMessage.slice(0,60))+(cv.lastMessage.length>60?'…':''):'No messages yet'}</div>
+        </div>
+        ${cv.unreadCount>0?`<div style="background:var(--red);color:#fff;border-radius:50%;font-size:11px;font-weight:700;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 4px">${cv.unreadCount}</div>`:''}
+      </div>
+    `).join('');
+  }catch(err){ list.innerHTML = '<p style="color:var(--gray)">Could not load conversations</p>'; console.error(err); }
+}
+
+let _activeConvId = null;
+let _chatPollTimer = null;
+
+async function openConversation(convId){
+  _activeConvId = convId;
+  el('communityConvListView').style.display = 'none';
+  el('communityConvChatView').style.display = 'block';
+  await loadConversationMessages(convId);
+  refreshDMBadge();
+}
+
+async function loadConversationMessages(convId){
+  const chatContent = el('communityConvChatContent');
+  try{
+    const data = await apiGet('/api/community/conversations/'+convId+'/messages');
+    if(data.error){ chatContent.innerHTML = '<p style="color:var(--gray)">'+esc(data.error)+'</p>'; return; }
+    renderChat(data);
+  }catch(err){ chatContent.innerHTML = '<p style="color:var(--gray)">Could not load messages</p>'; console.error(err); }
+}
+
+function renderChat(data){
+  const chatContent = el('communityConvChatContent');
+  chatContent.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div class="member-av" style="width:36px;height:36px;font-size:13px">${esc((data.otherName||'M').slice(0,1).toUpperCase())}</div>
+      <div>
+        <div style="font-weight:600">${esc(data.otherName)}</div>
+        <div style="font-size:12px;color:var(--gray);cursor:pointer" onclick="openMemberProfile(${data.otherUserId})">View profile</div>
+      </div>
+    </div>
+    <div id="chatMessagesBox">
+      ${data.messages.length===0?'<p style="color:var(--gray);text-align:center;margin:auto">Start the conversation!</p>':renderChatMessages(data.messages)}
+    </div>
+    <div style="display:flex;gap:8px">
+      <textarea id="chatMsgInput" placeholder="Write a message…" rows="2" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:2px;font-family:var(--f);font-size:13px;resize:none" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage(${data.conversationId})}"></textarea>
+      <button class="btn primary" onclick="sendChatMessage(${data.conversationId})" style="align-self:flex-end">Send</button>
+    </div>
+    <div style="font-size:12px;color:var(--gray2);margin-top:6px">Press Enter to send · Shift+Enter for new line</div>
+  `;
+  const box = el('chatMessagesBox');
+  if(box) box.scrollTop = box.scrollHeight;
+}
+
+function renderChatMessages(messages){
+  let html = '';
+  let lastDate = '';
+  messages.forEach(m=>{
+    const d = new Date(m.createdAt).toLocaleDateString();
+    if(d!==lastDate){ html+=`<div class="chat-time">${d}</div>`; lastDate=d; }
+    html+=`<div class="chat-bubble ${m.isMe?'me':'them'}">${esc(m.body)}</div>`;
+  });
+  return html;
+}
+
+async function sendChatMessage(convId){
+  const input = el('chatMsgInput');
+  const body = input.value.trim();
+  if(!body) return;
+  input.value = '';
+  try{
+    const res = await apiPost('/api/community/conversations/'+convId+'/messages', { body });
+    if(res.error){ toast(res.error); return; }
+    await loadConversationMessages(convId);
+  }catch(err){ toast('Could not send message'); console.error(err); }
+}
+
+async function refreshDMBadge(){
+  try{
+    const res = await apiGet('/api/community/conversations/unread-count');
+    const count = res.count || 0;
+    el('dmBadge').style.display = count>0 ? 'inline-block' : 'none';
+    el('dmBadge').textContent = count>9 ? '9+' : count;
+    el('msgTabBadge').style.display = count>0 ? 'inline-block' : 'none';
+    el('msgTabBadge').textContent = count>9 ? '9+' : count;
+  }catch(e){}
 }
 
 async function loadSolvedFrameworks(){
@@ -2505,6 +3023,8 @@ async function loadMarkingCriteria(){
 
 /* ---------- init ---------- */
 window.addEventListener('DOMContentLoaded',async ()=>{
+  _pickerCreatorFramework = makeCasePicker('pickerCreatorFramework', 'creatorFrameworkCaseId', '— Choose a case —');
+  _pickerShareCase = makeCasePicker('pickerShareCase', 'shareCaseId', '— Choose a case —');
   loadSettings();
   await loadMarkingCriteria();
   // nav
@@ -2546,23 +3066,39 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   el('submitCaseBtn').onclick=submitCase;
   el('acctCreator').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('creator'); };
 
-  // community
+  // community tabs
+  $$('.community-tab').forEach(b=>b.onclick=()=>showCommunityTab(b.dataset.ctab));
+
+  // community feed
   el('shareCaseBtn').onclick=()=>{ loadShareCaseOptions(); el('shareCaseModal').classList.add('show'); };
   el('shareCaseCancel').onclick=()=>el('shareCaseModal').classList.remove('show');
   el('shareCaseSave').onclick=submitSharedCase;
   el('shareCaseModal').onclick=(e)=>{ if(e.target===el('shareCaseModal')) el('shareCaseModal').classList.remove('show'); };
-  el('communityBackBtn').onclick=showCommunityFeed;
+  el('communityBackBtn').onclick=()=>showCommunityTab('feed');
   $$('#communityStatusFilter button').forEach(b=>b.onclick=()=>{
     $$('#communityStatusFilter button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
     _communityStatusFilter = b.dataset.status;
     loadCommunityFeed();
   });
 
+  // community members back
+  el('memberProfileBackBtn').onclick=()=>{
+    el('communityMemberProfilePane').style.display='none';
+    el('communityMembersPane').style.display='block';
+  };
+
+  // community messages back
+  el('convChatBackBtn').onclick=()=>{
+    _activeConvId=null;
+    showConvListView();
+  };
+
   // Account circle dropdown
   el('profileAv').onclick=(e)=>{ e.stopPropagation(); el('acctMenu').classList.toggle('open'); };
   document.addEventListener('click',()=>el('acctMenu').classList.remove('open'));
   el('acctMenu').addEventListener('click',e=>e.stopPropagation());
   el('acctSetup').onclick=()=>{ el('acctMenu').classList.remove('open'); openSetup(); };
+  el('acctPrivacy').onclick=()=>{ el('acctMenu').classList.remove('open'); openProfileSettings(); };
   el('acctAdmin').onclick=()=>{ el('acctMenu').classList.remove('open'); showView('admin'); loadAdminUsers(); loadAdminCases(); loadAdminCriteria(); loadSolvedFrameworks(); loadCaseSubmissions(); };
 
   el('closeSettings').onclick=closeSetup;
@@ -2599,7 +3135,12 @@ el('newDrillBtn').onclick=showReady; el('ctaStart').onclick=showReady; el('start
     const typing=/^(TEXTAREA|INPUT)$/.test(document.activeElement.tagName);
     const stage=$('#viewDrill .stage.show'); if(!stage) return;
     if(e.key==='Enter' && !typing){ const b=stage.querySelector('.btn.accent:not([disabled])'); if(b){ e.preventDefault(); b.click(); } }
-    if(e.code==='Space' && !typing){ const rec=stage.querySelector('.btn.rec'); if(rec){ e.preventDefault(); rec.click(); } }
+    if(e.code==='Space' && !typing){
+      e.preventDefault();
+      const recBtn=stage.querySelector('.btn.rec');
+      if(recBtn && !recBtn.disabled){ recBtn.click(); }
+      else { const stopBtn=stage.querySelector('[id$="Stop"]:not([disabled])'); if(stopBtn) stopBtn.click(); }
+    }
   });
 
   renderDashboard();
@@ -2645,6 +3186,43 @@ function remarkHits(){ for(let t=30;t<=tElapsed;t+=30){ const mk=$('#marks .mark
 function inDrill(){ return el('viewDrill').style.display!=='none' && el('drillRun').style.display!=='none'; }
 function openSetup(){ if(inDrill()){ pauseSession(); }
   else { modalMode='set'; el('closeSettings').textContent='Done'; el('pauseNote').style.display='none'; el('cancelDrill').style.display='none'; el('settingsModal').classList.add('show'); } }
+
+function openProfileSettings(){
+  const current = AUTH.user?.showStats !== false;
+  el('statsVisibilityInput').checked = current;
+  el('profileSettingsModal').classList.add('show');
+}
+
+async function setStatsVisibility(newVal){
+  try{
+    const res = await fetch(API_BASE+'/api/auth/profile', {method:'PATCH', headers:authHeaders(), body:JSON.stringify({showStats:newVal})}).then(r=>r.json());
+    if(res.error){ toast(res.error); el('statsVisibilityInput').checked = !newVal; return; }
+    AUTH.user = {...AUTH.user, showStats: newVal};
+    localStorage.setItem('cf_user', JSON.stringify(AUTH.user));
+  }catch(err){ toast('Could not save setting'); el('statsVisibilityInput').checked = !newVal; }
+}
+
+el('statsVisibilityInput').addEventListener('change', async function(){
+  const newVal = this.checked;
+  if(newVal){
+    // Turning ON: show informational prompt first
+    this.checked = false; // revert visually until confirmed
+    const confirmed = await confirmDialog(
+      'Show your performance stats?',
+      'Your total cases completed and average score will be visible on your community profile.\n\nIn return, you\'ll be able to see the stats of others who have also chosen to share — helping you connect with people at a similar level.',
+      { okText: 'Yes, show my stats' }
+    );
+    if(!confirmed){ return; }
+    this.checked = true;
+    await setStatsVisibility(true);
+    toast('Your stats are now visible to the community');
+  } else {
+    await setStatsVisibility(false);
+    toast('Your stats are now hidden');
+  }
+});
+
+el('closeProfileSettings').onclick = () => el('profileSettingsModal').classList.remove('show');
 function pauseSession(){ modalMode='pause'; S.paused=true; TTS.stop(); Mic.hide();
   pauseWasTiming=!!timerInt; if(timerInt){ clearInterval(timerInt); timerInt=null; }
   if(tStarted) el('timerLog').textContent='|| Paused';
