@@ -90,22 +90,66 @@ function quoteIsGrounded(quote, transcript) {
   return matched / qWords.length >= 0.8;
 }
 
-async function generateJson(prompt) {
-  const Anthropic = require('@anthropic-ai/sdk');
-  const clientOpts = { apiKey: process.env.ANTHROPIC_API_KEY };
-  if (process.env.ANTHROPIC_WORKSPACE_ID) {
-    clientOpts.defaultHeaders = { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID };
-  }
-  const client = new Anthropic(clientOpts);
-  const response = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
-    max_tokens: 8000,
-    messages: [{ role: 'user', content: prompt }]
+async function generateJsonViaWorkersAI(prompt) {
+  const url = process.env.WORKERS_AI_URL;
+  if (!url) throw new Error('WORKERS_AI_URL not configured');
+
+  const res = await fetch(`${url}/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(process.env.WORKERS_AI_SECRET
+        ? { Authorization: `Bearer ${process.env.WORKERS_AI_SECRET}` }
+        : {}),
+    },
+    body: JSON.stringify({
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 8000,
+    }),
   });
-  const raw = response.content.find(b => b.type === 'text')?.text?.trim() || '';
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Workers AI gateway error ${res.status}: ${detail}`);
+  }
+
+  const data = await res.json();
+  const raw = (data.content || '').trim();
   let cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
   cleaned = extractFirstJsonObject(cleaned) || cleaned;
   return { raw, parsed: JSON.parse(cleaned) };
+}
+
+async function generateJson(prompt) {
+  // Try Anthropic first; fall back to Workers AI on rate-limit (429) or overload (529).
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      const Anthropic = require('@anthropic-ai/sdk');
+      const clientOpts = { apiKey: process.env.ANTHROPIC_API_KEY };
+      if (process.env.ANTHROPIC_WORKSPACE_ID) {
+        clientOpts.defaultHeaders = { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID };
+      }
+      const client = new Anthropic(clientOpts);
+      const response = await client.messages.create({
+        model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: prompt }]
+      });
+      const raw = response.content.find(b => b.type === 'text')?.text?.trim() || '';
+      let cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+      cleaned = extractFirstJsonObject(cleaned) || cleaned;
+      return { raw, parsed: JSON.parse(cleaned) };
+    } catch (err) {
+      const status = err?.status ?? err?.statusCode;
+      if (status === 429 || status === 529 || err?.message?.includes('rate limit')) {
+        console.warn('Anthropic rate limited — falling back to Workers AI');
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  return generateJsonViaWorkersAI(prompt);
 }
 
 // STAGE 1 — extraction. Pulls a flat list of atomic points out of the transcript,
