@@ -263,6 +263,56 @@
   .empty-state .es-sub{font-size:13.5px;color:var(--gray);margin-top:5px;max-width:380px;line-height:1.6}
   .empty-state .btn{margin-top:16px}
 
+  /* ---- progress ---- */
+  #viewProgress{padding-bottom:80px}
+  .pg-block{padding:40px 0;border-bottom:1px solid var(--line);min-width:0}
+  .pg-block .blockhead.split{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+  .pg-two{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+  .pg-two>.pg-block{border-bottom:0}
+  .pg-two>.pg-block:first-child{border-right:1px solid var(--line);padding-right:44px}
+  .pg-two>.pg-block:last-child{padding-left:44px}
+  .pg-chart{width:100%;height:auto;display:block;overflow:visible}
+  .pg-chart text{font-family:var(--f);font-size:11px;fill:var(--gray2)}
+  .pg-chart .gl{stroke:var(--line);stroke-width:1}
+  .pg-chart .thr{stroke:var(--good);stroke-dasharray:4 4;stroke-width:1;opacity:.75}
+  .pg-chart .ln{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+  .pg-chart .dot{stroke:var(--surface);stroke-width:2}
+  .pg-chart .col{fill:var(--track)}
+  .pg-chart .none{fill:var(--gray2)}
+  .pg-verdict{font-size:16px;font-weight:600;line-height:1.5;margin:0 0 22px;max-width:520px}
+  .pg-verdict.up{color:var(--good)}.pg-verdict.down{color:var(--bad)}
+  .pg-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px}
+  .pg-kpi .n{font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1}
+  .pg-kpi .l{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--gray2);margin-top:7px}
+  .pg-d{font-size:12px;font-weight:700;margin-left:6px;white-space:nowrap}
+  .pg-d.up{color:var(--good)}.pg-d.down{color:var(--bad)}.pg-d.flat{color:var(--gray2)}
+  .pg-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:26px;max-width:340px}
+  .pg-cal span{aspect-ratio:1;border-radius:5px;background:var(--track);font-size:10px;color:var(--gray2);display:grid;place-items:center}
+  .pg-cal span.h{background:none;aspect-ratio:auto;font-weight:600;letter-spacing:.05em}
+  .pg-cal span.e{background:none}
+  .pg-cal span.l1{background:var(--amber);color:#fff}
+  .pg-cal span.l2{background:var(--good);color:#fff}
+  .pg-cal span.l3{background:var(--ink);color:var(--bg)}
+  .pg-cal span.today{outline:2px solid var(--red);outline-offset:1px}
+  .pg-plan{list-style:none;margin:0;padding:0}
+  .pg-item{display:grid;grid-template-columns:34px 1fr auto;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+  .pg-item:last-child{border-bottom:0}
+  .pg-rank{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;background:var(--bg2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-2)}
+  .pg-item:nth-child(-n+3) .pg-rank{background:var(--red);color:#fff;box-shadow:none}
+  .pg-item h4{margin:0;font-size:15.5px;font-weight:700}
+  .pg-item p{margin:5px 0 0;font-size:13.5px;line-height:1.6;color:var(--gray)}
+  .pg-item p.nx{color:var(--ink)}
+  .pg-item .btn{align-self:center}
+  @media (max-width:860px){
+    .pg-two{grid-template-columns:1fr}
+    .pg-two>.pg-block:first-child{border-right:0;padding-right:0;border-bottom:1px solid var(--line)}
+    .pg-two>.pg-block:last-child{padding-left:0}
+    .pg-item{grid-template-columns:34px 1fr}
+    .pg-item .btn{grid-column:2;justify-self:start}
+  }
+  .dash-delta{margin-top:16px;font-size:14px;font-weight:600;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .dash-delta button{background:none;border:0;padding:0;color:var(--red);font:inherit;font-weight:700;cursor:pointer}
+
   /* ---- dashboard ---- */
   #viewDashboard{padding-bottom:80px}
   .dash-head{padding:44px 0 38px;max-width:760px}
@@ -788,6 +838,10 @@
   #viewDashboard.enter>*:nth-child(2){animation-delay:.07s}
   #viewDashboard.enter>*:nth-child(3){animation-delay:.14s}
   #viewDashboard.enter>*:nth-child(4){animation-delay:.21s}
+  #viewProgress.enter>*{opacity:0;animation:rise .5s var(--ease-out) forwards}
+  #viewProgress.enter>*:nth-child(2){animation-delay:.07s}
+  #viewProgress.enter>*:nth-child(3){animation-delay:.14s}
+  #viewProgress.enter>*:nth-child(4){animation-delay:.21s}
 
   .runtop{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 0 16px;
     border-bottom:1px solid var(--line);margin-bottom:0;flex-wrap:wrap}
@@ -1181,6 +1235,7 @@
       <div class="brand">Case<b>room</b></div>
       <nav class="navlinks">
         <button class="navi on" data-view="dashboard"><span>Dashboard</span></button>
+        <button class="navi" data-view="progress"><span>Progress</span></button>
         <button class="navi" data-view="drill"><span>Drill</span></button>
         <button class="navi" id="navCreator" data-view="creator" style="display:none"><span>Creator</span></button>
         <button class="navi" data-view="community"><span>Community</span><span class="navbadge" id="dmBadge" style="display:none"></span></button>
@@ -1219,6 +1274,7 @@
       <div class="dash-head">
         <h1>Performance summary</h1>
         <p>Each completed drill is scored and recorded. Review your averages and the criteria that need work.</p>
+        <div class="dash-delta" id="dashDelta" style="display:none"><span id="dashDeltaText"></span><button type="button" id="dashProgressLink">See your progress →</button></div>
       </div>
 
       <div class="grid-stats">
@@ -1249,6 +1305,31 @@
           <p id="ctaText">Draw a random case from 400+ real and modeled prompts. Summarize it, ask clarifiers, build a framework in the time limit, deliver it, and get a scored review.</p>
         </div>
         <div class="cta-right"><button class="btn red big" id="ctaStart">Open ready room →</button></div>
+      </div>
+    </section>
+
+    <!-- PROGRESS -->
+    <section id="viewProgress" class="enter" style="display:none">
+      <div class="dash-head">
+        <div class="eyebrow red">Progress</div>
+        <h1>How you're trending</h1>
+        <p>Your scores over time, how last week and this month compare, and the ten things most worth working on next.</p>
+      </div>
+
+      <div class="pg-block">
+        <div class="blockhead split"><div><div class="eyebrow">Over time</div><h3>Average score by week</h3></div>
+          <div class="seg" id="pgRange" role="group" aria-label="Chart range"><button type="button" data-w="4">4W</button><button type="button" class="on" data-w="12">12W</button><button type="button" data-w="26">26W</button></div></div>
+        <div id="pgTrend"></div>
+      </div>
+
+      <div class="pg-two">
+        <div class="pg-block"><div class="blockhead"><div class="eyebrow">Last week</div><h3>Did you make progress?</h3></div><div id="pgWeek"></div></div>
+        <div class="pg-block"><div class="blockhead"><div class="eyebrow">This month</div><h3>The month so far</h3></div><div id="pgMonth"></div></div>
+      </div>
+
+      <div class="pg-block" style="border-bottom:0">
+        <div class="blockhead"><div class="eyebrow">Action plan</div><h3>Your top priorities</h3></div>
+        <ol class="pg-plan" id="pgPlan"></ol>
       </div>
     </section>
 
@@ -1923,13 +2004,18 @@
       if (!Array.isArray(drills)) return;
       // Convert server format to local format. The server returns newest first;
       // local history is oldest-first (renderReady reads the last entry).
-      const history = drills.map(d => ({
-        ts: new Date(d.created_at).getTime(),
+      // The server inserts a row for every review run, while the local cache
+      // overwrites re-runs of the same drill, so collapse the reruns here.
+      const history = dedupeReruns(drills.map(d => ({
+        // created_at is a naive timestamp stored in UTC; without a zone suffix
+        // the browser would read it as local time and shift every bucket.
+        ts: new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(String(d.created_at)) ? d.created_at : d.created_at + 'Z').getTime(),
         id: d.case_id, title: d.case_title, source: d.case_source, type: d.case_type,
-        pct: d.score, levels: d.levels || {}, bullets: d.bullets || 0
-      })).reverse();
+        pct: d.score, levels: normLevels(d.levels), bullets: d.bullets || 0
+      })).reverse());
       saveHistory(history);
       renderDashboard();
+      if (el('viewProgress').style.display !== 'none') renderProgress();
     } catch (e) { console.log('Could not sync history:', e); }
   }
 
@@ -2136,7 +2222,9 @@ function setKey(){ return 'cd_settings_v1_'+userScope(); }
 function histKey(){ return 'cd_history_v1_'+userScope(); }
 function loadSettings(){ try{ const s=JSON.parse(localStorage.getItem(setKey())||'{}'); S.timeLimit=s.timeLimit||180; S.rate=s.rate||1; S.showText=!!s.showText; }catch(e){} }
 function saveSettings(){ try{ localStorage.setItem(setKey(),JSON.stringify({timeLimit:S.timeLimit,rate:S.rate,showText:S.showText})); }catch(e){} }
-function loadHistory(){ try{ return JSON.parse(localStorage.getItem(histKey())||'[]'); }catch(e){ return []; } }
+// Levels are normalized to numbers on read: the server stores 'strong'|'ok'|'weak'
+// while the local cache stores 2|1|0, and averaging the strings gave NaN.
+function loadHistory(){ try{ const h=JSON.parse(localStorage.getItem(histKey())||'[]'); return Array.isArray(h)?h.map(x=>Object.assign({},x,{levels:normLevels(x&&x.levels)})):[]; }catch(e){ return []; } }
 function saveHistory(h){ try{ localStorage.setItem(histKey(),JSON.stringify(h)); }catch(e){} }
 
 /* Drop every cached progress key, including the pre-namespacing globals left
@@ -2568,19 +2656,23 @@ function showView(v){
   el('viewAdmin').style.display=v==='admin'?'block':'none';
   el('viewCreator').style.display=v==='creator'?'block':'none';
   el('viewCommunity').style.display=v==='community'?'block':'none';
+  el('viewProgress').style.display=v==='progress'?'block':'none';
   $$('.navi').forEach(n=>n.classList.toggle('on',n.dataset.view===v));
-  el('pageTitle').childNodes[0].nodeValue=v==='dashboard'?'Dashboard':(v==='admin'?'Admin':(v==='creator'?'Creator':(v==='community'?'Community':'Drill')));
-  el('pageSub').textContent=v==='dashboard'?'Case framework practice':(v==='admin'?'Users & case bank':(v==='creator'?'Submit frameworks and cases':(v==='community'?"Share cases you're stuck on and help others":(S.caseObj?S.caseObj.source:'Live practice'))));
+  const VIEW_TITLE={dashboard:'Dashboard',progress:'Progress',admin:'Admin',creator:'Creator',community:'Community'};
+  const VIEW_SUB={dashboard:'Case framework practice',progress:'Trends, weekly and monthly review, action plan',admin:'Users & case bank',creator:'Submit frameworks and cases',community:"Share cases you're stuck on and help others"};
+  el('pageTitle').childNodes[0].nodeValue=VIEW_TITLE[v]||'Drill';
+  el('pageSub').textContent=VIEW_SUB[v]||(S.caseObj?S.caseObj.source:'Live practice');
   if(v!=='drill') el('mainCrumb').style.display='';
   if(v==='dashboard'){ TTS.stop(); Mic.hide(); renderDashboard(); }
+  if(v==='progress'){ TTS.stop(); Mic.hide(); renderProgress(); }
   if(v==='admin'){ TTS.stop(); Mic.hide(); loadAdminUsers(); loadAdminCases(); loadSolvedFrameworks(); loadCaseSubmissions(); }
   if(v==='creator'){ TTS.stop(); Mic.hide(); loadCreatorFrameworkCases(); loadCreatorSubmissions(); }
   if(v==='community'){ TTS.stop(); Mic.hide(); showCommunityTab(_activeCommunityTab||'feed'); refreshDMBadge(); }
   // A view swap is a page change to the reader: return to the top and replay
   // the entrance stagger so the new view announces itself.
   window.scrollTo({top:0,behavior:'smooth'});
-  const vd=el('viewDashboard');
-  if(v==='dashboard'&&vd){ vd.classList.remove('enter'); void vd.offsetWidth; vd.classList.add('enter'); }
+  const vd=v==='dashboard'?el('viewDashboard'):(v==='progress'?el('viewProgress'):null);
+  if(vd){ vd.classList.remove('enter'); void vd.offsetWidth; vd.classList.add('enter'); }
 }
 function gotoStage(name){
   TTS.stop(); Mic.hide();
@@ -2653,7 +2745,16 @@ function makeDeepgramCapture(o){
 }
 
 /* ---------- drill actions ---------- */
-function randomCase(){ return CASE_BANK[Math.floor(Math.random()*CASE_BANK.length)]; }
+// `S.pendingPick` lets the Progress action plan steer the next drill to a
+// specific case ({caseId}) or case type ({type}); it applies once.
+function randomCase(){
+  const p=S.pendingPick; S.pendingPick=null;
+  if(p&&p.caseId){ const c=CASE_BANK.find(x=>x.id===p.caseId); if(c) return c; }
+  let pool=CASE_BANK;
+  if(p&&p.type){ const f=CASE_BANK.filter(x=>x.type===p.type); if(f.length) pool=f; }
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function startDrillWith(pick){ S.pendingPick=pick||null; return startDrill(); }
 async function startDrill(){
   await loadCaseBank();
   if(!CASE_BANK.length){ toast('Case bank failed to load. Please refresh and try again.'); return; }
@@ -2790,8 +2891,163 @@ function computeStreak(h){ if(!h.length)return 0; const days=new Set(h.map(x=>da
 function coverClass(pct){ return pct>=75?'cov-good':pct>=45?'cov-ok':'cov-bad'; }
 function scClass(pct){ return pct>=75?'sc-good':pct>=45?'sc-ok':'sc-bad'; }
 function timeAgo(ts){ const s=(Date.now()-ts)/1000; if(s<3600)return Math.max(1,Math.floor(s/60))+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+/* ANALYTICS:BEGIN — pure helpers (no DOM, no globals); tests load this block verbatim */
+const LEVEL_PTS={strong:2,ok:1,weak:0};
+const READY_PCT=87;
+function normLevel(v){ if(typeof v==='string') return Object.prototype.hasOwnProperty.call(LEVEL_PTS,v)?LEVEL_PTS[v]:null; return typeof v==='number'&&isFinite(v)?v:null; }
+function normLevels(lv){ const o={}; if(lv&&typeof lv==='object') Object.keys(lv).forEach(k=>{ const n=normLevel(lv[k]); if(n!=null) o[k]=n; }); return o; }
+// Oldest-first in, oldest-first out. A re-review of the same case within the window replaces the earlier row.
+function dedupeReruns(h,windowMs){
+  const win=windowMs==null?90*60000:windowMs, out=[];
+  h.slice().sort((a,b)=>a.ts-b.ts).forEach(x=>{ const p=out[out.length-1]; if(p&&p.id===x.id&&x.ts-p.ts<win) out[out.length-1]=x; else out.push(x); });
+  return out;
+}
+function startOfDay(ts){ const d=new Date(ts); d.setHours(0,0,0,0); return d.getTime(); }
+function addDays(ts,n){ const d=new Date(ts); d.setDate(d.getDate()+n); return d.getTime(); }
+function startOfWeek(ts){ const d=new Date(startOfDay(ts)); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d.getTime(); } // Monday
+function startOfMonth(ts,back){ const d=new Date(ts); return new Date(d.getFullYear(),d.getMonth()-(back||0),1).getTime(); }
+function between(h,from,to){ return h.filter(x=>x.ts>=from&&x.ts<to&&typeof x.pct==='number'); }
+function mean(a){ return a.length?a.reduce((n,v)=>n+v,0)/a.length:null; }
+function critPct(h,name){ const m=mean(h.map(x=>x.levels?normLevel(x.levels[name]):null).filter(v=>v!=null)); return m==null?null:Math.round(m/2*100); }
+function dayStamp(ts){ const d=new Date(ts); return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); }
+function periodStats(h,from,to,crits){
+  const p=between(h,from,to), byType={}, crit={};
+  p.forEach(x=>{ const t=x.type||'other'; (byType[t]=byType[t]||[]).push(x.pct); });
+  Object.keys(byType).forEach(t=>{ byType[t]={n:byType[t].length,avg:Math.round(mean(byType[t]))}; });
+  (crits||[]).forEach(n=>{ crit[n]=critPct(p,n); });
+  return {drills:p.length,avg:p.length?Math.round(mean(p.map(x=>x.pct))):null,best:p.length?Math.max(...p.map(x=>x.pct)):null,
+    activeDays:new Set(p.map(x=>dayStamp(x.ts))).size,crit,byType};
+}
+function compareStats(cur,prev){
+  const crit={}; Object.keys(cur.crit).forEach(n=>{ crit[n]=cur.crit[n]!=null&&prev.crit[n]!=null?cur.crit[n]-prev.crit[n]:null; });
+  return {drills:cur.drills-prev.drills,avg:cur.avg!=null&&prev.avg!=null?cur.avg-prev.avg:null,activeDays:cur.activeDays-prev.activeDays,crit};
+}
+function weeklySeries(h,weeks,now){
+  const w0=startOfWeek(now), out=[];
+  for(let i=weeks-1;i>=0;i--){ const s=addDays(w0,-7*i), p=between(h,s,addDays(s,7)); out.push({start:s,n:p.length,avg:p.length?Math.round(mean(p.map(x=>x.pct))):null}); }
+  return out;
+}
+// Calendar-aligned windows. Month-to-date is compared with the same elapsed span of the previous month.
+function reviewPeriods(now){
+  const w0=startOfWeek(now), m0=startOfMonth(now), pm0=startOfMonth(now,1);
+  return {thisWeek:[w0,now+1],lastWeek:[addDays(w0,-7),w0],weekBefore:[addDays(w0,-14),addDays(w0,-7)],
+    month:[m0,now+1],prevMonth:[pm0,Math.min(pm0+(now-m0),m0)]};
+}
+function verdict(cur,prev,label,prevLabel){
+  if(!cur.drills) return {tone:'none',text:prev.drills?`No drills ${label}. You did ${prev.drills} ${prevLabel}, so this is the week to restart.`:`No drills ${label}.`};
+  if(!prev.drills) return {tone:'none',text:`${cur.drills} drill${cur.drills>1?'s':''} ${label}, averaging ${cur.avg}. Nothing ${prevLabel} to compare against yet.`};
+  const d=cur.avg-prev.avg, vol=cur.drills-prev.drills, vtxt=vol>0?`${vol} more drill${vol>1?'s':''}`:vol<0?`${-vol} fewer drill${vol<-1?'s':''}`:'the same number of drills';
+  if(d>=3) return {tone:'up',text:`Yes. Your average is up ${d} points to ${cur.avg}, with ${vtxt} than ${prevLabel}.`};
+  if(d<=-3) return {tone:'down',text:`Not this time. Your average is down ${-d} points to ${cur.avg}, with ${vtxt} than ${prevLabel}.`};
+  return {tone:'flat',text:`Holding steady at ${cur.avg} (${d>0?'+':''}${d}), with ${vtxt} than ${prevLabel}.`};
+}
+// Rule-based and explainable: every item says why it is ranked and what to do next.
+function buildActionPlan(hist,o){
+  o=o||{}; const now=o.now||Date.now(), crits=o.crits||[], L=o.typeLabel||(t=>t), advice=o.weakAdvice||{}, items=[];
+  const h=hist.filter(x=>typeof x.pct==='number').sort((a,b)=>a.ts-b.ts);
+  if(!h.length) return [];
+  const conf=Math.min(1,h.length/8);
+  const rec=h.filter(x=>x.ts>=addDays(now,-14)), base=rec.length>=3?rec:h.slice(-7);
+  const span=rec.length>=3?'the last 14 days':`your last ${base.length} drill${base.length>1?'s':''}`;
+  const overall=Math.round(mean(base.map(x=>x.pct)));
+  const add=(key,score,title,why,next,action)=>items.push({key,score:Math.round(score*10)/10,title,why,next,action:action||{}});
+
+  if(h.length<5) add('baseline',90,`Build a baseline: ${5-h.length} more drill${5-h.length>1?'s':''}`,`Only ${h.length} drill${h.length>1?'s are':' is'} logged, so trends and priorities are still rough.`,'Complete short drills on separate days; the plan sharpens with each one.');
+
+  const cp=crits.map(n=>({n,p:critPct(base,n)})).filter(c=>c.p!=null), minP=cp.length?Math.min(...cp.map(c=>c.p)):null;
+  cp.forEach(c=>{ if(c.p>=75) return;
+    add('crit:'+c.n,(100-c.p)*(0.55+0.45*conf)+(c.p===minP?8:0),`Raise ${c.n} (${c.p}%)`,`Your ${c.n} average over ${span} is ${c.p}%${c.p===minP?', your weakest criterion':''}.`,advice[c.n]||`Re-read the ${c.n} rubric, then drill with that criterion as your only goal.`); });
+
+  const prior=h.filter(x=>x.ts>=addDays(now,-28)&&x.ts<addDays(now,-14));
+  if(rec.length>=2&&prior.length>=2) crits.forEach(n=>{ const a=critPct(rec,n), b=critPct(prior,n);
+    if(a!=null&&b!=null&&a-b<=-10) add('slip:'+n,35+Math.min(25,b-a),`${n} is slipping (${b}% → ${a}%)`,`It fell ${b-a} points compared with the previous two weeks.`,`Slow down on ${n} before your next delivery: check it explicitly before you finish.`); });
+
+  const byType={}; h.forEach(x=>{ const t=x.type||'other'; (byType[t]=byType[t]||[]).push(x.pct); });
+  Object.keys(byType).forEach(t=>{ const n=byType[t].length, a=Math.round(mean(byType[t])); if(n>=2&&a<70)
+    add('type:'+t,(100-a)*0.8*Math.min(1,n/4)+5,`Strengthen ${L(t)} cases (${a}% avg)`,`${n} attempts averaging ${a}, below your ${overall}% recent overall.`,`Do two ${L(t)} cases back to back and compare the frameworks.`,{type:t,label:`Drill ${L(t)}`}); });
+
+  (o.types||[]).filter(t=>!byType[t]).slice(0,2).forEach(t=>add('new:'+t,28,`Try a ${L(t)} case`,'You have not drilled this type yet, and interviewers will not stick to your favourites.',`Take one ${L(t)} case this week.`,{type:t,label:`Drill ${L(t)}`}));
+
+  const last=h[h.length-1], gap=Math.round((startOfDay(now)-startOfDay(last.ts))/86400000);
+  const active7=new Set(h.filter(x=>x.ts>=addDays(startOfDay(now),-6)).map(x=>dayStamp(x.ts))).size;
+  if(gap>=3) add('consistency',55+Math.min(20,gap*2),`Get back on the board: ${gap} days since your last drill`,'Skills fade quickly without reps, and a gap resets your streak.','Do one drill today, even a short one.',{label:'Start a drill'});
+  else if(active7<3) add('consistency',45,`Practice more often (${active7} active day${active7===1?'':'s'} in the last 7)`,'Frequent short sessions beat occasional long ones.','Aim for at least 3 drill days a week.',{label:'Start a drill'});
+
+  if(h.length>=3&&overall<READY_PCT) add('ready',(READY_PCT-overall)*0.9+10,`Close the gap to interview-ready (${overall}% vs ${READY_PCT}%)`,`Frameworks scoring ${READY_PCT}%+ are interview-ready; your recent average is ${overall}%.`,`Aim for ${READY_PCT}%+ on three drills in a row.`,{label:'Start a drill'});
+
+  const latest={}; h.forEach(x=>{ latest[x.id]=x; });
+  Object.values(latest).filter(x=>x.pct<50&&x.id).sort((a,b)=>a.pct-b.pct).slice(0,2).forEach(x=>add('retry:'+x.id,35+(50-x.pct)*0.5,`Retry "${x.title||'case'}" (${x.pct}%)`,'Your last attempt scored under 50%, and a retry shows what you have learned.','Redo it from scratch, then compare with your first framework.',{caseId:x.id,label:'Retry case'}));
+
+  return items.sort((a,b)=>b.score-a.score).slice(0,10).map((x,i)=>Object.assign(x,{rank:i+1}));
+}
+function weekSummaryLine(h,now,crits){
+  const P=reviewPeriods(now), lw=periodStats(h,P.lastWeek[0],P.lastWeek[1],crits), wb=periodStats(h,P.weekBefore[0],P.weekBefore[1],crits), tw=periodStats(h,P.thisWeek[0],P.thisWeek[1],crits);
+  if(!h.length) return '';
+  if(!lw.drills) return tw.drills?`This week: ${tw.drills} drill${tw.drills>1?'s':''} so far.`:'No drills last week or this week yet.';
+  const d=wb.drills?lw.avg-wb.avg:null;
+  return `Last week: ${lw.drills} drill${lw.drills>1?'s':''}, avg ${lw.avg}${d==null?'':` (${d>0?'+':''}${d} vs the week before)`}.`;
+}
+/* ANALYTICS:END */
+
+/* ---------- progress view ---------- */
+let PG_WEEKS=12, _pgToken=0;
+const TYPE_LABELS={ma:'M&A',sizing:'Market sizing'};
+function typeLabel(t){ return TYPE_LABELS[t]||String(t||'other').replace(/_/g,' ').replace(/^./,c=>c.toUpperCase()); }
+function fmtDay(ts){ return new Date(ts).toLocaleDateString(undefined,{day:'numeric',month:'short'}); }
+function deltaChip(d,unit){ if(d==null) return ''; const cls=d>0?'up':d<0?'down':'flat'; return `<span class="pg-d ${cls}">${d>0?'▲ +':d<0?'▼ ':'● '}${d===0?'0':d}${unit||''}</span>`; }
+function scoreColor(p){ return p>=75?'var(--good)':p>=45?'var(--amber)':'var(--bad)'; }
+
+function renderTrendChart(series){
+  const W=Math.max(300,Math.min(640,(el('pgTrend').clientWidth||640))), H=220, L=34, R=10, T=14, B=34, iw=W-L-R, ih=H-T-B, n=series.length, step=iw/n, bw=Math.min(34,step*.62);
+  const y=v=>T+ih-(v/100)*ih, cx=i=>L+step*i+step/2;
+  if(!series.some(s=>s.n)) return emptyState('doc','No drills in this range','Complete a drill and your weekly average will chart here.');
+  const grid=[0,50,100].map(v=>`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end">${v}</text>`).join('');
+  const thr=`<line class="thr" x1="${L}" x2="${W-R}" y1="${y(READY_PCT)}" y2="${y(READY_PCT)}"/><text x="${W-R}" y="${y(READY_PCT)-5}" text-anchor="end" style="fill:var(--good)">interview-ready ${READY_PCT}</text>`;
+  const every=n>16?Math.ceil(n/8):n>8?2:1;
+  const cols=series.map((s,i)=>{ const lab=(i%every===0||i===n-1)?`<text x="${cx(i)}" y="${H-12}" text-anchor="middle">${fmtDay(s.start)}</text>`:'';
+    if(s.avg==null) return `${lab}<text class="none" x="${cx(i)}" y="${y(0)-6}" text-anchor="middle">–</text>`;
+    return `<rect class="col" x="${cx(i)-bw/2}" y="${y(s.avg)}" width="${bw}" height="${y(0)-y(s.avg)}" rx="3"><title>Week of ${fmtDay(s.start)}: avg ${s.avg}, ${s.n} drill${s.n>1?'s':''}</title></rect>${lab}`; }).join('');
+  const pts=series.map((s,i)=>s.avg==null?null:[cx(i),y(s.avg),s]).filter(Boolean);
+  const line=pts.length>1?`<polyline class="ln" points="${pts.map(p=>p[0]+','+p[1]).join(' ')}"/>`:'';
+  const dots=pts.map(p=>`<circle class="dot" cx="${p[0]}" cy="${p[1]}" r="5" fill="${scoreColor(p[2].avg)}"><title>Week of ${fmtDay(p[2].start)}: avg ${p[2].avg}, ${p[2].n} drill${p[2].n>1?'s':''}</title></circle>`).join('');
+  const done=series.filter(s=>s.n), first=done[0], lastW=done[done.length-1];
+  const alt=`Average score by week over ${n} weeks. First drilled week ${first.avg}, latest drilled week ${lastW.avg}.`;
+  return `<svg class="pg-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${alt}">${grid}${thr}${cols}${line}${dots}</svg>`;
+}
+
+function renderPeriodCard(cur,prev,label,prevLabel){
+  const v=verdict(cur,prev,label,prevLabel);
+  const kpi=(n,l,d,u)=>`<div class="pg-kpi"><div class="n">${n==null?'–':n}${d==null?'':deltaChip(d,u)}</div><div class="l">${l}</div></div>`;
+  const cmp=compareStats(cur,prev), hasPrev=prev.drills>0;
+  let html=`<p class="pg-verdict ${v.tone}">${esc(v.text)}</p>
+    <div class="pg-kpis">${kpi(cur.drills,'Drills',hasPrev?cmp.drills:null)}${kpi(cur.avg,'Average',cmp.avg)}${kpi(cur.activeDays,'Active days',hasPrev?cmp.activeDays:null)}</div>`;
+  if(cur.drills) html+=CRITS.map(n=>{ const p=cur.crit[n]; if(p==null) return ''; return `<div class="area"><div class="top"><span class="nm">${esc(n)}</span><span class="vl">${p}%${deltaChip(cmp.crit[n],'')}</span></div><div class="bar"><i style="background:${scoreColor(p)};width:${p}%"></i></div></div>`; }).join('');
+  return html;
+}
+function renderCalendar(h,now){
+  const m0=startOfMonth(now), d0=new Date(m0), days=new Date(d0.getFullYear(),d0.getMonth()+1,0).getDate(), lead=(d0.getDay()+6)%7, todayN=new Date(now).getDate();
+  const counts={}; between(h,m0,addDays(m0,days)).forEach(x=>{ const k=new Date(x.ts).getDate(); counts[k]=(counts[k]||0)+1; });
+  let cells=['M','T','W','T','F','S','S'].map(c=>`<span class="h">${c}</span>`).join('')+'<span class="e"></span>'.repeat(lead);
+  for(let d=1;d<=days;d++){ const c=counts[d]||0, cls=(c>=3?'l3':c===2?'l2':c===1?'l1':'')+(d===todayN?' today':''); cells+=`<span class="${cls}" title="${c} drill${c===1?'':'s'}">${c||''}</span>`; }
+  return `<div class="pg-cal" role="img" aria-label="Practice calendar: ${Object.keys(counts).length} active days this month">${cells}</div>`;
+}
+
+async function renderProgress(){
+  const tok=++_pgToken, now=Date.now(), h=loadHistory();
+  let types=[]; try{ await loadCaseBank(); types=[...new Set(CASE_BANK.map(c=>c.type).filter(Boolean))].sort(); }catch(e){}
+  if(tok!==_pgToken) return; // a newer render superseded this one
+  const P=reviewPeriods(now), st=(r)=>periodStats(h,r[0],r[1],CRITS);
+  el('pgTrend').innerHTML=h.length?renderTrendChart(weeklySeries(h,PG_WEEKS,now)):emptyState('doc','No history yet','Your weekly trend, last-week review and action plan appear after your first scored drill.','<button class="btn red sm" onclick="showReady()">Start your first drill</button>');
+  el('pgWeek').innerHTML=h.length?renderPeriodCard(st(P.lastWeek),st(P.weekBefore),'last week','the week before')+`<div class="rm" style="font-size:12.5px;color:var(--gray2);margin-top:6px">${(()=>{ const t=st(P.thisWeek); return `This week so far: ${t.drills} drill${t.drills===1?'':'s'}${t.avg==null?'':`, avg ${t.avg}`}.`; })()}</div>`:emptyState('doc','Nothing to review yet','Last week’s verdict shows up once you have logged drills.');
+  el('pgMonth').innerHTML=h.length?renderPeriodCard(st(P.month),st(P.prevMonth),'this month','the same point last month')+renderCalendar(h,now):emptyState('doc','Nothing to review yet','Your month-to-date summary shows up once you have logged drills.');
+  const weakAdvice={}; CRITS.forEach(n=>{ const f=MARKING_CRITERIA_CONFIG&&MARKING_CRITERIA_CONFIG[n]&&MARKING_CRITERIA_CONFIG[n].feedback; if(f&&f.weak) weakAdvice[n]=f.weak; });
+  const plan=buildActionPlan(h,{now,crits:CRITS,types,typeLabel,weakAdvice});
+  el('pgPlan').innerHTML=plan.length?plan.map(it=>{ const a=it.action||{}; return `<li class="pg-item"><span class="pg-rank">${it.rank}</span><div><h4>${esc(it.title)}</h4><p>${esc(it.why)}</p><p class="nx">→ ${esc(it.next)}</p></div><button class="btn red sm" type="button" data-drill="1" data-type="${esc(a.type||'')}" data-case="${esc(a.caseId||'')}">${esc(a.label||'Drill now')}</button></li>`; }).join(''):'<li>'+emptyState('inbox','No priorities yet','Finish a drill and we will rank what to work on first.')+'</li>';
+}
+
 function renderDashboard(){
   const h=loadHistory();
+  { const line=weekSummaryLine(h,Date.now(),CRITS), box=el('dashDelta'); box.style.display=line?'flex':'none'; el('dashDeltaText').textContent=line; }
   // Counters roll up rather than snap, so the numbers read as a result
   // being tallied instead of a value that was always there.
   setStat('statDrills', h.length);
@@ -3931,7 +4187,10 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   loadSettings();
   await loadMarkingCriteria();
   // nav
-  $$('.navi[data-view]').forEach(n=>n.onclick=()=>{ if(n.dataset.view==='drill') showReady(); else if(n.dataset.view==='admin') showView('admin'); else if(n.dataset.view==='creator') showView('creator'); else if(n.dataset.view==='community') showView('community'); else showView('dashboard'); });
+  $$('.navi[data-view]').forEach(n=>n.onclick=()=>{ if(n.dataset.view==='drill') showReady(); else if(n.dataset.view==='admin') showView('admin'); else if(n.dataset.view==='creator') showView('creator'); else if(n.dataset.view==='community') showView('community'); else if(n.dataset.view==='progress') showView('progress'); else showView('dashboard'); });
+  el('dashProgressLink').onclick=()=>showView('progress');
+  $$('#pgRange button').forEach(b=>b.onclick=()=>{ PG_WEEKS=+b.dataset.w; $$('#pgRange button').forEach(x=>x.classList.toggle('on',x===b)); renderProgress(); });
+  el('pgPlan').onclick=e=>{ const b=e.target.closest('button[data-drill]'); if(!b) return; startDrillWith({caseId:b.dataset.case||null,type:b.dataset.type||null}); };
   // admin
   $$('#adminTabs button').forEach(b=>b.onclick=()=>{
     $$('#adminTabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
