@@ -18,6 +18,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/drills', require('./routes/drills'));
 app.use('/api/transcribe', require('./routes/transcribe'));
+app.use('/api/judge', require('./routes/judge'));
 app.use('/api/cases', require('./routes/cases'));
 app.use('/api/creator', require('./routes/creator'));
 app.use('/api/admin', require('./routes/admin'));

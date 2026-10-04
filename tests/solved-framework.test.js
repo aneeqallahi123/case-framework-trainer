@@ -13,8 +13,8 @@ const block = name => {
   return m[1];
 };
 const { classifyQuestion, checkSummary } = new Function(block('SCORING') + '\nreturn {classifyQuestion,checkSummary};')();
-const { parseBucketText, parseClarifyingText, buildFrameworkFromForm, frameworkPlain } =
-  new Function(block('FWFORM') + '\nreturn {parseBucketText,parseClarifyingText,buildFrameworkFromForm,frameworkPlain};')();
+const { parseBucketText, parseClarifyingText, buildFrameworkFromForm, frameworkPlain, expertFrameworkHtml, escapeHtml, SHAPE_LABELS } =
+  new Function(block('FWFORM') + '\nreturn {parseBucketText,parseClarifyingText,buildFrameworkFromForm,frameworkPlain,expertFrameworkHtml,escapeHtml,SHAPE_LABELS};')();
 
 const entries = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'backend', 'src', 'data', 'expert-cases.json'), 'utf8'));
 const byId = id => entries.find(e => e.case.id === id).case;
@@ -172,4 +172,51 @@ test('the draft playbook only cites real exemplar cases and stays marked as a dr
     });
   }
   assert.strictEqual(pb.observed.totalBuckets, entries.reduce((n, e) => n + e.framework.buckets.length, 0));
+});
+
+test('every answer shape has a student-facing label', () => {
+  for (const shape of SHAPES) assert.ok(SHAPE_LABELS[shape], shape);
+  assert.deepStrictEqual(Object.keys(SHAPE_LABELS).sort(), SHAPES.slice().sort());
+});
+
+test('escapeHtml neutralizes markup, quotes and non-strings', () => {
+  assert.strictEqual(escapeHtml('<img src=x onerror="a()">&\''), '&lt;img src=x onerror=&quot;a()&quot;&gt;&amp;&#39;');
+  assert.strictEqual(escapeHtml(null), '');
+  assert.strictEqual(escapeHtml(5), '5');
+});
+
+test('expert framework view shows purpose, numbered question buckets, hypotheses, the starting bucket and the clarifying Q&A', () => {
+  const e = entries.find(x => x.case.id === 'ex07').framework; // starts at bucket 3
+  const html = expertFrameworkHtml(e);
+  assert.ok(html.includes(escapeHtml(e.purpose)));
+  e.buckets.forEach((b, i) => {
+    assert.ok(html.includes(escapeHtml(b.question)), 'bucket ' + (i + 1));
+    b.points.forEach(p => assert.ok(html.includes(escapeHtml(p))));
+    if (b.hypothesis) assert.ok(html.includes('<b>Hypothesis:</b> ' + escapeHtml(b.hypothesis)));
+  });
+  assert.strictEqual((html.match(/Start here/g) || []).length, 1);
+  assert.ok(html.indexOf('Start here') > html.indexOf(escapeHtml(e.buckets[2].question)));
+  assert.ok(html.indexOf('Start here') < html.indexOf(escapeHtml(e.buckets[3].question)));
+  assert.ok(html.includes('Where to start'));
+  assert.ok(html.includes('Clarifying questions and answers'));
+  e.clarifying.forEach(c => assert.ok(html.includes(escapeHtml(c.answer))));
+});
+
+test('expert framework view escapes author-supplied text and omits empty sections', () => {
+  const html = expertFrameworkHtml({
+    purpose: '<script>alert(1)</script>', start: { text: 'Start with <b>x</b>' },
+    buckets: [{ question: 'Q <i>1</i>?', points: ['p & q'] }, { question: 'Q2?', points: ['r'] }]
+  });
+  assert.ok(!html.includes('<script>') && !html.includes('<i>1</i>') && !html.includes('<b>x</b>'));
+  assert.ok(html.includes('p &amp; q'));
+  assert.ok(!html.includes('Start here'));
+  assert.ok(!html.includes('Hypothesis'));
+  assert.ok(!html.includes('Clarifying questions'));
+});
+
+test('every expert framework renders without throwing and lists all of its buckets', () => {
+  for (const e of entries) {
+    const html = expertFrameworkHtml(e.framework);
+    assert.strictEqual((html.match(/class="ai-bucket"/g) || []).length, e.framework.buckets.length, e.case.id);
+  }
 });

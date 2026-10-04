@@ -2,6 +2,10 @@ const express = require('express');
 const crypto = require('crypto');
 const { pool } = require('../db');
 const { requireAdmin } = require('../middleware/auth');
+const { judge, loadContext, loadPlaybook, shouldUsePlaybook, stats: judgeStats } = require('../judge/service');
+const { buildSystem } = require('../judge/prompt');
+const { modelName, cacheControl, countPromptTokens } = require('../judge/model');
+const { buildSamples, checkExpectations } = require('../judge/samples');
 
 const router = express.Router();
 router.use(requireAdmin);
@@ -221,6 +225,14 @@ router.put('/system-config/system-prompt', async (req, res) => {
     return res.status(400).json({ error: 'System prompt must be a string' });
   }
   try {
+    const current = await pool.query('SELECT value FROM system_config WHERE key = $1', ['system_prompt']);
+    // Keep every saved version so a bad edit can be rolled back. The first save also keeps the version it replaces.
+    const hasHistory = (await pool.query('SELECT 1 FROM system_prompt_history LIMIT 1')).rows.length > 0;
+    if (!hasHistory && current.rows.length && current.rows[0].value) {
+      await pool.query('INSERT INTO system_prompt_history (value, edited_by) VALUES ($1, NULL)', [current.rows[0].value]);
+    }
+    await pool.query('INSERT INTO system_prompt_history (value, edited_by) VALUES ($1, $2)', [systemPrompt, req.user.id]);
+
     const result = await pool.query(
       `UPDATE system_config SET value = $1, updated_at = NOW() WHERE key = $2 RETURNING value, updated_at`,
       [systemPrompt, 'system_prompt']
@@ -235,6 +247,124 @@ router.put('/system-config/system-prompt', async (req, res) => {
   } catch (err) {
     console.error('Update system prompt error:', err);
     res.status(500).json({ error: 'Could not update system prompt' });
+  }
+});
+
+// GET /api/admin/system-config/system-prompt/history - saved versions, newest first
+router.get('/system-config/system-prompt/history', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT h.id, h.created_at, LENGTH(h.value) AS chars, LEFT(h.value, 120) AS preview, u.first_name AS edited_by
+       FROM system_prompt_history h LEFT JOIN users u ON u.id = h.edited_by
+       ORDER BY h.id DESC LIMIT 30`
+    );
+    res.json(result.rows.map(r => ({ id: r.id, createdAt: r.created_at, chars: r.chars, preview: r.preview, editedBy: r.edited_by || null })));
+  } catch (err) {
+    console.error('Prompt history error:', err);
+    res.status(500).json({ error: 'Could not fetch prompt history' });
+  }
+});
+
+// GET /api/admin/system-config/system-prompt/history/:id - one saved version (to load into the editor)
+router.get('/system-config/system-prompt/history/:id', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT value FROM system_prompt_history WHERE id = $1', [req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Version not found' });
+    res.json({ systemPrompt: result.rows[0].value });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch version' });
+  }
+});
+
+// ---- Judge ----
+
+function judgeSettings() {
+  return {
+    model: modelName(),
+    promptCaching: !!cacheControl(),
+    cacheTtl: cacheControl() && cacheControl().ttl ? cacheControl().ttl : '5m',
+    ratePerHour: parseInt(process.env.JUDGE_RATE_PER_HOUR || '30', 10) || 30
+  };
+}
+
+// GET /api/admin/judge-stats - usage since boot, to decide whether prompt caching pays for itself.
+// Prompt caching breaks even at roughly a 22% read share of the cacheable prefix.
+router.get('/judge-stats', (req, res) => {
+  const s = judgeStats;
+  const prefix = s.cacheReadTokens + s.cacheWriteTokens;
+  res.json({
+    ...s,
+    settings: judgeSettings(),
+    modelCalls: s.calls,
+    cacheReadShare: prefix ? Math.round((s.cacheReadTokens / prefix) * 100) : null,
+    resultCacheShare: s.calls + s.resultCacheHits ? Math.round((s.resultCacheHits / (s.calls + s.resultCacheHits)) * 100) : null
+  });
+});
+
+// GET /api/admin/judge-preview - what the judge's stable prompt looks like right now and how big it is.
+router.get('/judge-preview', async (req, res) => {
+  try {
+    const ctx = await loadContext(pool);
+    const playbook = loadPlaybook();
+    const built = buildSystem({ ...ctx, playbook, usePlaybook: shouldUsePlaybook(playbook) });
+    const exactTokens = await countPromptTokens(built.system);
+    res.json({
+      chars: built.system.length,
+      estimatedTokens: Math.round(built.system.length / 4),
+      exactTokens,
+      exemplarCount: built.exemplarCount,
+      judged: built.judged,
+      playbookIncluded: built.playbookIncluded,
+      unresolvedPlaceholders: built.unresolved,
+      settings: judgeSettings(),
+      // Haiku 4.5 silently skips caching below 4,096 tokens.
+      cacheableOnHaiku: (exactTokens || Math.round(built.system.length / 4)) >= 4096
+    });
+  } catch (err) {
+    console.error('Judge preview error:', err);
+    res.status(500).json({ error: 'Could not build the judge preview' });
+  }
+});
+
+// POST /api/admin/judge-test { confirm: true, cases: 1-5 }
+// Judges test frameworks built from the expert solutions (the expert's own, a generic one, an overlapping one),
+// with the case's own expert framework left out of the prompt. Makes up to 3 model calls per case.
+router.post('/judge-test', async (req, res) => {
+  if (!req.body || req.body.confirm !== true) {
+    return res.status(400).json({ error: 'This makes model calls that cost money. Send confirm: true to run it.' });
+  }
+  const n = Math.min(5, Math.max(1, parseInt(req.body.cases, 10) || 3));
+  try {
+    const ctx = await loadContext(pool);
+    const picks = ctx.exemplars.slice(0, n);
+    if (!picks.length) return res.status(400).json({ error: 'No expert frameworks to test with' });
+
+    const results = [];
+    for (const ex of picks) {
+      for (const sample of buildSamples(ex.framework)) {
+        const row = { caseId: ex.caseId, title: ex.title, variant: sample.variant };
+        try {
+          const r = await judge({
+            pool, excludeCaseId: ex.caseId, noCache: true,
+            input: { caseId: ex.caseId, structText: sample.structText, transcript: '', ruleResults: [] }
+          });
+          if (r.skipped) { row.error = 'skipped: ' + r.skipped; row.pass = false; }
+          else {
+            row.checks = checkExpectations(sample, r.judgement);
+            row.pass = row.checks.every(c => c.pass);
+            row.levels = Object.fromEntries(Object.entries(r.judgement.criteria).map(([k, v]) => [k, v.level]));
+          }
+        } catch (err) {
+          row.error = err.message;
+          row.pass = false;
+        }
+        results.push(row);
+      }
+    }
+    res.json({ passed: results.filter(r => r.pass).length, total: results.length, results });
+  } catch (err) {
+    console.error('Judge test error:', err);
+    res.status(500).json({ error: 'Could not run the judge test' });
   }
 });
 

@@ -97,6 +97,35 @@ Push again and you're live.
 
 ---
 
+## How a drill is marked
+
+Marking is a hybrid. Rules score what can be counted: **Structure** (bucket and point counts) and **Succinct** (point length). A model, the "coach", scores **MECE** and **Relevant** by meaning and writes the feedback. If the coach is unavailable the review falls back to simple keyword checks for those two, so a score always appears, and the result is saved with an older `rubric_version` (2 = rules only, 3 = coach).
+
+- The coach's instructions are the **System prompt** in the admin panel, combined with the live marking criteria and the expert frameworks. Write `{{Structure.minPointsPerBucket}}` to insert a live setting. The admin panel also keeps prompt versions, shows the prompt's size and usage, and can run a planted-flaw test (judges test frameworks built from each expert solution with that case's own expert framework left out).
+- Identical frameworks reuse the stored result, so a retry costs nothing and reads the same. Each user is limited to `JUDGE_RATE_PER_HOUR` judged reviews per hour.
+- Cost: the stable prompt is roughly 8k tokens. Prompt caching is off by default; see `.env.example` for when to turn it on.
+
+## Expert frameworks
+
+Creators submit structured solved frameworks (answer shape, purpose, buckets as questions with hypotheses, where to start, clarifying Q&A) which admins approve. Approved ones feed the coach as calibration examples and appear under **Community > Expert frameworks**, where each one unlocks after the student has attempted that case (enforced by the server).
+
+`backend/src/data/expert-cases.json` holds 15 expert-solved cases. They are seeded only when `SEED_EXPERT_CASES=true` is set, because you should confirm you may show those prompts and frameworks before doing so.
+
+## Tests
+
+```
+node --test tests/analytics.test.js tests/scoring.test.js tests/solved-framework.test.js tests/judge.test.js tests/judge-service.test.js
+```
+
+Two further suites need a scratch Postgres and make no real model calls:
+
+```
+E2E_DATABASE_URL=postgresql://... node --test tests/e2e-community-judge.test.js   # API, gating, judge route
+UI_DATABASE_URL=postgresql://... node tests/ui/server.js &  node tests/ui/browser.test.js   # needs Playwright
+```
+
+---
+
 ## File Structure
 
 ```
@@ -114,5 +143,10 @@ case-framework-trainer/
         └── routes/
             ├── auth.js      ← /api/auth/signup, /login, /me
             ├── drills.js    ← /api/drills (save + fetch history)
+            ├── judge.js     ← /api/judge (the coach: MECE, Relevant, feedback)
+            ├── creator.js, admin.js, community.js, cases.js
             └── transcribe.js← /api/transcribe + /structure
+        ├── judge/           ← prompt builder, model call, service, test samples
+        ├── lib/             ← solved-framework schema, JSON helpers, rate limiter
+        └── data/            ← case bank, expert cases, draft playbook
 ```

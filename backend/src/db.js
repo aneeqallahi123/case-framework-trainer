@@ -160,6 +160,32 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS show_stats BOOLEAN DEFAULT true;
     `);
 
+    // Judge results keyed by a hash of (prompt, framework, model): identical retries cost nothing and read the same.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS judge_cache (
+        key CHAR(64) PRIMARY KEY,
+        result JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      DELETE FROM judge_cache WHERE created_at < NOW() - INTERVAL '90 days';
+
+      CREATE TABLE IF NOT EXISTS system_prompt_history (
+        id SERIAL PRIMARY KEY,
+        value TEXT NOT NULL,
+        edited_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Expert-framework entries live in the community as posts of kind 'expert' pointing at a solved framework,
+    // so comments, votes and the thread UI are shared with the student Q&A. One entry per framework.
+    await client.query(`
+      ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS kind VARCHAR(20) DEFAULT 'post';
+      ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS solved_framework_id INTEGER REFERENCES solved_frameworks(id) ON DELETE CASCADE;
+      CREATE UNIQUE INDEX IF NOT EXISTS community_posts_solved_framework_idx
+        ON community_posts (solved_framework_id) WHERE solved_framework_id IS NOT NULL;
+    `);
+
     // Scoring rubric version each result was marked under (1 = original rules), so
     // trend views can tell scales apart when the rubric changes.
     await client.query(`
@@ -237,9 +263,27 @@ async function seedExpertCases(client) {
   if (!fs.existsSync(filePath)) return;
   const { validateSolvedFramework } = require('./lib/solvedFramework');
 
-  const admin = await client.query('SELECT id FROM users WHERE email = $1', [SEED_ADMINS[0].email]);
-  if (!admin.rows.length) return;
-  const adminId = admin.rows[0].id;
+  // The frameworks are credited to a dedicated creator account, not to an admin. Its password is random and never
+  // shown, so nobody can log in as it; to let the consultant submit more, promote their own account to creator.
+  // EXPERT_DISPLAY_NAME sets the name students see (default is deliberately neutral).
+  const expertEmail = 'expert@caseroom.app';
+  const displayName = (process.env.EXPERT_DISPLAY_NAME || 'Expert consultant').slice(0, 100);
+  let expert = await client.query('SELECT id FROM users WHERE email = $1', [expertEmail]);
+  if (!expert.rows.length) {
+    const hash = await bcrypt.hash(require('crypto').randomBytes(24).toString('hex'), 10);
+    expert = await client.query(
+      "INSERT INTO users (email, password_hash, first_name, role) VALUES ($1, $2, $3, 'creator') RETURNING id",
+      [expertEmail, hash, displayName]
+    );
+  } else {
+    await client.query('UPDATE users SET first_name = $1 WHERE id = $2', [displayName, expert.rows[0].id]);
+  }
+  const adminId = expert.rows[0].id;
+  // Earlier seeds credited an admin; move those frameworks to the expert account.
+  await client.query(
+    "UPDATE solved_frameworks SET creator_id = $1, approved_by = $1 WHERE framework->>'origin' LIKE 'darden-2024-25-case-%' AND creator_id <> $1",
+    [adminId]
+  );
 
   const entries = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   let added = 0;

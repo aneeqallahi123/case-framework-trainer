@@ -1384,13 +1384,26 @@
       <div id="adminSystemPromptPane" style="display:none">
         <div class="card flat">
           <h3>System prompt <span class="csub">Controls evaluation methodology and framing</span></h3>
-          <p style="margin:16px 0 0;color:var(--gray);font-size:14px">Edit the system prompt that guides how frameworks are evaluated. This defines the methodology, scoring philosophy, and qualitative guidance for marking.</p>
+          <p style="margin:16px 0 0;color:var(--gray);font-size:14px">This text is sent to the coach model together with the live criteria and the expert frameworks. The coach scores MECE and Relevant and writes the feedback; Structure and Succinct are scored by rules. To insert a live setting write it as <code>{{Structure.minPointsPerBucket}}</code>, so the prompt cannot promise a number the rules do not use. Edits change how every student is marked, so use the checks below before relying on one.</p>
           <textarea id="systemPromptEditor" style="margin:16px 0 0;width:100%;min-height:300px;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);font-family:monospace;font-size:13px;resize:vertical"></textarea>
           <div class="btnbar" style="margin-top:16px">
             <button class="btn ghost" id="spResetBtn">Reset to default</button>
             <button class="btn primary" id="spSaveBtn">Save prompt</button>
           </div>
           <div id="spStatus" style="margin-top:12px;font-size:13px;color:var(--gray)"></div>
+
+          <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--line)">
+            <h3 style="font-size:15px">Versions and checks</h3>
+            <div class="btnbar" style="margin-top:12px;flex-wrap:wrap;gap:8px">
+              <select id="spHistorySel" style="min-width:260px;padding:9px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:13px"></select>
+              <button class="btn ghost" id="spLoadVersionBtn">Load version into editor</button>
+            </div>
+            <div class="btnbar" style="margin-top:10px;flex-wrap:wrap;gap:8px">
+              <button class="btn ghost" id="spPreviewBtn">Preview prompt size and usage</button>
+              <button class="btn ghost" id="spTestBtn">Run planted-flaw test (uses the model)</button>
+            </div>
+            <pre id="spPanel" style="margin-top:12px;white-space:pre-wrap;font-size:12.5px;color:var(--gray)"></pre>
+          </div>
         </div>
       </div>
 
@@ -1537,6 +1550,7 @@
       <div class="community-tabbar">
         <div style="display:flex;gap:0;min-width:max-content">
           <button class="community-tab on" data-ctab="feed">Feed</button>
+          <button class="community-tab" data-ctab="experts">Expert frameworks</button>
           <button class="community-tab" data-ctab="members">Members</button>
           <button class="community-tab" data-ctab="messages">Messages<span class="navbadge" id="msgTabBadge" style="display:none"></span></button>
         </div>
@@ -1560,6 +1574,17 @@
 
         <div id="communityFeedList">
           <p style="color:var(--gray);text-align:center;padding:40px 20px">Loading community posts...</p>
+        </div>
+      </div>
+
+      <!-- EXPERT FRAMEWORKS pane -->
+      <div id="communityExpertsPane" style="display:none">
+        <div class="dash-head">
+          <h1>Expert frameworks</h1>
+          <p>See how an experienced consultant structured a case, then discuss it. Each one unlocks after you have attempted that case. It is one strong way to structure it, not the only one.</p>
+        </div>
+        <div id="communityExpertsList">
+          <p style="color:var(--gray);text-align:center;padding:40px 20px">Loading expert frameworks...</p>
         </div>
       </div>
 
@@ -2048,7 +2073,7 @@
   }
 
   async function saveResultToServer(c, r, st) {
-    if (!AUTH.token) return;
+    if (!AUTH.token) return false;
     try {
       await apiPost('/api/drills', {
         caseId: c.id, caseTitle: c.title, caseSource: c.source, caseType: c.type,
@@ -2056,10 +2081,11 @@
         bullets: st.reduce((n, b) => n + b.bullets.length, 0),
         rawTranscript: document.getElementById('fwText').value,
         structuredFramework: window._lastAIFramework || null,
-        aiFeedback: null,
-        rubricVersion: RUBRIC_VERSION
+        aiFeedback: r.coach ? JSON.stringify(r.coach) : null,
+        rubricVersion: r.rubricVersion || RUBRIC_VERSION
       });
-    } catch (e) { console.log('Could not save to server:', e); }
+      return true;
+    } catch (e) { console.log('Could not save to server:', e); return false; }
   }
 
   // ---- Deepgram batch transcription ----
@@ -2500,7 +2526,11 @@ function reviewFramework(struct,c,criteriaConfig,opts){
     res.crits.push({name:'Relevant',sub:'Tailored to THIS case',level,notes});
   })();
 
-  // Only enabled criteria count, each scaled by its weight (default 1). Percent cutoffs (87 / 50) match the system prompt.
+  return finalizeReview(res,opts);
+}
+// Only enabled criteria count, each scaled by its weight (default 1). Percent cutoffs (87 / 50) match the system prompt.
+// rubricVersion 2 = rule-based scoring; applyJudgement raises it to 3 when the model scored MECE and Relevant.
+function finalizeReview(res,opts){
   const enabled=opts&&Array.isArray(opts.enabled)?new Set(opts.enabled):null, weights=(opts&&opts.weights)||{};
   res.crits=res.crits.filter(cr=>!enabled||enabled.has(cr.name));
   const wOf=cr=>{ const w=Number(weights[cr.name]); return Number.isFinite(w)&&w>=0?w:1; };
@@ -2508,7 +2538,24 @@ function reviewFramework(struct,c,criteriaConfig,opts){
   const ratio=possible?earned/possible:0;
   res.score=earned; res.pct=Math.round(ratio*100);
   res.overall=ratio*100>=87?'Strong framework. Interview-ready.':ratio*100>=50?'Solid framework. Address the flagged items.':'Incomplete. Rework the flagged areas before delivering.';
+  res.rubricVersion=2;
   return res;
+}
+// Merges the judge's verdicts (criteria it scored: level, reason, evidence quote) into a rule-based review and
+// rescores. Criteria the judge did not return keep their rule level. Same opts as reviewFramework.
+function applyJudgement(review,judgement,opts){
+  const jc=(judgement&&judgement.criteria)||{};
+  const crits=review.crits.map(cr=>{
+    const j=jc[cr.name];
+    if(!j||!['strong','ok','weak'].includes(j.level)) return cr;
+    const notes=[j.reason].concat(j.evidence?['You said: “'+j.evidence+'”']:[]).filter(Boolean);
+    return {name:cr.name,sub:cr.sub,level:j.level,notes:notes.length?notes:cr.notes,judged:true};
+  });
+  const out=finalizeReview({crits},opts);
+  if(out.crits.some(cr=>cr.judged)) out.rubricVersion=3;
+  const coach=judgement?{doneWell:judgement.doneWell||'',topPriority:judgement.topPriority||'',consultantWouldAdd:judgement.consultantWouldAdd||'',coaching:judgement.coaching||''}:null;
+  out.coach=coach&&(coach.doneWell||coach.topPriority||coach.consultantWouldAdd||coach.coaching)?coach:null;
+  return out;
 }
 /* SCORING:END */
 
@@ -2899,30 +2946,63 @@ function setCount(node,val,dur){
 function prefersReducedMotion(){
   return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
-function runReview(){
+// The coach (model) scores MECE and Relevant and writes the feedback; rules score the rest. Any failure falls
+// back to the rule-based review, so a score always appears.
+async function fetchJudgement(c,st,r0){
+  if(!AUTH.token) return null;
+  const ctl=new AbortController(), timer=setTimeout(()=>ctl.abort(),30000);
+  try{
+    const res=await fetch(API_BASE+'/api/judge',{method:'POST',headers:authHeaders(),signal:ctl.signal,body:JSON.stringify({
+      caseId:c.id, structText:el('structText').value, transcript:(el('fwText')&&el('fwText').value)||'',
+      ruleResults:r0.crits.map(cr=>({name:cr.name,level:cr.level,notes:cr.notes.map(n=>String(n).replace(/<[^>]*>/g,''))}))
+    })});
+    const data=await res.json().catch(()=>null);
+    if(!res.ok||!data||!data.judgement) return {fallback:true,reason:data&&data.skipped?'skipped':'error'};
+    return data;
+  }catch(e){ return {fallback:true,reason:'error'}; }
+  finally{ clearTimeout(timer); }
+}
+async function runReview(){
   const c=S.caseObj, st=parseStructure(el('structText').value);
-  if(!st.length){ el('reviewOut').innerHTML='<div class="fb warn">Nothing to review — add at least one <span class="kbd"># bucket</span>.</div>'; return; }
-  const r=reviewFramework(st,c,MARKING_CRITERIA_CONFIG,{enabled:CRITS.length?CRITS:null,weights:MARKING_WEIGHTS}); const lvl={strong:100,ok:62,weak:32}; const gc=r.pct>=75?'var(--good)':r.pct>=45?'var(--amber)':'var(--bad)';
+  if(!st.length){ el('reviewOut').innerHTML='<div class="fb warn">Nothing to review \u2014 add at least one <span class="kbd"># bucket</span>.</div>'; return; }
+  const opts={enabled:CRITS.length?CRITS:null,weights:MARKING_WEIGHTS};
+  const r0=reviewFramework(st,c,MARKING_CRITERIA_CONFIG,opts);
+  const seq=S.reviewSeq=(S.reviewSeq||0)+1;
+  if(AUTH.token){
+    el('reviewOut').innerHTML='<div class="card" style="margin-top:18px"><h3>Review</h3><div class="fb">Reading your framework\u2026</div></div>';
+    el('reviewFoot').style.display='none';
+  }
+  const j=await fetchJudgement(c,st,r0);
+  if(seq!==S.reviewSeq) return; // a newer review replaced this one
+  const judged=!!(j&&!j.fallback);
+  const r=judged?applyJudgement(r0,j.judgement,opts):r0;
+  showReview(c,st,r,{quick:!!(j&&j.fallback&&j.reason==='error')});
+  const saved=recordResult(c,r,st);
+  showExpertLink(c,saved);
+}
+function showReview(c,st,r,o){
+  const quickNote=o&&o.quick?'<div class="fb warn">Quick review: the coach was unavailable, so MECE and Relevant were scored by simple checks.</div>':'';
+  const coachHtml=r.coach?`<div class="card" style="margin-top:18px"><h3>Coach\'s notes</h3>${r.coach.doneWell?`<div class="fb good">${esc(r.coach.doneWell)}</div>`:''}${r.coach.topPriority?`<div class="fb warn"><b>Next:</b> ${esc(r.coach.topPriority)}</div>`:''}${r.coach.consultantWouldAdd?`<div class="fb">An expert would also: ${esc(r.coach.consultantWouldAdd)}</div>`:''}${r.coach.coaching?`<div class="fb">${esc(r.coach.coaching)}</div>`:''}</div>`:'';
+  const lvl={strong:100,ok:62,weak:32}; const gc=r.pct>=75?'var(--good)':r.pct>=45?'var(--amber)':'var(--bad)';
   const hasTree = !!window._lastAIFramework?.tree;
   const framedContent = hasTree ? '<div id="reviewTreeBox"></div>' :
     st.map((b,i)=>`<h4><span class="n">${i+1}</span>${b.header}</h4><ul>${b.bullets.map(x=>`<li>${x}</li>`).join('')||'<li class="empty">(no points)</li>'}</ul>`).join('');
   let html='<div class="card" style="margin-top:18px"><h3>Your framework, transcribed</h3><div class="preview" style="min-height:auto;margin-top:10px">'+framedContent+'</div></div>';
-  html+=`<div class="card" style="margin-top:18px"><h3>Review</h3><div class="grademain" style="margin-top:12px"><div class="gring" id="gring" style="--gc:${gc}"><div class="gi"><div><div class="gnum" id="gnum">0</div><div class="glbl">/ 100</div></div></div></div><div class="overall-txt">${r.overall}</div></div>`;
-  html+=r.crits.map(cr=>{ const g=cr.level==='strong'?['c-strong','✓','i-strong']:cr.level==='ok'?['c-ok','~','i-ok']:['c-weak','!','i-weak']; return `<div class="crit"><div class="crithead"><div class="cicon ${g[0]}">${g[1]}</div><div><div class="ctitle2">${cr.name}</div><div class="csub2">${cr.sub}</div></div></div><div class="strbar"><i class="${g[2]}" data-w="${lvl[cr.level]}"></i></div>${cr.notes.map(n=>`<div class="fb ${cr.level==='strong'?'good':cr.level==='ok'?'warn':'bad'}">${n}</div>`).join('')}</div>`; }).join('')+'</div>';
+  html+=`<div class="card" style="margin-top:18px"><h3>Review</h3>${quickNote}<div class="grademain" style="margin-top:12px"><div class="gring" id="gring" style="--gc:${gc}"><div class="gi"><div><div class="gnum" id="gnum">0</div><div class="glbl">/ 100</div></div></div></div><div class="overall-txt">${r.overall}</div></div>`;
+  html+=r.crits.map(cr=>{ const g=cr.level==='strong'?['c-strong','✓','i-strong']:cr.level==='ok'?['c-ok','~','i-ok']:['c-weak','!','i-weak']; return `<div class="crit"><div class="crithead"><div class="cicon ${g[0]}">${g[1]}</div><div><div class="ctitle2">${cr.name}</div><div class="csub2">${cr.sub}</div></div></div><div class="strbar"><i class="${g[2]}" data-w="${lvl[cr.level]}"></i></div>${cr.notes.map(n=>`<div class="fb ${cr.level==='strong'?'good':cr.level==='ok'?'warn':'bad'}">${cr.judged?esc(n):n}</div>`).join('')}</div>`; }).join('')+'</div>'+coachHtml+'<div id="expertLinkSlot"></div>';
   el('reviewOut').innerHTML=html; el('reviewFoot').style.display='flex';
   if (hasTree) renderIssueTree(el('reviewTreeBox'), window._lastAIFramework.tree);
   requestAnimationFrame(()=>{ $$('#reviewOut .strbar i').forEach(i=>i.style.width=i.dataset.w+'%'); const gr=el('gring'); if(gr)gr.style.background=`conic-gradient(${gc} ${r.pct*3.6}deg,var(--track) 0)`; animateCount(el('gnum'),r.pct,1000); });
   Beep.score(r.pct); TTS.speak(r.overall);
-  recordResult(c,r,st);
 }
 function recordResult(c,r,st){
   const lv={}; r.crits.forEach(cr=>lv[cr.name]=cr.level==='strong'?2:cr.level==='ok'?1:0);
   const h=loadHistory();
-  const entry={ts:Date.now(),id:c.id,title:c.title,source:c.source,type:c.type,pct:r.pct,levels:lv,bullets:st.reduce((n,b)=>n+b.bullets.length,0),rv:RUBRIC_VERSION};
+  const entry={ts:Date.now(),id:c.id,title:c.title,source:c.source,type:c.type,pct:r.pct,levels:lv,bullets:st.reduce((n,b)=>n+b.bullets.length,0),rv:r.rubricVersion||RUBRIC_VERSION};
   if(S.recorded&&h.length){ h[h.length-1]=entry; } else { h.push(entry); S.recorded=true; }
   saveHistory(h);
-  // Also persist to server (async, non-blocking)
-  if(typeof saveResultToServer === 'function') saveResultToServer(c, r, st);
+  // Also persist to server (async, non-blocking). Returns the save promise so callers can wait for it.
+  return typeof saveResultToServer === 'function' ? saveResultToServer(c, r, st) : Promise.resolve();
 }
 
 /* ---------- dashboard analytics ---------- */
@@ -3362,6 +3442,7 @@ async function loadSystemPrompt(){
     if(res.error){ container.textContent = res.error; return; }
     editor.value = res.systemPrompt || '';
     container.textContent = '';
+    loadPromptHistory();
   }catch(err){
     container.textContent = 'Could not load system prompt.';
     console.error(err);
@@ -3382,6 +3463,7 @@ async function saveSystemPrompt(){
     }).then(r=>r.json());
     if(res.error){ status.textContent = 'Error: '+res.error; return; }
     status.textContent = 'Saved successfully.';
+    loadPromptHistory();
     setTimeout(()=>{ status.textContent = ''; }, 2500);
   }catch(err){
     status.textContent = 'Error saving prompt.';
@@ -3389,6 +3471,61 @@ async function saveSystemPrompt(){
   }finally{
     btn.disabled = false;
   }
+}
+
+async function loadPromptHistory(){
+  const sel = el('spHistorySel');
+  try{
+    const h = await apiGet('/api/admin/system-config/system-prompt/history');
+    sel.innerHTML = Array.isArray(h) && h.length
+      ? h.map(v=>`<option value="${v.id}">${esc(new Date(v.createdAt).toLocaleString())} \u00B7 ${esc(v.editedBy||'original')} \u00B7 ${v.chars} chars</option>`).join('')
+      : '<option value="">No saved versions yet</option>';
+  }catch(err){ sel.innerHTML = '<option value="">Could not load versions</option>'; }
+}
+
+async function loadPromptVersion(){
+  const id = el('spHistorySel').value;
+  if(!id) return;
+  const res = await apiGet('/api/admin/system-config/system-prompt/history/'+id);
+  if(res.error){ el('spStatus').textContent = res.error; return; }
+  el('systemPromptEditor').value = res.systemPrompt;
+  el('spStatus').textContent = 'Loaded into the editor. Save to make it live.';
+}
+
+async function previewJudge(){
+  const panel = el('spPanel');
+  panel.textContent = 'Checking\u2026';
+  try{
+    const [p, st] = await Promise.all([apiGet('/api/admin/judge-preview'), apiGet('/api/admin/judge-stats')]);
+    if(p.error){ panel.textContent = p.error; return; }
+    const lines = [
+      `Stable prompt: ${p.chars.toLocaleString()} characters, ${p.exactTokens!=null?p.exactTokens.toLocaleString()+' tokens':'about '+p.estimatedTokens.toLocaleString()+' tokens (estimate)'}`,
+      `Expert frameworks included: ${p.exemplarCount}. Coach scores: ${p.judged.join(', ')||'nothing'}. Playbook included: ${p.playbookIncluded?'yes':'no (draft, not reviewed)'}`,
+      `Model: ${p.settings.model}. Prompt caching: ${p.settings.promptCaching?'on ('+p.settings.cacheTtl+')':'off'}. ${p.cacheableOnHaiku?'Large enough to cache on Haiku.':'Too small to cache on Haiku (needs 4,096 tokens).'}`
+    ];
+    if(p.unresolvedPlaceholders.length) lines.push('Placeholders that did not resolve: '+p.unresolvedPlaceholders.join(', '));
+    lines.push('', `Since the server started: ${st.modelCalls} model calls, ${st.resultCacheHits} answered from stored results${st.resultCacheShare!=null?' ('+st.resultCacheShare+'%)':''}, ${st.skipped} skipped as too short, ${st.errors} errors.`);
+    lines.push(`Tokens: ${st.inputTokens.toLocaleString()} uncached input, ${st.cacheReadTokens.toLocaleString()} read from cache, ${st.cacheWriteTokens.toLocaleString()} written to cache, ${st.outputTokens.toLocaleString()} output.${st.cacheReadShare!=null?' Cache read share: '+st.cacheReadShare+'% (caching pays off above roughly 22%).':''}`);
+    panel.textContent = lines.join('\n');
+  }catch(err){ panel.textContent = 'Could not run the preview.'; console.error(err); }
+}
+
+async function testJudge(){
+  if(!await confirmDialog('Run the planted-flaw test?','This judges 3 test frameworks for each of 3 expert cases (9 model calls, with each case\'s own expert framework left out) and reports which expectations held.',{okText:'Run test'})) return;
+  const panel = el('spPanel'), btn = el('spTestBtn');
+  btn.disabled = true; panel.textContent = 'Running\u2026 this can take a minute.';
+  try{
+    const res = await fetch(API_BASE+'/api/admin/judge-test',{method:'POST',headers:authHeaders(),body:JSON.stringify({confirm:true,cases:3})}).then(r=>r.json());
+    if(res.error){ panel.textContent = res.error; return; }
+    const lines = [`${res.passed} of ${res.total} expectations held`, ''];
+    res.results.forEach(r=>{
+      const detail = r.error ? r.error : (r.checks||[]).map(c=>`${c.criterion} ${c.level||'none'} (wanted ${c.wanted})`).join('; ');
+      lines.push(`${r.pass?'PASS':'FAIL'}  ${r.title} / ${r.variant}: ${detail}`);
+    });
+    lines.push('', 'gold = the expert\'s own structure (neither dimension should be weak); generic = right shape, no case content (Relevant should not be strong); overlap = repeated points (MECE should not be strong).');
+    panel.textContent = lines.join('\n');
+  }catch(err){ panel.textContent = 'The test could not run.'; console.error(err); }
+  finally{ btn.disabled = false; }
 }
 
 async function resetSystemPrompt(){
@@ -3471,6 +3608,15 @@ function frameworkPlain(fw){
   if(fw.start&&fw.start.text) out.push('',"Where I'd start"+(fw.start.bucket?' (bucket '+fw.start.bucket+')':'')+': '+fw.start.text);
   (fw.clarifying||[]).forEach(c=>out.push('','Q: '+c.question,'A: '+c.answer));
   return out.join('\n');
+}
+const SHAPE_LABELS={gate:'Go / no-go',diagnosis:'Diagnosis',selection:'Selection',calculate:'Calculate',open_ended:'Open-ended'};
+function escapeHtml(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+// Study view of an expert framework: purpose, buckets as questions with hypotheses, where to start, clarifying Q&A.
+function expertFrameworkHtml(fw){
+  const e=escapeHtml, sb=fw.start&&fw.start.bucket;
+  const buckets=(fw.buckets||[]).map((b,i)=>`<div class="ai-bucket"><div class="num">${i+1}</div><div class="bbody"><div class="bname">${e(b.question)}${sb===i+1?' <span class="chip">Start here</span>':''}</div><ul>${(b.points||[]).map(p=>`<li>${e(p)}</li>`).join('')}</ul>${b.hypothesis?`<div class="fb" style="margin-top:8px"><b>Hypothesis:</b> ${e(b.hypothesis)}</div>`:''}</div></div>`).join('');
+  const clar=(fw.clarifying||[]).length?`<details style="margin-top:14px"><summary style="cursor:pointer;font-weight:600">Clarifying questions and answers</summary>${fw.clarifying.map(c=>`<p style="margin-top:10px"><b>Q:</b> ${e(c.question)}<br><b>A:</b> ${e(c.answer)}</p>`).join('')}</details>`:'';
+  return `<p style="margin:0 0 14px">${e(fw.purpose)}</p>${buckets}<div class="confusion" style="margin-top:14px"><div class="confusion-lbl">Where to start</div>${e(fw.start&&fw.start.text)}</div>${clar}`;
 }
 /* FWFORM:END */
 
@@ -3663,12 +3809,15 @@ let _activeCommunityTab = 'feed';
 function showCommunityTab(tab){
   _activeCommunityTab = tab;
   $$('.community-tab').forEach(b=>b.classList.toggle('on', b.dataset.ctab===tab));
+  window._openExpertId = null;
   el('communityFeedPane').style.display = 'none';
+  el('communityExpertsPane').style.display = 'none';
   el('communityDetailPane').style.display = 'none';
   el('communityMembersPane').style.display = 'none';
   el('communityMemberProfilePane').style.display = 'none';
   el('communityMessagesPane').style.display = 'none';
   if(tab==='feed'){ el('communityFeedPane').style.display='block'; loadCommunityFeed(); }
+  if(tab==='experts'){ el('communityExpertsPane').style.display='block'; loadExpertFrameworks(); }
   if(tab==='members'){ el('communityMembersPane').style.display='block'; loadCommunityMembers(); }
   if(tab==='messages'){ el('communityMessagesPane').style.display='block'; showConvListView(); }
 }
@@ -3718,6 +3867,8 @@ async function loadCommunityFeed(){
 
 async function openCommunityPost(id){
   window._openCommunityPostId = id;
+  window._openExpertId = null;
+  el('communityBackBtn').textContent = '\u2190 Back to feed';
   el('communityFeedPane').style.display = 'none';
   el('communityDetailPane').style.display = 'block';
   const content = el('communityDetailContent');
@@ -3729,35 +3880,8 @@ async function openCommunityPost(id){
   }catch(err){ content.innerHTML = '<p style="color:var(--gray)">Could not load post</p>'; console.error(err); }
 }
 
-function renderCommunityDetail(post){
-  const content = el('communityDetailContent');
-  const c = post.case || {};
-  const authorLink = post.authorId
-    ? `<span style="color:var(--ink);font-weight:500;cursor:pointer;text-decoration:underline" onclick="openMemberProfile(${post.authorId})">${esc(post.author)}</span>`
-    : esc(post.author);
-  content.innerHTML = `
-    <div class="card flat">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
-        <h3>${esc(c.title||post.caseTitle||'Case')}</h3>
-        <span class="status-pill ${post.status==='resolved'?'resolved':'open'}">${esc(post.status)}</span>
-      </div>
-      <div class="post-meta" style="margin-top:6px">
-        ${c.type?`<span class="chip">${esc(c.type)}</span>`:''}${c.source?`<span>${esc(c.source)}</span>`:''}
-        <span>shared by ${authorLink}</span>
-      </div>
-      ${c.prompt?`<p class="promptquote">${esc(c.prompt)}</p>`:''}
-      ${post.note?`<div class="confusion"><div class="confusion-lbl">What they're confused about</div>${esc(post.note)}</div>`:''}
-      <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
-        <button class="vote-btn${post.viewerVoted?' voted':''}" id="postVoteBtn" onclick="votePost(${post.id},this)">▲ ${post.voteCount} upvote${post.voteCount===1?'':'s'}</button>
-        ${post.authorId && !post.isOwner?`<button class="btn ghost" onclick="startDMWithUser(${post.authorId})">Message ${esc(post.author)}</button>`:''}
-      </div>
-      ${post.isOwner?`<div class="btnbar" style="margin-top:14px">
-        <button class="btn ghost" onclick="setCommunityPostStatus(${post.id}, '${post.status==='resolved'?'open':'resolved'}')">Mark as ${post.status==='resolved'?'open':'resolved'}</button>
-        <button class="btn ghost" onclick="deleteCommunityPost(${post.id})">Delete post</button>
-      </div>`:''}
-    </div>
-
-    <div class="card flat" style="margin-top:16px">
+function commentsCardHtml(post){
+  return `    <div class="card flat" style="margin-top:16px">
       <h3>Comments (${post.comments.length})</h3>
       <div style="margin-top:12px">
         ${post.comments.length===0?'<p class="muted" style="font-size:13.5px">No comments yet — be the first to help out.</p>':post.comments.map(cm=>{
@@ -3788,7 +3912,38 @@ function renderCommunityDetail(post){
       <div class="btnbar" style="margin-top:10px">
         <button class="btn primary" onclick="submitCommunityComment(${post.id})">Post comment</button>
       </div>
+    </div>`;
+}
+
+function renderCommunityDetail(post){
+  const content = el('communityDetailContent');
+  const c = post.case || {};
+  const authorLink = post.authorId
+    ? `<span style="color:var(--ink);font-weight:500;cursor:pointer;text-decoration:underline" onclick="openMemberProfile(${post.authorId})">${esc(post.author)}</span>`
+    : esc(post.author);
+  content.innerHTML = `
+    <div class="card flat">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
+        <h3>${esc(c.title||post.caseTitle||'Case')}</h3>
+        <span class="status-pill ${post.status==='resolved'?'resolved':'open'}">${esc(post.status)}</span>
+      </div>
+      <div class="post-meta" style="margin-top:6px">
+        ${c.type?`<span class="chip">${esc(c.type)}</span>`:''}${c.source?`<span>${esc(c.source)}</span>`:''}
+        <span>shared by ${authorLink}</span>
+      </div>
+      ${c.prompt?`<p class="promptquote">${esc(c.prompt)}</p>`:''}
+      ${post.note?`<div class="confusion"><div class="confusion-lbl">What they're confused about</div>${esc(post.note)}</div>`:''}
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+        <button class="vote-btn${post.viewerVoted?' voted':''}" id="postVoteBtn" onclick="votePost(${post.id},this)">▲ ${post.voteCount} upvote${post.voteCount===1?'':'s'}</button>
+        ${post.authorId && !post.isOwner?`<button class="btn ghost" onclick="startDMWithUser(${post.authorId})">Message ${esc(post.author)}</button>`:''}
+      </div>
+      ${post.isOwner?`<div class="btnbar" style="margin-top:14px">
+        <button class="btn ghost" onclick="setCommunityPostStatus(${post.id}, '${post.status==='resolved'?'open':'resolved'}')">Mark as ${post.status==='resolved'?'open':'resolved'}</button>
+        <button class="btn ghost" onclick="deleteCommunityPost(${post.id})">Delete post</button>
+      </div>`:''}
     </div>
+
+    ${commentsCardHtml(post)}
   `;
 }
 
@@ -3808,7 +3963,7 @@ async function submitCommunityComment(postId){
   try{
     const res = await apiPost('/api/community/posts/'+postId+'/comments', { body, anonymous });
     if(res.error){ toast(res.error); return; }
-    openCommunityPost(postId);
+    if(window._openExpertId) openExpertFramework(window._openExpertId); else openCommunityPost(postId);
   }catch(err){ toast('Could not post comment'); console.error(err); }
 }
 
@@ -3871,6 +4026,117 @@ async function submitSharedCase(){
   }catch(err){ toast('Could not share case'); console.error(err); }
 }
 
+/* ── Expert frameworks ───────────────────────────── */
+
+let _expertIndex = null;
+
+async function loadExpertFrameworks(){
+  const list = el('communityExpertsList');
+  list.innerHTML = skeletonRows(3);
+  try{
+    const entries = await apiGet('/api/community/experts');
+    if(!Array.isArray(entries)){ list.innerHTML = errorState('Could not load expert frameworks'); return; }
+    _expertIndex = entries;
+    if(entries.length === 0){
+      list.innerHTML = emptyState('chat', 'No expert frameworks yet', 'Approved expert frameworks appear here.');
+      return;
+    }
+    list.innerHTML = entries.map(e=>`
+      <article class="post-card">
+        <div class="post-head">
+          <div class="post-main" onclick="openExpertFramework(${e.id})">
+            <div class="post-title">${esc(e.caseTitle)}</div>
+            <div class="post-meta">
+              ${e.shape?`<span class="chip">${esc(SHAPE_LABELS[e.shape]||e.shape)}</span>`:''}
+              ${e.caseType?`<span class="chip">${esc(e.caseType)}</span>`:''}
+              ${e.caseSource?`<span>${esc(e.caseSource)}</span>`:''}
+              <span>by ${esc(e.expert.name)}</span>
+            </div>
+          </div>
+          <span class="status-pill ${e.unlocked?'resolved':'open'}">${e.unlocked?'Unlocked':'Locked'}</span>
+        </div>
+        <div class="post-foot">
+          ${e.unlocked
+            ? `<span class="post-link" onclick="openExpertFramework(${e.id})">${ICON.comment} ${e.commentCount} comment${e.commentCount===1?'':'s'}</span>`
+            : `<button class="btn ghost" onclick="practiceExpertCase('${esc(e.caseId)}')">Practice this case to unlock</button>`}
+        </div>
+      </article>
+    `).join('');
+  }catch(err){ list.innerHTML = errorState('Could not load expert frameworks'); console.error(err); }
+}
+
+function practiceExpertCase(caseId){
+  startDrillWith({caseId});
+}
+
+async function openExpertFramework(id){
+  window._openExpertId = id;
+  window._openCommunityPostId = null;
+  el('communityExpertsPane').style.display = 'none';
+  el('communityFeedPane').style.display = 'none';
+  el('communityDetailPane').style.display = 'block';
+  el('communityBackBtn').textContent = '\u2190 Back to expert frameworks';
+  const content = el('communityDetailContent');
+  content.innerHTML = skeletonRows(2);
+  try{
+    const data = await apiGet('/api/community/experts/'+id);
+    if(data.locked){
+      content.innerHTML = `<div class="card flat"><h3>${esc(data.caseTitle||'Expert framework')}</h3>
+        <p style="margin-top:8px;color:var(--gray)">This unlocks once you have attempted the case. Try it first, then compare your structure with the expert's.</p>
+        <div class="btnbar" style="margin-top:14px"><button class="btn primary" onclick="practiceExpertCase('${esc(data.caseId)}')">Practice this case</button></div></div>`;
+      return;
+    }
+    if(data.error){ content.innerHTML = '<p style="color:var(--gray)">'+esc(data.error)+'</p>'; return; }
+    renderExpertDetail(data);
+  }catch(err){ content.innerHTML = '<p style="color:var(--gray)">Could not load this expert framework</p>'; console.error(err); }
+}
+
+function renderExpertDetail(data){
+  const content = el('communityDetailContent');
+  const c = data.case || {};
+  content.innerHTML = `
+    <div class="card flat">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
+        <h3>${esc(c.title||'Case')}</h3>
+        <span class="chip">${esc(SHAPE_LABELS[data.framework.shape]||data.framework.shape)}</span>
+      </div>
+      <div class="post-meta" style="margin-top:6px">
+        ${c.type?`<span class="chip">${esc(c.type)}</span>`:''}${c.source?`<span>${esc(c.source)}</span>`:''}
+        <span>framework by <span style="color:var(--ink);font-weight:500;cursor:pointer;text-decoration:underline" onclick="openMemberProfile(${data.expert.id})">${esc(data.expert.name)}</span></span>
+      </div>
+      ${c.prompt?`<p class="promptquote">${esc(c.prompt)}</p>`:''}
+      ${data.framework.caseTypeLine?`<p class="muted" style="font-size:13px;margin:0 0 12px">${esc(data.framework.caseTypeLine)}</p>`:''}
+      ${expertFrameworkHtml(data.framework)}
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+        <button class="vote-btn${data.viewerVoted?' voted':''}" id="postVoteBtn" onclick="votePost(${data.id},this)">\u25B2 ${data.voteCount} upvote${data.voteCount===1?'':'s'}</button>
+      </div>
+    </div>
+    ${commentsCardHtml(data)}`;
+}
+
+// After a review is saved, offer the expert framework for that case if there is one.
+async function showExpertLink(c, saved){
+  try{
+    if(!(await saved) || !AUTH.token) return;
+    if(!_expertIndex){
+      const list = await apiGet('/api/community/experts');
+      _expertIndex = Array.isArray(list) ? list : [];
+    }
+    const mine = _expertIndex.filter(e=>e.caseId===c.id);
+    const slot = el('expertLinkSlot');
+    if(!mine.length || !slot) return;
+    slot.innerHTML = `<div class="card" style="margin-top:18px"><h3>See how an expert approached this</h3>
+      <p class="muted" style="font-size:13.5px;margin-top:6px">Compare your structure with theirs and discuss it with the community.</p>
+      <div class="btnbar" style="margin-top:12px">${mine.map(e=>`<button class="btn primary" onclick="openExpertFromReview(${e.id})">View ${esc(e.expert.name)}'s framework</button>`).join('')}</div></div>`;
+  }catch(err){ console.warn('Could not offer the expert framework', err); }
+}
+
+function openExpertFromReview(id){
+  _activeCommunityTab = 'experts';
+  showView('community');
+  openExpertFramework(id);
+}
+
 /* ── Members ─────────────────────────────────────── */
 
 function renderStatsBadge(m, viewerCanSeeStats){
@@ -3897,7 +4163,7 @@ async function loadCommunityMembers(){
         <div class="member-card" onclick="openMemberProfile(${m.id})" tabindex="0" role="button">
           <div class="member-av">${esc((m.name||'M').slice(0,1).toUpperCase())}</div>
           <div style="flex:1">
-            <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name)}</div>
+            <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name)}${m.solvedCount>0?` <span class="chip">Expert \u00B7 ${m.solvedCount} solved</span>`:''}</div>
             <div style="font-size:12px;color:var(--gray);margin-top:2px">${m.postCount} post${m.postCount===1?'':'s'} · ${m.commentCount} comment${m.commentCount===1?'':'s'}${m.acceptedCount>0?' · '+m.acceptedCount+' accepted':''}</div>
             ${renderStatsBadge(m, viewerCanSeeStats)}
             <div style="font-size:11px;color:var(--gray2);margin-top:4px">Joined ${new Date(m.joinedAt).toLocaleDateString('en',{month:'short',year:'numeric'})}</div>
@@ -3909,6 +4175,7 @@ async function loadCommunityMembers(){
 }
 
 async function openMemberProfile(userId){
+  el('communityExpertsPane').style.display = 'none';
   el('communityMembersPane').style.display = 'none';
   el('communityFeedPane').style.display = 'none';
   el('communityDetailPane').style.display = 'none';
@@ -3972,7 +4239,7 @@ function renderMemberProfile(profile){
     <div class="card flat profile-head">
       <div class="member-av" style="width:58px;height:58px;font-size:22px;flex-shrink:0">${esc((profile.name||'M').slice(0,1).toUpperCase())}</div>
       <div style="flex:1">
-        <h2 style="font-size:20px">${esc(profile.name)}</h2>
+        <h2 style="font-size:20px">${esc(profile.name)}${profile.solvedCount>0?` <span class="chip" style="vertical-align:middle">Expert \u00B7 ${profile.solvedCount} solved</span>`:''}</h2>
         <div style="font-size:13px;color:var(--gray);margin-top:4px">
           Joined ${new Date(profile.joinedAt).toLocaleDateString('en',{month:'long',year:'numeric'})}
           · ${profile.posts.length} public post${profile.posts.length===1?'':'s'}
@@ -4306,6 +4573,9 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   });
   el('spSaveBtn').onclick=saveSystemPrompt;
   el('spResetBtn').onclick=resetSystemPrompt;
+  el('spLoadVersionBtn').onclick=loadPromptVersion;
+  el('spPreviewBtn').onclick=previewJudge;
+  el('spTestBtn').onclick=testJudge;
   el('adminAddCaseBtn').onclick=()=>openCaseModal(null);
   el('acCancel').onclick=closeCaseModal;
   el('acSave').onclick=saveCaseFromModal;
@@ -4335,7 +4605,7 @@ window.addEventListener('DOMContentLoaded',async ()=>{
   el('shareCaseCancel').onclick=()=>el('shareCaseModal').classList.remove('show');
   el('shareCaseSave').onclick=submitSharedCase;
   el('shareCaseModal').onclick=(e)=>{ if(e.target===el('shareCaseModal')) el('shareCaseModal').classList.remove('show'); };
-  el('communityBackBtn').onclick=()=>showCommunityTab('feed');
+  el('communityBackBtn').onclick=()=>showCommunityTab(window._openExpertId?'experts':'feed');
   $$('#communityStatusFilter button').forEach(b=>b.onclick=()=>{
     $$('#communityStatusFilter button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
     _communityStatusFilter = b.dataset.status;

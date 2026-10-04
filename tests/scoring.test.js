@@ -8,7 +8,7 @@ const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const m = html.match(/\/\* SCORING:BEGIN[^\n]*\n([\s\S]*?)\/\* SCORING:END \*\//);
 assert.ok(m, 'scoring block markers not found in index.html');
-const { reviewFramework, parseStructure } = new Function(m[1] + '\nreturn {reviewFramework,parseStructure};')();
+const { reviewFramework, parseStructure, applyJudgement } = new Function(m[1] + '\nreturn {reviewFramework,parseStructure,applyJudgement};')();
 
 const CASE = { type: 'growth', meceDimensions: [], caseKeywords: ['acme'] };
 
@@ -126,4 +126,51 @@ test('no enabled criteria yields a zero score instead of NaN', () => {
 test('parseStructure still reads # bucket / - point text', () => {
   const s = parseStructure('# Revenue\n- price\n- volume\n# Cost\n- labor');
   assert.deepStrictEqual(s, [{ header: 'Revenue', bullets: ['price', 'volume'] }, { header: 'Cost', bullets: ['labor'] }]);
+});
+
+const verdict = (level, extra) => Object.assign({ level, reason: 'because ' + level, evidence: '' }, extra);
+
+test('applyJudgement replaces MECE and Relevant with the judge\'s verdicts, keeps rule levels, and rescores', () => {
+  const f = framework(4, 4);
+  for (let i = 0; i < 3; i++) f[0].bullets[i] = longPoint(15); // Succinct weak by rule
+  const rules = reviewFramework(f, CASE, {});
+  assert.deepStrictEqual(rules.crits.map(c => c.level), ['strong', 'strong', 'weak', 'strong']);
+  const r = applyJudgement(rules, { criteria: { MECE: verdict('weak', { evidence: 'acme zq0x' }), Relevant: verdict('ok') }, topPriority: 'Fix overlap' }, {});
+  assert.deepStrictEqual(r.crits.map(c => [c.name, c.level]), [['Structure', 'strong'], ['MECE', 'weak'], ['Succinct', 'weak'], ['Relevant', 'ok']]);
+  assert.strictEqual(r.pct, 38); // 2 + 0 + 0 + 1 of 8
+  assert.match(r.overall, /Incomplete/);
+  assert.strictEqual(r.rubricVersion, 3);
+  assert.deepStrictEqual(r.crits[1].notes, ['because weak', 'You said: \u201Cacme zq0x\u201D']);
+  assert.strictEqual(r.crits[1].judged, true);
+  assert.strictEqual(r.crits[0].judged, undefined);
+  assert.strictEqual(r.coach.topPriority, 'Fix overlap');
+});
+
+test('applyJudgement leaves criteria the judge did not (validly) score on their rule level', () => {
+  const rules = reviewFramework(framework(4, 4), CASE, {});
+  const r = applyJudgement(rules, { criteria: { MECE: verdict('amazing'), Relevant: verdict('weak') } }, {});
+  assert.strictEqual(level(r, 'MECE'), 'strong');
+  assert.strictEqual(level(r, 'Relevant'), 'weak');
+  assert.strictEqual(r.crits.find(c => c.name === 'MECE').judged, undefined);
+  assert.strictEqual(r.rubricVersion, 3);
+});
+
+test('applyJudgement with nothing usable is just the rule-based review at version 2 with no coach notes', () => {
+  const rules = reviewFramework(framework(4, 4), CASE, {});
+  for (const j of [null, undefined, {}, { criteria: {} }]) {
+    const r = applyJudgement(rules, j, {});
+    assert.strictEqual(r.pct, rules.pct);
+    assert.strictEqual(r.rubricVersion, 2);
+    assert.strictEqual(r.coach, null);
+  }
+});
+
+test('applyJudgement respects enabled criteria and weights', () => {
+  const rules = reviewFramework(framework(4, 4), CASE, {});
+  const j = { criteria: { MECE: verdict('weak'), Relevant: verdict('strong') } };
+  const noMece = applyJudgement(rules, j, { enabled: ['Structure', 'Succinct', 'Relevant'] });
+  assert.deepStrictEqual(noMece.crits.map(c => c.name), ['Structure', 'Succinct', 'Relevant']);
+  assert.strictEqual(noMece.pct, 100);
+  const heavyMece = applyJudgement(rules, j, { weights: { Structure: 1, MECE: 3, Succinct: 1, Relevant: 1 } });
+  assert.strictEqual(heavyMece.pct, 50); // Structure 1x2 + MECE 3x0 + Succinct 1x2 + Relevant 1x2 = 6 of 12
 });

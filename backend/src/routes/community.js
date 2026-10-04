@@ -1,14 +1,33 @@
 const express = require('express');
 const { pool } = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { validateSolvedFramework } = require('../lib/solvedFramework');
 
 const router = express.Router();
 router.use(requireAuth);
 
+// Expert-framework entries (community_posts.kind = 'expert') are locked until the viewer has saved a drill on that
+// case. Every route that reads or writes one goes through this check; hiding it in the UI alone would leak it.
+async function hasAttempted(userId, caseId) {
+  const r = await pool.query('SELECT 1 FROM drill_results WHERE user_id = $1 AND case_id = $2 LIMIT 1', [userId, caseId]);
+  return r.rows.length > 0;
+}
+
+// -> { found, allowed, caseId }. Student posts are always allowed.
+async function postAccess(postId, userId) {
+  const r = await pool.query('SELECT kind, case_id FROM community_posts WHERE id = $1', [postId]);
+  if (!r.rows.length) return { found: false };
+  const { kind, case_id: caseId } = r.rows[0];
+  if (kind !== 'expert') return { found: true, allowed: true, caseId };
+  return { found: true, allowed: await hasAttempted(userId, caseId), caseId };
+}
+
+const LOCKED = { error: 'Locked until you have attempted this case', locked: true };
+
 // GET /api/community/posts - feed, optionally filtered by type/status
 router.get('/posts', async (req, res) => {
   const { type, status } = req.query;
-  const conditions = [];
+  const conditions = [`p.kind = 'post'`];
   const params = [];
 
   if (type) {
@@ -87,65 +106,72 @@ router.post('/posts', async (req, res) => {
   }
 });
 
+// Post detail with case data and comment thread. Returns null if the post does not exist.
+async function loadPostDetail(id, viewerId) {
+  const postResult = await pool.query(
+    `SELECT p.id, p.case_id, p.note, p.status, p.anonymous, p.user_id, p.created_at, p.kind,
+            c.data AS case_data,
+            u.first_name AS author_first_name,
+            (SELECT COUNT(*)::int FROM community_post_votes pv WHERE pv.post_id = p.id) AS vote_count,
+            EXISTS(SELECT 1 FROM community_post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $2) AS viewer_voted
+     FROM community_posts p
+     JOIN cases c ON c.id = p.case_id
+     JOIN users u ON u.id = p.user_id
+     WHERE p.id = $1`,
+    [id, viewerId]
+  );
+  if (!postResult.rows.length) return null;
+  const row = postResult.rows[0];
+
+  const commentsResult = await pool.query(
+    `SELECT cm.id, cm.body, cm.is_accepted, cm.anonymous, cm.user_id, cm.created_at,
+            u.first_name AS author_first_name,
+            (SELECT COUNT(*)::int FROM community_comment_votes v WHERE v.comment_id = cm.id) AS vote_count,
+            EXISTS(SELECT 1 FROM community_comment_votes v WHERE v.comment_id = cm.id AND v.user_id = $2) AS viewer_voted
+     FROM community_comments cm
+     JOIN users u ON u.id = cm.user_id
+     WHERE cm.post_id = $1
+     ORDER BY cm.is_accepted DESC, vote_count DESC, cm.created_at ASC`,
+    [id, viewerId]
+  );
+
+  return {
+    id: row.id,
+    caseId: row.case_id,
+    case: row.case_data,
+    kind: row.kind,
+    note: row.note,
+    status: row.status,
+    anonymous: row.anonymous,
+    author: row.anonymous ? 'Anonymous' : row.author_first_name || 'Someone',
+    authorId: row.anonymous ? null : row.user_id,
+    isOwner: row.user_id === viewerId,
+    voteCount: row.vote_count,
+    viewerVoted: row.viewer_voted,
+    createdAt: row.created_at,
+    comments: commentsResult.rows.map(c => ({
+      id: c.id,
+      body: c.body,
+      isAccepted: c.is_accepted,
+      author: c.anonymous ? 'Anonymous' : c.author_first_name || 'Someone',
+      authorId: c.anonymous ? null : c.user_id,
+      isOwner: c.user_id === viewerId,
+      voteCount: c.vote_count,
+      viewerVoted: c.viewer_voted,
+      createdAt: c.created_at
+    }))
+  };
+}
+
 // GET /api/community/posts/:id - post detail with case data and comment thread
 router.get('/posts/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const postResult = await pool.query(
-      `SELECT p.id, p.case_id, p.note, p.status, p.anonymous, p.user_id, p.created_at,
-              c.data AS case_data,
-              u.first_name AS author_first_name,
-              (SELECT COUNT(*)::int FROM community_post_votes pv WHERE pv.post_id = p.id) AS vote_count,
-              EXISTS(SELECT 1 FROM community_post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $2) AS viewer_voted
-       FROM community_posts p
-       JOIN cases c ON c.id = p.case_id
-       JOIN users u ON u.id = p.user_id
-       WHERE p.id = $1`,
-      [id, req.user.id]
-    );
-    if (!postResult.rows.length) {
-      return res.status(404).json({ error: 'Post not found' });
-    }
-    const row = postResult.rows[0];
-
-    const commentsResult = await pool.query(
-      `SELECT cm.id, cm.body, cm.is_accepted, cm.anonymous, cm.user_id, cm.created_at,
-              u.first_name AS author_first_name,
-              (SELECT COUNT(*)::int FROM community_comment_votes v WHERE v.comment_id = cm.id) AS vote_count,
-              EXISTS(SELECT 1 FROM community_comment_votes v WHERE v.comment_id = cm.id AND v.user_id = $2) AS viewer_voted
-       FROM community_comments cm
-       JOIN users u ON u.id = cm.user_id
-       WHERE cm.post_id = $1
-       ORDER BY cm.is_accepted DESC, vote_count DESC, cm.created_at ASC`,
-      [id, req.user.id]
-    );
-
-    res.json({
-      id: row.id,
-      caseId: row.case_id,
-      case: row.case_data,
-      note: row.note,
-      status: row.status,
-      anonymous: row.anonymous,
-      author: row.anonymous ? 'Anonymous' : row.author_first_name || 'Someone',
-      authorId: row.anonymous ? null : row.user_id,
-      isOwner: row.user_id === req.user.id,
-      voteCount: row.vote_count,
-      viewerVoted: row.viewer_voted,
-      createdAt: row.created_at,
-      comments: commentsResult.rows.map(c => ({
-        id: c.id,
-        body: c.body,
-        isAccepted: c.is_accepted,
-        author: c.anonymous ? 'Anonymous' : c.author_first_name || 'Someone',
-        authorId: c.anonymous ? null : c.user_id,
-        isOwner: c.user_id === req.user.id,
-        voteCount: c.vote_count,
-        viewerVoted: c.viewer_voted,
-        createdAt: c.created_at
-      }))
-    });
+    const access = await postAccess(id, req.user.id);
+    if (!access.found) return res.status(404).json({ error: 'Post not found' });
+    if (!access.allowed) return res.status(403).json({ ...LOCKED, caseId: access.caseId });
+    res.json(await loadPostDetail(id, req.user.id));
   } catch (err) {
     console.error('Get community post error:', err);
     res.status(500).json({ error: 'Could not fetch post' });
@@ -186,9 +212,12 @@ router.delete('/posts/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const existing = await pool.query('SELECT user_id FROM community_posts WHERE id = $1', [id]);
+    const existing = await pool.query('SELECT user_id, kind FROM community_posts WHERE id = $1', [id]);
     if (!existing.rows.length) {
       return res.status(404).json({ error: 'Post not found' });
+    }
+    if (existing.rows[0].kind === 'expert') {
+      return res.status(403).json({ error: 'Expert entries are managed by admins' });
     }
     if (existing.rows[0].user_id !== req.user.id) {
       return res.status(403).json({ error: 'You can only delete your own posts' });
@@ -207,10 +236,11 @@ router.post('/posts/:id/vote', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const postExists = await pool.query('SELECT id FROM community_posts WHERE id = $1', [id]);
-    if (!postExists.rows.length) {
+    const access = await postAccess(id, req.user.id);
+    if (!access.found) {
       return res.status(404).json({ error: 'Post not found' });
     }
+    if (!access.allowed) return res.status(403).json({ ...LOCKED, caseId: access.caseId });
 
     const existing = await pool.query(
       'SELECT 1 FROM community_post_votes WHERE post_id = $1 AND user_id = $2',
@@ -243,10 +273,11 @@ router.post('/posts/:id/comments', async (req, res) => {
   }
 
   try {
-    const postExists = await pool.query('SELECT id FROM community_posts WHERE id = $1', [id]);
-    if (!postExists.rows.length) {
+    const access = await postAccess(id, req.user.id);
+    if (!access.found) {
       return res.status(404).json({ error: 'Post not found' });
     }
+    if (!access.allowed) return res.status(403).json({ ...LOCKED, caseId: access.caseId });
 
     const result = await pool.query(
       `INSERT INTO community_comments (post_id, user_id, body, anonymous)
@@ -267,10 +298,12 @@ router.post('/comments/:id/vote', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const commentExists = await pool.query('SELECT id FROM community_comments WHERE id = $1', [id]);
+    const commentExists = await pool.query('SELECT post_id FROM community_comments WHERE id = $1', [id]);
     if (!commentExists.rows.length) {
       return res.status(404).json({ error: 'Comment not found' });
     }
+    const access = await postAccess(commentExists.rows[0].post_id, req.user.id);
+    if (!access.allowed) return res.status(403).json({ ...LOCKED, caseId: access.caseId });
 
     const existingVote = await pool.query(
       'SELECT 1 FROM community_comment_votes WHERE comment_id = $1 AND user_id = $2',
@@ -331,6 +364,83 @@ router.post('/comments/:id/accept', async (req, res) => {
   }
 });
 
+// ─── Expert frameworks ───────────────────────────────────────────────────────
+
+// GET /api/community/experts - every approved expert framework, with whether the viewer has unlocked it.
+// Bodies are never returned here.
+router.get('/experts', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT sf.id, sf.case_id, sf.framework->>'shape' AS shape, c.title, c.type, c.source,
+              u.id AS expert_id, u.first_name AS expert_name,
+              EXISTS(SELECT 1 FROM drill_results d WHERE d.user_id = $1 AND d.case_id = sf.case_id) AS unlocked,
+              (SELECT COUNT(*)::int FROM community_comments cm JOIN community_posts p ON p.id = cm.post_id
+               WHERE p.solved_framework_id = sf.id) AS comment_count
+       FROM solved_frameworks sf
+       JOIN cases c ON c.id = sf.case_id
+       JOIN users u ON u.id = sf.creator_id
+       WHERE sf.status = 'approved' AND sf.framework ? 'shape'
+       ORDER BY c.title, sf.id`,
+      [req.user.id]
+    );
+    res.json(result.rows.map(r => ({
+      id: r.id,
+      caseId: r.case_id,
+      caseTitle: r.title,
+      caseType: r.type,
+      caseSource: r.source,
+      shape: r.shape,
+      expert: { id: r.expert_id, name: r.expert_name || 'Expert' },
+      unlocked: r.unlocked,
+      commentCount: r.comment_count
+    })));
+  } catch (err) {
+    console.error('List experts error:', err);
+    res.status(500).json({ error: 'Could not fetch expert frameworks' });
+  }
+});
+
+// GET /api/community/experts/:id - the framework and its discussion thread. 403 until the viewer has attempted the case.
+router.get('/experts/:id', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(404).json({ error: 'Not found' });
+  try {
+    const sf = await pool.query(
+      `SELECT sf.id, sf.case_id, sf.framework, sf.creator_id, c.title, u.first_name AS expert_name
+       FROM solved_frameworks sf JOIN cases c ON c.id = sf.case_id JOIN users u ON u.id = sf.creator_id
+       WHERE sf.id = $1 AND sf.status = 'approved'`,
+      [id]
+    );
+    const checked = sf.rows.length ? validateSolvedFramework(sf.rows[0].framework) : null;
+    if (!checked || !checked.ok) return res.status(404).json({ error: 'Not found' });
+    const row = sf.rows[0];
+
+    if (!(await hasAttempted(req.user.id, row.case_id))) {
+      return res.status(403).json({ ...LOCKED, caseId: row.case_id, caseTitle: row.title });
+    }
+
+    // The discussion thread is created the first time anyone unlocks the entry.
+    await pool.query(
+      `INSERT INTO community_posts (case_id, user_id, note, kind, solved_framework_id)
+       VALUES ($1, $2, '', 'expert', $3)
+       ON CONFLICT (solved_framework_id) WHERE solved_framework_id IS NOT NULL DO NOTHING`,
+      [row.case_id, row.creator_id, id]
+    );
+    const post = await pool.query('SELECT id FROM community_posts WHERE solved_framework_id = $1', [id]);
+    const detail = await loadPostDetail(post.rows[0].id, req.user.id);
+
+    res.json({
+      ...detail,
+      solvedFrameworkId: id,
+      framework: checked.value,
+      expert: { id: row.creator_id, name: row.expert_name || 'Expert' }
+    });
+  } catch (err) {
+    console.error('Get expert framework error:', err);
+    res.status(500).json({ error: 'Could not fetch expert framework' });
+  }
+});
+
 // ─── Members ────────────────────────────────────────────────────────────────
 
 // GET /api/community/members - list all members with activity stats
@@ -342,11 +452,13 @@ router.get('/members', async (req, res) => {
 
     const result = await pool.query(
       `SELECT u.id, u.first_name, u.created_at, u.show_stats,
-              (SELECT COUNT(*)::int FROM community_posts p WHERE p.user_id = u.id AND p.anonymous = false) AS post_count,
-              (SELECT COUNT(*)::int FROM community_comments cm WHERE cm.user_id = u.id AND cm.anonymous = false) AS comment_count,
+              (SELECT COUNT(*)::int FROM community_posts p WHERE p.user_id = u.id AND p.anonymous = false AND p.kind = 'post') AS post_count,
+              (SELECT COUNT(*)::int FROM community_comments cm JOIN community_posts p ON p.id = cm.post_id
+               WHERE cm.user_id = u.id AND cm.anonymous = false AND p.kind = 'post') AS comment_count,
               (SELECT COUNT(*)::int FROM community_comments cm
                JOIN community_posts p ON p.id = cm.post_id
-               WHERE cm.user_id = u.id AND cm.is_accepted = true AND cm.anonymous = false) AS accepted_count,
+               WHERE cm.user_id = u.id AND cm.is_accepted = true AND cm.anonymous = false AND p.kind = 'post') AS accepted_count,
+              (SELECT COUNT(*)::int FROM solved_frameworks sf WHERE sf.creator_id = u.id AND sf.status = 'approved' AND sf.framework ? 'shape') AS solved_count,
               (SELECT COUNT(*)::int FROM drill_results dr WHERE dr.user_id = u.id) AS case_count,
               (SELECT ROUND(AVG(dr.score))::int FROM drill_results dr WHERE dr.user_id = u.id) AS avg_score_pct
        FROM users u
@@ -360,6 +472,7 @@ router.get('/members', async (req, res) => {
         postCount: r.post_count,
         commentCount: r.comment_count,
         acceptedCount: r.accepted_count,
+        solvedCount: r.solved_count,
         joinedAt: r.created_at
       };
       if (!viewerCanSeeStats) {
@@ -391,7 +504,8 @@ router.get('/members/:id', async (req, res) => {
     const userResult = await pool.query(
       `SELECT u.id, u.first_name, u.created_at, u.show_stats,
               (SELECT COUNT(*)::int FROM drill_results dr WHERE dr.user_id = u.id) AS case_count,
-              (SELECT ROUND(AVG(dr.score))::int FROM drill_results dr WHERE dr.user_id = u.id) AS avg_score_pct
+              (SELECT ROUND(AVG(dr.score))::int FROM drill_results dr WHERE dr.user_id = u.id) AS avg_score_pct,
+              (SELECT COUNT(*)::int FROM solved_frameworks sf WHERE sf.creator_id = u.id AND sf.status = 'approved' AND sf.framework ? 'shape') AS solved_count
        FROM users u WHERE u.id = $1`,
       [id]
     );
@@ -407,7 +521,7 @@ router.get('/members/:id', async (req, res) => {
               (SELECT COUNT(*)::int FROM community_post_votes pv WHERE pv.post_id = p.id) AS vote_count
        FROM community_posts p
        JOIN cases c ON c.id = p.case_id
-       WHERE p.user_id = $1 AND p.anonymous = false
+       WHERE p.user_id = $1 AND p.anonymous = false AND p.kind = 'post'
        ORDER BY p.created_at DESC`,
       [id]
     );
@@ -420,7 +534,7 @@ router.get('/members/:id', async (req, res) => {
        FROM community_comments cm
        JOIN community_posts p ON p.id = cm.post_id
        JOIN cases c ON c.id = p.case_id
-       WHERE cm.user_id = $1 AND cm.anonymous = false
+       WHERE cm.user_id = $1 AND cm.anonymous = false AND p.kind = 'post'
        ORDER BY cm.created_at DESC
        LIMIT 20`,
       [id]
@@ -440,6 +554,7 @@ router.get('/members/:id', async (req, res) => {
       id: user.id,
       name: user.first_name || 'Member',
       joinedAt: user.created_at,
+      solvedCount: user.solved_count,
       isMe: user.id === req.user.id,
       viewerCanSeeStats,
       ...statsInfo,
