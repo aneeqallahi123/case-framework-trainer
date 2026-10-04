@@ -43,7 +43,7 @@ router.get('/', requireAuth, async (req, res) => {
        FROM drill_results
        WHERE user_id = $1
        ORDER BY created_at DESC
-       LIMIT 100`,
+       LIMIT 2000`,
       [req.user.id]
     );
     res.json(result.rows);

@@ -161,6 +161,11 @@ async function initDB() {
     `);
 
     await client.query(`
+      CREATE INDEX IF NOT EXISTS drill_results_user_created_idx
+      ON drill_results (user_id, created_at DESC);
+    `);
+
+    await client.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS direct_conversations_pair_idx
       ON direct_conversations (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id));
     `);
