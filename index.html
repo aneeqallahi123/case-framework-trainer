@@ -2011,7 +2011,7 @@
         // the browser would read it as local time and shift every bucket.
         ts: new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(String(d.created_at)) ? d.created_at : d.created_at + 'Z').getTime(),
         id: d.case_id, title: d.case_title, source: d.case_source, type: d.case_type,
-        pct: d.score, levels: normLevels(d.levels), bullets: d.bullets || 0
+        pct: d.score, levels: normLevels(d.levels), bullets: d.bullets || 0, rv: d.rubric_version || 1
       })).reverse());
       saveHistory(history);
       renderDashboard();
@@ -2028,7 +2028,8 @@
         bullets: st.reduce((n, b) => n + b.bullets.length, 0),
         rawTranscript: document.getElementById('fwText').value,
         structuredFramework: window._lastAIFramework || null,
-        aiFeedback: null
+        aiFeedback: null,
+        rubricVersion: RUBRIC_VERSION
       });
     } catch (e) { console.log('Could not save to server:', e); }
   }
@@ -2381,6 +2382,7 @@ function confirmDialog(title, body, {okText='Confirm', danger=false}={}){
 }
 
 /* ---------- helpers / engine (verified logic) ---------- */
+/* SCORING:BEGIN — pure helpers (no DOM, no globals); tests load this block verbatim */
 const STOP=new Set(('the a an of to and or for in on at by with from as is are be we they it our their this that these those will would should could can may might do does your his her its into about over under per via vs across also more most less than then so but if not no yes how what which who where when why between among within during each all any some other new'.split(' ')));
 function words(s){ return (s.toLowerCase().match(/[a-z0-9$%.\-]+/g)||[]); }
 function sigWords(s){ return words(s).filter(w=>w.length>3&&!STOP.has(w.replace(/[^a-z0-9]/g,''))); }
@@ -2419,8 +2421,9 @@ function autoStructure(raw){ const text=raw.replace(/\s+/g,' ').trim(); if(!text
   const lines=[]; buckets.forEach((b,i)=>{ let h=b.replace(BUCKET_CUE,'').trim(); let hw=h.split(' ').slice(0,5).join(' ').replace(/^(is |would be |i'?d |i would |look at |looking at |around |about )/i,'').trim(); lines.push('# '+(capitalize(hw)||('Bucket '+(i+1)))); let rest=h.split(' ').slice(5).join(' '); let pc=rest.split(BULLET_CUE).join('|').split(/[|,]| and /i).map(s=>s.trim()).filter(s=>s.length>2); if(!pc.length)pc=[h]; pc.slice(0,6).forEach(p=>lines.push('- '+capitalize(p))); }); return lines.join('\n'); }
 function parseStructure(text){ const out=[]; text.split(/\n/).forEach(line=>{ const t=line.trim(); if(!t)return; if(/^#/.test(t))out.push({header:t.replace(/^#+\s*/,'').trim(),bullets:[]}); else{ const b=t.replace(/^[\-\*•]\s*/,'').trim(); if(!out.length)out.push({header:b,bullets:[]}); else out[out.length-1].bullets.push(b);} }); return out; }
 
-function reviewFramework(struct,c,criteriaConfig){
-  const cfg=criteriaConfig||MARKING_CRITERIA_CONFIG;
+// opts (optional): {enabled:[criterion names], weights:{name:weight}}. Callers pass the live config; this block is pure so tests can load it.
+function reviewFramework(struct,c,criteriaConfig,opts){
+  const cfg=criteriaConfig||{};
   const res={crits:[]}, totalBullets=struct.reduce((n,b)=>n+b.bullets.length,0), allText=struct.map(b=>b.header+' '+b.bullets.join(' ')).join(' ').toLowerCase();
 
   (function(){
@@ -2430,7 +2433,8 @@ function reviewFramework(struct,c,criteriaConfig){
     else if(nb>maxB){ notes.push(`${nb} buckets is a lot — ${minB}–${maxB} is easier to deliver.`); level='ok'; } else notes.push(`${nb} buckets — within the ${minB}–${maxB} range.`);
     const minPts=critCfg.minPointsPerBucket||4, maxPts=critCfg.maxPointsPerBucket||5;
     const thin=struct.filter(b=>b.bullets.length<minPts).map(b=>b.header), fat=struct.filter(b=>b.bullets.length>maxPts).map(b=>b.header);
-    if(thin.length){ notes.push(`Thin (under ${minPts} points): ${thin.join('; ')}. Target ${minPts}–${maxPts} each.`); if(level==='strong')level='ok'; }
+    // Half or more of the buckets under the minimum is below expectations (weak); fewer is a nudge (ok).
+    if(thin.length){ notes.push(`Thin (under ${minPts} points): ${thin.join('; ')}. Target ${minPts}–${maxPts} each.`); level=thin.length*2>=nb?'weak':(level==='strong'?'ok':level); }
     if(fat.length){ notes.push(`Overloaded (${maxPts+1}+ points): ${fat.join('; ')}. Trim to ${minPts}–${maxPts}.`); if(level==='strong')level='ok'; }
     res.crits.push({name:'Structure',sub:`${minB}–${maxB} buckets, ${minPts}–${maxPts} points each`,level,notes});
   })();
@@ -2449,9 +2453,12 @@ function reviewFramework(struct,c,criteriaConfig){
   (function(){
     const critCfg=cfg.Succinct||{}; const notes=[]; let level='strong'; const lens=[]; struct.forEach(b=>b.bullets.forEach(x=>lens.push({w:words(x).length,t:x})));
     const maxWordLen=critCfg.maxAvgWordLength||12, maxLongOk=critCfg.maxLongPointsBeforeOk||2, maxLongWeak=critCfg.maxLongPointsBeforeWeak||3, maxTotal=critCfg.maxTotalBullets||22;
-    const long=lens.filter(x=>x.w>maxWordLen), avg=lens.length?Math.round(lens.reduce((n,x)=>n+x.w,0)/lens.length):0;
+    // "Under N words": a point of N or more words runs long. Tiers: strong below maxLongOk long points,
+    // ok from maxLongOk up to maxLongWeak, weak from maxLongWeak. okAt is clamped so all three tiers stay reachable.
+    const long=lens.filter(x=>x.w>=maxWordLen), avg=lens.length?Math.round(lens.reduce((n,x)=>n+x.w,0)/lens.length):0;
+    const okAt=Math.max(1,Math.min(maxLongOk,maxLongWeak-1));
     notes.push(`Average point length: ${avg} words.`);
-    if(long.length){ notes.push(`${long.length} point${long.length===1?'':'s'} run long (>${maxWordLen} words) — compress to phrases.`); level=long.length>=maxLongWeak?'weak':(long.length>maxLongOk?'ok':'strong'); } else notes.push('Points are concise and phrase-length, suitable for delivery.');
+    if(long.length){ notes.push(`${long.length} point${long.length===1?'':'s'} run long (${maxWordLen}+ words) — compress to phrases.`); level=long.length>=maxLongWeak?'weak':(long.length>=okAt?'ok':'strong'); } else notes.push('Points are concise and phrase-length, suitable for delivery.');
     if(totalBullets>maxTotal){ notes.push(`${totalBullets} total points is a lot to say in a few minutes — prioritize.`); if(level==='strong')level='ok'; }
     res.crits.push({name:'Succinct',sub:'Tight, phrase-length points',level,notes});
   })();
@@ -2465,10 +2472,17 @@ function reviewFramework(struct,c,criteriaConfig){
     res.crits.push({name:'Relevant',sub:'Tailored to THIS case',level,notes});
   })();
 
-  const score=res.crits.reduce((n,c)=>n+(c.level==='strong'?2:c.level==='ok'?1:0),0); res.score=score; res.pct=Math.round(score/8*100);
-  res.overall=score>=7?'Strong framework. Interview-ready.':score>=4?'Solid framework. Address the flagged items.':'Incomplete. Rework the flagged areas before delivering.';
+  // Only enabled criteria count, each scaled by its weight (default 1). Percent cutoffs (87 / 50) match the system prompt.
+  const enabled=opts&&Array.isArray(opts.enabled)?new Set(opts.enabled):null, weights=(opts&&opts.weights)||{};
+  res.crits=res.crits.filter(cr=>!enabled||enabled.has(cr.name));
+  const wOf=cr=>{ const w=Number(weights[cr.name]); return Number.isFinite(w)&&w>=0?w:1; };
+  const earned=res.crits.reduce((n,cr)=>n+wOf(cr)*(cr.level==='strong'?2:cr.level==='ok'?1:0),0), possible=res.crits.reduce((n,cr)=>n+wOf(cr)*2,0);
+  const ratio=possible?earned/possible:0;
+  res.score=earned; res.pct=Math.round(ratio*100);
+  res.overall=ratio*100>=87?'Strong framework. Interview-ready.':ratio*100>=50?'Solid framework. Address the flagged items.':'Incomplete. Rework the flagged areas before delivering.';
   return res;
 }
+/* SCORING:END */
 
 /* ---------- issue tree diagram ---------- */
 function buildTreeLayout(root){
@@ -2860,7 +2874,7 @@ function prefersReducedMotion(){
 function runReview(){
   const c=S.caseObj, st=parseStructure(el('structText').value);
   if(!st.length){ el('reviewOut').innerHTML='<div class="fb warn">Nothing to review — add at least one <span class="kbd"># bucket</span>.</div>'; return; }
-  const r=reviewFramework(st,c); const lvl={strong:100,ok:62,weak:32}; const gc=r.pct>=75?'var(--good)':r.pct>=45?'var(--amber)':'var(--bad)';
+  const r=reviewFramework(st,c,MARKING_CRITERIA_CONFIG,{enabled:CRITS.length?CRITS:null,weights:MARKING_WEIGHTS}); const lvl={strong:100,ok:62,weak:32}; const gc=r.pct>=75?'var(--good)':r.pct>=45?'var(--amber)':'var(--bad)';
   const hasTree = !!window._lastAIFramework?.tree;
   const framedContent = hasTree ? '<div id="reviewTreeBox"></div>' :
     st.map((b,i)=>`<h4><span class="n">${i+1}</span>${b.header}</h4><ul>${b.bullets.map(x=>`<li>${x}</li>`).join('')||'<li class="empty">(no points)</li>'}</ul>`).join('');
@@ -2876,7 +2890,7 @@ function runReview(){
 function recordResult(c,r,st){
   const lv={}; r.crits.forEach(cr=>lv[cr.name]=cr.level==='strong'?2:cr.level==='ok'?1:0);
   const h=loadHistory();
-  const entry={ts:Date.now(),id:c.id,title:c.title,source:c.source,type:c.type,pct:r.pct,levels:lv,bullets:st.reduce((n,b)=>n+b.bullets.length,0)};
+  const entry={ts:Date.now(),id:c.id,title:c.title,source:c.source,type:c.type,pct:r.pct,levels:lv,bullets:st.reduce((n,b)=>n+b.bullets.length,0),rv:RUBRIC_VERSION};
   if(S.recorded&&h.length){ h[h.length-1]=entry; } else { h.push(entry); S.recorded=true; }
   saveHistory(h);
   // Also persist to server (async, non-blocking)
@@ -2886,6 +2900,9 @@ function recordResult(c,r,st){
 /* ---------- dashboard analytics ---------- */
 let CRITS=['Structure','MECE','Succinct','Relevant'];
 let MARKING_CRITERIA_CONFIG={};
+let MARKING_WEIGHTS={};
+// Bump when scoring rules change so saved results record which scale they were marked on (1 = original rules).
+const RUBRIC_VERSION=2;
 function dayKey(ts){ const d=new Date(ts); return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); }
 function computeStreak(h){ if(!h.length)return 0; const days=new Set(h.map(x=>dayKey(x.ts))); let streak=0; const d=new Date(); for(;;){ const k=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); if(days.has(k)){streak++; d.setDate(d.getDate()-1);} else break; } return streak; }
 function coverClass(pct){ return pct>=75?'cov-good':pct>=45?'cov-ok':'cov-bad'; }
@@ -4169,9 +4186,11 @@ async function loadMarkingCriteria(){
     const criteria=await apiGet('/api/cases/marking-criteria');
     if(criteria && !criteria.error){
       MARKING_CRITERIA_CONFIG={};
+      MARKING_WEIGHTS={};
       CRITS=[];
       Object.entries(criteria).forEach(([name,data])=>{
         MARKING_CRITERIA_CONFIG[name]=data.config||{};
+        MARKING_WEIGHTS[name]=data.weight;
         CRITS.push(name);
       });
     }

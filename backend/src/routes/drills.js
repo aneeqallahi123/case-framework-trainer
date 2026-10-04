@@ -9,14 +9,14 @@ router.post('/', requireAuth, async (req, res) => {
   const {
     caseId, caseTitle, caseSource, caseType,
     score, levels, bullets,
-    rawTranscript, structuredFramework, aiFeedback
+    rawTranscript, structuredFramework, aiFeedback, rubricVersion
   } = req.body;
 
   try {
     const result = await pool.query(
       `INSERT INTO drill_results
-        (user_id, case_id, case_title, case_source, case_type, score, levels, bullets, raw_transcript, structured_framework, ai_feedback)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        (user_id, case_id, case_title, case_source, case_type, score, levels, bullets, raw_transcript, structured_framework, ai_feedback, rubric_version)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        RETURNING *`,
       [
         req.user.id, caseId, caseTitle, caseSource, caseType,
@@ -25,7 +25,8 @@ router.post('/', requireAuth, async (req, res) => {
         bullets || 0,
         rawTranscript || null,
         JSON.stringify(structuredFramework || null),
-        aiFeedback || null
+        aiFeedback || null,
+        Number.isInteger(rubricVersion) && rubricVersion > 0 ? rubricVersion : 1
       ]
     );
     res.json(result.rows[0]);
@@ -39,7 +40,7 @@ router.post('/', requireAuth, async (req, res) => {
 router.get('/', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, case_id, case_title, case_source, case_type, score, levels, bullets, ai_feedback, created_at
+      `SELECT id, case_id, case_title, case_source, case_type, score, levels, bullets, ai_feedback, rubric_version, created_at
        FROM drill_results
        WHERE user_id = $1
        ORDER BY created_at DESC

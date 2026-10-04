@@ -160,6 +160,12 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS show_stats BOOLEAN DEFAULT true;
     `);
 
+    // Scoring rubric version each result was marked under (1 = original rules), so
+    // trend views can tell scales apart when the rubric changes.
+    await client.query(`
+      ALTER TABLE drill_results ADD COLUMN IF NOT EXISTS rubric_version INTEGER DEFAULT 1;
+    `);
+
     await client.query(`
       CREATE INDEX IF NOT EXISTS drill_results_user_created_idx
       ON drill_results (user_id, created_at DESC);
@@ -241,7 +247,6 @@ async function seedMarkingCriteria(client) {
       config: {
         overlapThreshold: 0.22,
         minSharedWords: 2,
-        minCoveragePct: 0,
         feedback: {
           strong: 'No significant overlap; covers key dimensions.',
           ok: 'Some overlap exists; could improve exclusivity.',
