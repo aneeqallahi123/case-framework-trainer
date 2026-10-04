@@ -1,0 +1,2801 @@
+[
+ {
+  "case": {
+   "id": "ex01",
+   "title": "Catch Me or I Go, HuDisney",
+   "source": "Darden Casebook 2024-25",
+   "type": "ma",
+   "prompt": "Your client is Disney, they’re a global leader in entertainment and have a diverse portfolio of media networks, including Disney+ and Hulu. Disney+ is the flagship streaming service and focuses on family content, whereas Hulu offers a wider range of TV shows and movies. As the streaming market grows more competitive and consumers prefer consolidated services (i.e., multiple networks in one platform), Disney is considering merging Hulu with Disney+ to streamline offerings. You’re tasked to analyze this integration’s viability and strategize its implementation.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "objective",
+      "goal",
+      "aim",
+      "hoping",
+      "trying to achieve",
+      "target",
+      "success",
+      "looking for",
+      "primary",
+      "achieve",
+      "why merge",
+      "why merging",
+      "purpose"
+     ],
+     "answer": "Disney hopes to increase revenues from its streaming channel."
+    },
+    {
+     "keywords": [
+      "difference",
+      "content",
+      "genre",
+      "size",
+      "audience",
+      "offer",
+      "library",
+      "family",
+      "compare"
+     ],
+     "answer": "Disney+ focuses on family-friendly content including Pixar, Star wars, and Marvel content. Hulu offers a broader range of content from network (i.e., ABC Network) TV shows, movies, and original content."
+    },
+    {
+     "keywords": [
+      "geograph",
+      "market",
+      "region",
+      "countries",
+      "where",
+      "global",
+      "international"
+     ],
+     "answer": "Both services have subscribers across the globe, and the two streamlining platforms serve similar geographical markets."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Standalone value of target",
+     "keywords": [
+      "revenue",
+      "growth",
+      "cash flow",
+      "valuation",
+      "pipeline",
+      "standalone",
+      "assets"
+     ]
+    },
+    {
+     "name": "Synergies",
+     "keywords": [
+      "synergy",
+      "synergies",
+      "cost",
+      "revenue",
+      "cross-sell",
+      "distribution",
+      "scale"
+     ]
+    },
+    {
+     "name": "Strategic fit / rationale",
+     "keywords": [
+      "strategic",
+      "fit",
+      "rationale",
+      "capabilities",
+      "portfolio",
+      "market"
+     ]
+    },
+    {
+     "name": "Price / returns",
+     "keywords": [
+      "price",
+      "valuation",
+      "multiple",
+      "roi",
+      "return",
+      "npv",
+      "payback"
+     ]
+    },
+    {
+     "name": "Risks & integration",
+     "keywords": [
+      "risk",
+      "integration",
+      "regulatory",
+      "culture",
+      "execution"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "disney",
+    "hulu",
+    "streaming",
+    "subscriber",
+    "merge",
+    "merging",
+    "bundle",
+    "platform",
+    "content",
+    "network",
+    "pixar",
+    "family"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-01",
+   "shape": "gate",
+   "caseTypeLine": "Strategic decision (should we merge?) with an implementation part. The goal is streaming revenue, so the subscriber and pricing maths is the core.",
+   "purpose": "To decide whether merging Hulu into Disney+ grows streaming revenue, and how to do it, I’d look at four areas:",
+   "buckets": [
+    {
+     "question": "Will the merged platform earn more revenue?",
+     "points": [
+      "How many subscribers are on Disney+ only, Hulu only, or both?",
+      "How many would trade up or down at a bundle price?",
+      "Does a bigger library reduce churn?",
+      "Can Hulu’s ads be sold across the Disney+ base?"
+     ],
+     "hypothesis": "I expect the overlap is small, so the upside is in upselling single subscribers."
+    },
+    {
+     "question": "What will it cost and save?",
+     "points": [
+      "One-time costs come from merging the tech and renegotiating Hulu’s licences.",
+      "Savings come from one tech stack, one marketing budget and stronger content buying.",
+      "Does the extra profit pay back quickly enough?"
+     ]
+    },
+    {
+     "question": "How will viewers, partners and competitors react?",
+     "points": [
+      "Does Hulu’s adult content dilute the Disney brand?",
+      "Will Hulu-only subscribers cancel rather than pay for Disney content?",
+      "Do content contracts allow the move?",
+      "Will Netflix and Amazon respond with their own bundles?"
+     ],
+     "hypothesis": "I expect this is the biggest risk."
+    },
+    {
+     "question": "How should Disney roll it out?",
+     "points": [
+      "Build one app with separate Disney and Hulu sections and parental controls.",
+      "Test bundle pricing in a few markets first.",
+      "Merge the teams under one P&L owner.",
+      "Tell subscribers early to limit churn."
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 1,
+    "text": "Revenue is the stated objective, so I’d start with area 1 and ask for subscriber counts by platform (including the overlap) and current prices."
+   },
+   "clarifying": [
+    {
+     "question": "What is Disney hoping to achieve with this merging of platforms?",
+     "answer": "Disney hopes to increase revenues from its streaming channel."
+    },
+    {
+     "question": "What are differences between the platforms’ content, size, or genre?",
+     "answer": "Disney+ focuses on family-friendly content including Pixar, Star wars, and Marvel content. Hulu offers a broader range of content from network (i.e., ABC Network) TV shows, movies, and original content."
+    },
+    {
+     "question": "What geographical markets do Disney+ and Hulu serve?",
+     "answer": "Both services have subscribers across the globe, and the two streamlining platforms serve similar geographical markets."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex02",
+   "title": "Cruising Into Bollywood",
+   "source": "Darden Casebook 2024-25",
+   "type": "market_entry",
+   "prompt": "Your client is Dom Cruise, an iconic Hollywood star with a legendary reputation built on his performances in action-packed films. He is seeking to expand his horizons internationally by venturing into the competitive Bollywood market. Our team has been hired to help him assess the potential of this venture and determine the best approach for his entry into this new market.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "why does",
+      "why is",
+      "motivat",
+      "goal",
+      "objective",
+      "want",
+      "reason",
+      "achieve"
+     ],
+     "answer": "To create a film that debuts with an opening weekend revenue of over $250 M & gains a movie rating of at least 4.5 stars. He is driven by a desire to connect with the broader Indian audience and explore a new cultural narrative. Defining his status as a versatile international actor"
+    },
+    {
+     "keywords": [
+      "bollywood work",
+      "operate",
+      "industry",
+      "distribut",
+      "multiplex",
+      "how does",
+      "market work"
+     ],
+     "answer": "It is a vibrant film industry where popular production houses & celebrities are crucial to drawing large crowds. Musical and dance sequences are a central part of Bollywood films, and success is often measured by box office performance, especially in opening weekend revenues. Films are distributed through multiplexes (venues with multiple screens) and single-screen theaters"
+    },
+    {
+     "keywords": [
+      "perceiv",
+      "perception",
+      "reputation",
+      "brand",
+      "fan",
+      "popular",
+      "known",
+      "seen"
+     ],
+     "answer": "Dom Cruise is seen positively in the Bollywood market as a globally renowned actor. His involvement in a Bollywood project would be considered a potential boost for the film's international appeal, given his broad fanbase"
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Market attractiveness",
+     "keywords": [
+      "market",
+      "size",
+      "growth",
+      "demand",
+      "segment",
+      "customer",
+      "tam"
+     ]
+    },
+    {
+     "name": "Competition",
+     "keywords": [
+      "competitor",
+      "competition",
+      "incumbent",
+      "rivals",
+      "share",
+      "differentiation"
+     ]
+    },
+    {
+     "name": "Company capability & fit",
+     "keywords": [
+      "capability",
+      "fit",
+      "product",
+      "brand",
+      "resources",
+      "team",
+      "operations"
+     ]
+    },
+    {
+     "name": "Financials / economics",
+     "keywords": [
+      "revenue",
+      "cost",
+      "profit",
+      "investment",
+      "roi",
+      "payback",
+      "margin",
+      "price"
+     ]
+    },
+    {
+     "name": "Entry mode & risk",
+     "keywords": [
+      "entry",
+      "build",
+      "buy",
+      "partner",
+      "acquisition",
+      "risk",
+      "regulation"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "dom",
+    "cruise",
+    "bollywood",
+    "hollywood",
+    "india",
+    "indian",
+    "film",
+    "movie",
+    "opening",
+    "weekend",
+    "box office",
+    "rating"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-02",
+   "shape": "gate",
+   "caseTypeLine": "Strategic decision (market entry) with a “how to enter” part. The objective is concrete: over $250M opening weekend and at least a 4.5-star rating.",
+   "purpose": "To decide whether Dom can hit $250M and 4.5 stars, and how he should enter, I’d look at three questions that all need a yes, then at how to enter:",
+   "buckets": [
+    {
+     "question": "Can the film earn over $250M in its opening weekend?",
+     "points": [
+      "How many screens, shows, seats and at what ticket price, in India and overseas?",
+      "How did the biggest Bollywood openings and past Hollywood crossovers perform?",
+      "How much can Dom’s global fans and the Indian diaspora add?"
+     ],
+     "hypothesis": "I expect India alone can’t reach $250M, so a global release is needed."
+    },
+    {
+     "question": "Will it earn a 4.5-star rating?",
+     "points": [
+      "Can Dom carry both action and song-and-dance scenes?",
+      "Can we pair him with a top Indian co-star?",
+      "Will the story and language feel authentic to Indian audiences?",
+      "Which critics and influencers drive ratings?"
+     ],
+     "hypothesis": "I expect an action film with music suits him best."
+    },
+    {
+     "question": "Can he access the right partners?",
+     "points": [
+      "Which production house can bring the director, music and credibility?",
+      "Can we secure enough multiplex screens and a strong release date?",
+      "How will we promote it locally, starting with the music?",
+      "Are the budget, sets and on-set safety in place?"
+     ]
+    },
+    {
+     "question": "What is the best entry route, and what are the risks?",
+     "points": [
+      "Should he lead, co-produce or start with a cameo?",
+      "How would a flop affect his brand?",
+      "What Hollywood work does he give up?"
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 1,
+    "text": "The $250M bar is the hardest test, so I’d start with area 1 and ask for box office data on Bollywood openings and screen counts."
+   },
+   "clarifying": [
+    {
+     "question": "Why does Dom Cruise want to enter the Bollywood market?",
+     "answer": "To create a film that debuts with an opening weekend revenue of over $250 M & gains a movie rating of at least 4.5 stars. He is driven by a desire to connect with the broader Indian audience and explore a new cultural narrative. Defining his status as a versatile international actor"
+    },
+    {
+     "question": "How does the Bollywood market operate?",
+     "answer": "It is a vibrant film industry where popular production houses & celebrities are crucial to drawing large crowds. Musical and dance sequences are a central part of Bollywood films, and success is often measured by box office performance, especially in opening weekend revenues. Films are distributed through multiplexes (venues with multiple screens) and single-screen theaters"
+    },
+    {
+     "question": "How is Dom Cruise currently perceived in the Bollywood market?",
+     "answer": "Dom Cruise is seen positively in the Bollywood market as a globally renowned actor. His involvement in a Bollywood project would be considered a potential boost for the film's international appeal, given his broad fanbase"
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex03",
+   "title": "Crunch Time at ChipCo.",
+   "source": "Darden Casebook 2024-25",
+   "type": "operations",
+   "prompt": "Your client is Bryant, a Plant Director at ChipCo., a global tortilla chip producer. While sales are strong, the North Carolina-based plant that Bryant oversees has been failing to meet customer commitments for several months. Bryant has hired us to diagnose the cause of the downtick in on-time deliveries and to propose a solution.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "objective",
+      "goal",
+      "aim",
+      "hoping",
+      "trying to achieve",
+      "target",
+      "success",
+      "looking for",
+      "primary"
+     ],
+     "answer": "The client wants to be able to meet sales commitments without incurring excessive costs."
+    },
+    {
+     "keywords": [
+      "value chain",
+      "supply chain",
+      "where does",
+      "fall in",
+      "upstream",
+      "downstream",
+      "plant do",
+      "what does the plant"
+     ],
+     "answer": "The plant receives raw materials inputs such as corn, oil, and seasonings from suppliers and performs all the steps required to output store-ready bags of chips. The plant also has its own sales team internal to the plant itself."
+    },
+    {
+     "keywords": [
+      "timeline",
+      "time frame",
+      "timeframe",
+      "deadline",
+      "how soon",
+      "by when",
+      "horizon",
+      "how long",
+      "urgency"
+     ],
+     "answer": "Bryant would obviously like to begin meeting sales commitments ASAP but provided no specific timeline constraint."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Process / root cause",
+     "keywords": [
+      "process",
+      "root cause",
+      "bottleneck",
+      "step",
+      "workflow",
+      "cycle"
+     ]
+    },
+    {
+     "name": "Capacity & utilization",
+     "keywords": [
+      "capacity",
+      "utilization",
+      "throughput",
+      "volume",
+      "demand"
+     ]
+    },
+    {
+     "name": "Cost structure",
+     "keywords": [
+      "cost",
+      "labor",
+      "materials",
+      "overhead",
+      "efficiency"
+     ]
+    },
+    {
+     "name": "Quality & external",
+     "keywords": [
+      "quality",
+      "defect",
+      "customer",
+      "supplier",
+      "external"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "chipco",
+    "tortilla",
+    "chip",
+    "plant",
+    "bryant",
+    "north carolina",
+    "on-time",
+    "deliver",
+    "commitment",
+    "sales team",
+    "corn"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-03",
+   "shape": "diagnosis",
+   "caseTypeLine": "Diagnosis. The metric is the on-time delivery rate, so this is solved by elimination along the order-to-delivery process.",
+   "purpose": "Late deliveries mean orders committed are greater than bags delivered on time. I’ll find which step in the process opened the gap, then the root cause, then a fix that doesn’t add excessive cost. I’d trace four steps:",
+   "buckets": [
+    {
+     "question": "Is the plant committing to more than it can make?",
+     "points": [
+      "Have orders or SKUs grown faster than capacity?",
+      "Have promised lead times shortened?",
+      "Are misses concentrated in certain customers or SKUs?"
+     ],
+     "hypothesis": "I expect the in-plant sales team is over-committing."
+    },
+    {
+     "question": "Are inputs arriving on time and to spec?",
+     "points": [
+      "Are suppliers delivering late more often than last year?",
+      "Are more inputs being rejected for quality?",
+      "Is there enough raw material before each run?"
+     ]
+    },
+    {
+     "question": "Is the plant producing less than planned?",
+     "points": [
+      "Which has fallen: hours, uptime, line speed or yield?",
+      "Which step is the bottleneck?",
+      "Are absenteeism or turnover leaving shifts short?"
+     ],
+     "hypothesis": "I expect uptime has dropped from breakdowns or longer changeovers."
+    },
+    {
+     "question": "Are finished bags shipping on time?",
+     "points": [
+      "Is the warehouse full or slow?",
+      "Are carriers and trucks reliable?",
+      "Is the hand-off from sales to shipping working?"
+     ]
+    }
+   ],
+   "start": {
+    "text": "I’d first compare planned vs. actual output by month. That tells us right away whether the gap is in production (my starting hypothesis) or in commitments, and lets me rule out whole branches. Then I’d find the root cause and weigh fixes such as scheduling, maintenance, an extra shift or resetting commitments against their cost."
+   },
+   "clarifying": [
+    {
+     "question": "What is the client’s objective?",
+     "answer": "The client wants to be able to meet sales commitments without incurring excessive costs."
+    },
+    {
+     "question": "Where does the ChipCo plant fall in the overall tortilla chip value chain?",
+     "answer": "The plant receives raw materials inputs such as corn, oil, and seasonings from suppliers and performs all the steps required to output store-ready bags of chips. The plant also has its own sales team internal to the plant itself."
+    },
+    {
+     "question": "Is there any timeline that ChipCo needs to get production back up within?",
+     "answer": "Bryant would obviously like to begin meeting sales commitments ASAP but provided no specific timeline constraint."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex04",
+   "title": "Hooville College",
+   "source": "Darden Casebook 2024-25",
+   "type": "decision",
+   "prompt": "Hooville College is a liberal arts college that serves approximately 4,000 students from across the United States. It has a reputation for excellent humanities and arts departments (e.g., English or Foreign Language), however with the dual pressures of declining enrollment and increasing tuition expenses in higher education, Hooville’s President is considering implementing an innovative tuition model that she believes would increase enrollment. She has engaged us to help think through the implications of this change.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "tuition model",
+      "proposed",
+      "new model",
+      "how would",
+      "details",
+      "model"
+     ],
+     "answer": "Hooville currently charges a flat tuition rate, though the college gives financial aid and some students pay less than this flat rate. The proposed model would eliminate tuition altogether, replacing it with a binding commitment on the part of any Hooville student to pay 5% of their annual income back to Hooville for the entirety of their career, after graduating."
+    },
+    {
+     "keywords": [
+      "mission",
+      "motto",
+      "values"
+     ],
+     "answer": "Hooville’s mission is to educate a diverse population of students in order to prepare them for lifelong learning and success in their careers. Their motto is “Inspiring a Life of the Mind.”"
+    },
+    {
+     "keywords": [
+      "cost",
+      "enrollment",
+      "financ",
+      "current",
+      "numbers",
+      "details"
+     ],
+     "answer": "These details will be given later in the case."
+    },
+    {
+     "keywords": [
+      "objective",
+      "goal",
+      "aim",
+      "hoping",
+      "trying to achieve",
+      "target",
+      "success",
+      "looking for",
+      "primary",
+      "purpose"
+     ],
+     "answer": "The goal is to generate an immediate increase in student enrollment and realign the college with its original mission."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Benefits / upside",
+     "keywords": [
+      "benefit",
+      "upside",
+      "revenue",
+      "value",
+      "strategic",
+      "opportunity"
+     ]
+    },
+    {
+     "name": "Costs / investment",
+     "keywords": [
+      "cost",
+      "investment",
+      "resources",
+      "capital",
+      "risk"
+     ]
+    },
+    {
+     "name": "Market / external factors",
+     "keywords": [
+      "market",
+      "customer",
+      "competition",
+      "demand",
+      "regulation"
+     ]
+    },
+    {
+     "name": "Feasibility & risks",
+     "keywords": [
+      "feasibility",
+      "capability",
+      "risk",
+      "execution",
+      "alternative"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "hooville",
+    "college",
+    "tuition",
+    "enrollment",
+    "student",
+    "income",
+    "alumni",
+    "humanities",
+    "liberal arts",
+    "financial aid"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-04",
+   "shape": "gate",
+   "caseTypeLine": "Strategic decision: a long-term, hard-to-reverse change to the business model, with financial maths at its core.",
+   "purpose": "To decide whether replacing tuition with a 5%-of-income commitment is right for Hooville, I’d check four things that all need a yes:",
+   "buckets": [
+    {
+     "question": "Will enrollment rise, and among which students?",
+     "points": [
+      "Which applicants does the model attract?",
+      "Will more admitted students choose Hooville over peers?",
+      "Do we have the faculty and housing for more students?"
+     ],
+     "hypothesis": "I expect future high earners avoid it, shifting the mix to lower-paying careers."
+    },
+    {
+     "question": "Is it financially sustainable?",
+     "points": [
+      "What does Hooville earn today after financial aid?",
+      "What would 5% of graduates’ lifetime income be worth today?",
+      "How would Hooville fund that gap?",
+      "How much would go uncollected?"
+     ],
+     "hypothesis": "I expect the value is fine but there is a four-year cash gap."
+    },
+    {
+     "question": "Does it fit the mission and stakeholders?",
+     "points": [
+      "Will it push students away from the humanities?",
+      "Will alumni donations fall?",
+      "How will faculty, accreditors and regulators react?"
+     ]
+    },
+    {
+     "question": "Can Hooville implement it?",
+     "points": [
+      "Should it start with a pilot cohort?",
+      "How will income be verified and payments collected?",
+      "How will it be explained to families?"
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 2,
+    "text": "I’d start with area 2 and build the baseline: current enrollment, tuition and aid discount, then compare it with the proposed model. Enrollment gains matter little if the college can’t survive the cash gap."
+   },
+   "clarifying": [
+    {
+     "question": "Can you provide more information about the proposed tuition model?",
+     "answer": "Hooville currently charges a flat tuition rate, though the college gives financial aid and some students pay less than this flat rate. The proposed model would eliminate tuition altogether, replacing it with a binding commitment on the part of any Hooville student to pay 5% of their annual income back to Hooville for the entirety of their career, after graduating."
+    },
+    {
+     "question": "What is Hooville College’s mission?",
+     "answer": "Hooville’s mission is to educate a diverse population of students in order to prepare them for lifelong learning and success in their careers. Their motto is “Inspiring a Life of the Mind.”"
+    },
+    {
+     "question": "Can you give any details about Hooville’s current cost and enrollment?",
+     "answer": "These details will be given later in the case."
+    },
+    {
+     "question": "What are the objectives/goals of this new tuition model for Hooville College?",
+     "answer": "The goal is to generate an immediate increase in student enrollment and realign the college with its original mission."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex05",
+   "title": "HR Co.",
+   "source": "Darden Casebook 2024-25",
+   "type": "competitive_response",
+   "prompt": "HR Co. is a leader in the human resource outsourcing (HRO) market in the United States. The firm was an early pioneer in such services as outsourced payroll and employee benefits admin for their clients, mostly small and medium-sized businesses. In the last 3 years, new and disruptive companies have entered the HRO market. Traditionally, the firm has paid little attention to new entrants. However, these companies have grown rapidly, using technology to acquire customers and revolutionize the outsourced HR service model. Their early success has caught the attention of HR Co.’s board and executive team. HR Co. has approached our consulting firm to assess the situation and recommend a course of action.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "business model",
+      "how does",
+      "make money",
+      "revenue model",
+      "revenue",
+      "earn",
+      "money",
+      "services",
+      "offer",
+      "what does hr co"
+     ],
+     "answer": "Provide outsourced HR solutions, ranging from a la carte services (like payroll administration, workers comp) to fully-managed HR function for the entire employee lifecycle. HR Co. collects one-time and ongoing fees from clients for these services."
+    },
+    {
+     "keywords": [
+      "objective",
+      "goal",
+      "aim",
+      "hoping",
+      "trying to achieve",
+      "target",
+      "success",
+      "looking for",
+      "primary"
+     ],
+     "answer": "Assess threats of new entrants, recommending a competitive response if necessary"
+    },
+    {
+     "keywords": [
+      "timeline",
+      "time frame",
+      "timeframe",
+      "deadline",
+      "how soon",
+      "by when",
+      "horizon",
+      "how long",
+      "urgency"
+     ],
+     "answer": "Unspecified; safe to assume it’s an issue of months, not years"
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Understand the threat",
+     "keywords": [
+      "competitor",
+      "threat",
+      "move",
+      "share",
+      "offering",
+      "price"
+     ]
+    },
+    {
+     "name": "Our position",
+     "keywords": [
+      "client",
+      "strength",
+      "weakness",
+      "capability",
+      "brand",
+      "cost"
+     ]
+    },
+    {
+     "name": "Customers & market",
+     "keywords": [
+      "customer",
+      "segment",
+      "demand",
+      "switching",
+      "loyalty"
+     ]
+    },
+    {
+     "name": "Response options",
+     "keywords": [
+      "respond",
+      "match",
+      "differentiate",
+      "price",
+      "acquire",
+      "partner",
+      "ignore"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "hr co",
+    "outsourc",
+    "payroll",
+    "benefits",
+    "entrant",
+    "small and medium",
+    "hro",
+    "employee lifecycle",
+    "disrupt",
+    "clients"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-05",
+   "shape": "open_ended",
+   "caseTypeLine": "Open-ended strategy (competitive response), starting with a short diagnosis of how big the threat is.",
+   "purpose": "To recommend a response, I first need to know how big the threat really is, then what options HR Co. has and how to choose between them. I’d look at four areas:",
+   "buckets": [
+    {
+     "question": "How big is the threat?",
+     "points": [
+      "Which clients and services are we losing?",
+      "Why are clients switching?",
+      "Are the entrants profitable or burning cash?"
+     ],
+     "hypothesis": "I expect we are losing small businesses that buy payroll only."
+    },
+    {
+     "question": "Where do we win and lose against them?",
+     "points": [
+      "They acquire clients digitally while we rely on a sales team.",
+      "How does our product compare at each stage of the employee lifecycle?",
+      "Our strengths are our client base, compliance expertise and full service."
+     ]
+    },
+    {
+     "question": "What are our options?",
+     "points": [
+      "We could defend existing clients with better pricing and service.",
+      "We could build a self-serve digital product.",
+      "We could buy or partner with an entrant.",
+      "We could focus on larger clients that want full service."
+     ]
+    },
+    {
+     "question": "Which option should we choose?",
+     "points": [
+      "Which protects the most revenue, fastest, at the lowest cost?",
+      "How much would each cannibalise current fees?",
+      "How will competitors respond?"
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 1,
+    "text": "I’d start with area 1 and ask for HR Co.’s market share and client churn over the last three years, split by client size and service type."
+   },
+   "clarifying": [
+    {
+     "question": "Business model",
+     "answer": "Provide outsourced HR solutions, ranging from a la carte services (like payroll administration, workers comp) to fully-managed HR function for the entire employee lifecycle. HR Co. collects one-time and ongoing fees from clients for these services."
+    },
+    {
+     "question": "Objective",
+     "answer": "Assess threats of new entrants, recommending a competitive response if necessary"
+    },
+    {
+     "question": "Timeline",
+     "answer": "Unspecified; safe to assume it’s an issue of months, not years"
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex06",
+   "title": "Hydrogenous",
+   "source": "Darden Casebook 2024-25",
+   "type": "decision",
+   "prompt": "Hydrogenous is an international NGO that leads initiatives to combat extreme drought as part of the global effort led by the United Nations Convention to combat desertification. Mitigating desertification is a crucial component of tackling climate change, providing immense value for natural landscapes and human welfare (e.g., food security, employment, and sustainable development). The President, Luke, approached you and asked: “What factors should the team consider when selecting the firm’s next project to combat desertification?”",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "desertification",
+      "what is",
+      "define",
+      "definition",
+      "mean"
+     ],
+     "answer": "“The process by which natural or human causes reduce the biological productivity of drylands (arid and semiarid lands).” – Britannica"
+    },
+    {
+     "keywords": [
+      "usually",
+      "what does hydrogenous",
+      "levers",
+      "mitigate",
+      "activities",
+      "typically",
+      "funded",
+      "funding",
+      "donors",
+      "how does hydrogenous"
+     ],
+     "answer": "Hydrogenous is mandated by UN to address desertification challenges. Most of the levers our client can pull are afforestation, reforestation, water supply support, and nature preservation, which are funded by global foundations, local governments, and other institutional donors."
+    },
+    {
+     "keywords": [
+      "target",
+      "goal",
+      "objective",
+      "aim",
+      "success",
+      "criteria",
+      "selecting"
+     ],
+     "answer": "Selecting the project with both the shortest payback period and biggest “impact.” Ideally, the project would also become a flagship model, attracting additional philanthropic support to fund future initiatives."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Benefits / upside",
+     "keywords": [
+      "benefit",
+      "upside",
+      "revenue",
+      "value",
+      "strategic",
+      "opportunity"
+     ]
+    },
+    {
+     "name": "Costs / investment",
+     "keywords": [
+      "cost",
+      "investment",
+      "resources",
+      "capital",
+      "risk"
+     ]
+    },
+    {
+     "name": "Market / external factors",
+     "keywords": [
+      "market",
+      "customer",
+      "competition",
+      "demand",
+      "regulation"
+     ]
+    },
+    {
+     "name": "Feasibility & risks",
+     "keywords": [
+      "feasibility",
+      "capability",
+      "risk",
+      "execution",
+      "alternative"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "hydrogenous",
+    "desertification",
+    "afforestation",
+    "reforestation",
+    "drought",
+    "ngo",
+    "donor",
+    "flagship",
+    "land",
+    "water",
+    "project"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-06",
+   "shape": "selection",
+   "caseTypeLine": "Public sector / non-profit selection among options. Criteria come from the client’s target: impact, payback and flagship value, plus whether the project can be delivered on the ground.",
+   "purpose": "To pick the project with the shortest payback, the biggest impact and the most flagship value, I’d score each candidate project on four criteria:",
+   "buckets": [
+    {
+     "question": "How big is the impact?",
+     "points": [
+      "How much land is restored?",
+      "How many people gain food, jobs or income?",
+      "How much carbon and water does it save?",
+      "How fast is the area degrading?"
+     ],
+     "hypothesis": "I expect fast-degrading areas near farms give the most impact per dollar."
+    },
+    {
+     "question": "How fast does it pay back?",
+     "points": [
+      "What is the upfront cost of each lever?",
+      "What are the upkeep costs and tree survival rates?",
+      "How do we value the benefit in money terms?"
+     ]
+    },
+    {
+     "question": "Can it be delivered on the ground?",
+     "points": [
+      "Do we have government support, land rights and local partners?",
+      "Will local communities protect the land?",
+      "Do the rainfall and soil suit the lever?",
+      "Is the area safe and stable?"
+     ]
+    },
+    {
+     "question": "Will it attract donors as a flagship?",
+     "points": [
+      "Will results be visible quickly?",
+      "Does it match donor priorities?",
+      "Can it be replicated elsewhere?"
+     ]
+    }
+   ],
+   "start": {
+    "text": "I’d first agree with Luke on a single definition of “impact” so projects can be compared. Then I’d calculate payback for each candidate, since payback and impact are the two stated targets, and use delivery risk and flagship value to break ties."
+   },
+   "clarifying": [
+    {
+     "question": "What is Desertification?",
+     "answer": "“The process by which natural or human causes reduce the biological productivity of drylands (arid and semiarid lands).” – Britannica"
+    },
+    {
+     "question": "What does Hydrogenous usually do to mitigate desertification?",
+     "answer": "Hydrogenous is mandated by UN to address desertification challenges. Most of the levers our client can pull are afforestation, reforestation, water supply support, and nature preservation, which are funded by global foundations, local governments, and other institutional donors."
+    },
+    {
+     "question": "What is Hydrogenous’ target?",
+     "answer": "Selecting the project with both the shortest payback period and biggest “impact.” Ideally, the project would also become a flagship model, attracting additional philanthropic support to fund future initiatives."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex07",
+   "title": "Jane Darden’s Ranch",
+   "source": "Darden Casebook 2024-25",
+   "type": "market_entry",
+   "prompt": "Your client is Jane Darden, a longtime owner, and operator of the Wahoo Cattle Ranch, which has been in the family since 1883. However, since the early 2000s, the Montana economy has experienced a dramatic shift in its local businesses and consumers. The ranch is now surrounded by high-end resorts, fine dining, and a burgeoning outdoor mall, which have increased the cost of property taxes and tightened the Wahoo Cattle Range profit margins. Concerned about the outlook of her ranch, Jane Darden has approached our team to determine whether she should enter the hospitality industry or not.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "make money",
+      "revenue",
+      "income",
+      "business model",
+      "how does wahoo",
+      "earn",
+      "sells"
+     ],
+     "answer": "In addition to selling beef and milk, the ranch offers horseback riding, fly fishing, and hiking tours."
+    },
+    {
+     "keywords": [
+      "timeline",
+      "time frame",
+      "timeframe",
+      "deadline",
+      "how soon",
+      "by when",
+      "horizon",
+      "how long",
+      "urgency",
+      "when",
+      "invest",
+      "breakeven",
+      "break even",
+      "payback",
+      "budget",
+      "pivot"
+     ],
+     "answer": "Jane is fine with an investment as long as it reaches a breakeven in at most three years after construction begins."
+    },
+    {
+     "keywords": [
+      "objective",
+      "goal",
+      "aim",
+      "hoping",
+      "trying to achieve",
+      "target",
+      "success",
+      "looking for",
+      "primary",
+      "profit",
+      "net income",
+      "maximize"
+     ],
+     "answer": "Long term, Jane wants to maximize annual net income for her business."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Market attractiveness",
+     "keywords": [
+      "market",
+      "size",
+      "growth",
+      "demand",
+      "segment",
+      "customer",
+      "tam"
+     ]
+    },
+    {
+     "name": "Competition",
+     "keywords": [
+      "competitor",
+      "competition",
+      "incumbent",
+      "rivals",
+      "share",
+      "differentiation"
+     ]
+    },
+    {
+     "name": "Company capability & fit",
+     "keywords": [
+      "capability",
+      "fit",
+      "product",
+      "brand",
+      "resources",
+      "team",
+      "operations"
+     ]
+    },
+    {
+     "name": "Financials / economics",
+     "keywords": [
+      "revenue",
+      "cost",
+      "profit",
+      "investment",
+      "roi",
+      "payback",
+      "margin",
+      "price"
+     ]
+    },
+    {
+     "name": "Entry mode & risk",
+     "keywords": [
+      "entry",
+      "build",
+      "buy",
+      "partner",
+      "acquisition",
+      "risk",
+      "regulation"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "jane",
+    "ranch",
+    "wahoo",
+    "montana",
+    "cattle",
+    "hospitality",
+    "resort",
+    "breakeven",
+    "lodge",
+    "tours",
+    "property tax"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-07",
+   "shape": "gate",
+   "caseTypeLine": "Strategic decision (market entry) with a hard financial gate: breakeven within three years of construction starting.",
+   "purpose": "To decide whether Jane should enter hospitality, three things need a yes: the market is attractive, she can win a niche, and it breaks even within three years while raising net income. I’d also check the risks.",
+   "buckets": [
+    {
+     "question": "Is the local hospitality market attractive?",
+     "points": [
+      "What are visitor numbers, occupancy and room rates nearby?",
+      "How seasonal is demand?",
+      "What gap do the luxury resorts leave?"
+     ],
+     "hypothesis": "I expect an authentic ranch stay is that gap."
+    },
+    {
+     "question": "Can the ranch compete?",
+     "points": [
+      "It already has land, heritage and outdoor tours.",
+      "It lacks hospitality staff and know-how.",
+      "Which format fits best: lodge, cabins, glamping or events?"
+     ]
+    },
+    {
+     "question": "Does it break even within three years?",
+     "points": [
+      "What does construction cost, and how long does it take?",
+      "What annual profit do rooms and activities generate?",
+      "How does it affect the cattle business?"
+     ],
+     "hypothesis": "I expect the two businesses support each other."
+    },
+    {
+     "question": "What are the risks and alternatives?",
+     "points": [
+      "Will zoning or higher property taxes get in the way?",
+      "How exposed is it to a tourism downturn?",
+      "Would leasing or selling land earn more?"
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 3,
+    "text": "Because the three-year breakeven can rule the idea out on its own, I’d start with area 3 and ask for construction cost and expected occupancy and rates."
+   },
+   "clarifying": [
+    {
+     "question": "How does Wahoo Cattle Ranch make money?",
+     "answer": "In addition to selling beef and milk, the ranch offers horseback riding, fly fishing, and hiking tours."
+    },
+    {
+     "question": "Is there a timeline for when Jane Darden would want to make this potential pivot into hospitality?",
+     "answer": "Jane is fine with an investment as long as it reaches a breakeven in at most three years after construction begins."
+    },
+    {
+     "question": "What is Jane Darden’s primary goal if makes this pivot?",
+     "answer": "Long term, Jane wants to maximize annual net income for her business."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex08",
+   "title": "Kegging Costs",
+   "source": "Darden Casebook 2024-25",
+   "type": "operations",
+   "prompt": "Our client is a large craft brewery that primarily sells beer nationally through its distribution network. The brewery has grown from an annual production of 100,000 BBL (beer barrels) three years ago to 500,000 BBL today. The brewery packages its beer in kegs, which are used to serve beer on tap at bars and restaurants, and into 24-pack cases of cans, which are purchased at stores and consumed later. The CEO is preparing for the annual board meeting and has asked us to investigate two initiatives. There are currently $20 million available in the budget and the company would like to identify how to best employ these funds. While they are always interested in new opportunities for growth, the two initiatives focus on making their current processes more efficient. The first initiative is a recommendation to purchase kegs outright rather than renewing a long-term agreement to lease them from a national provider. The second is a recommendation to purchase an upgraded canning and packaging system. How would you advise our client?",
+   "facts": [
+    {
+     "keywords": [
+      "budget",
+      "million",
+      "available",
+      "fund",
+      "$",
+      "dollar"
+     ],
+     "kind": "number",
+     "value": 20,
+     "unit": "million",
+     "correctText": "$20 million"
+    }
+   ],
+   "clarifiers": [
+    {
+     "keywords": [
+      "objective",
+      "goal",
+      "aim",
+      "hoping",
+      "trying to achieve",
+      "target",
+      "success",
+      "looking for",
+      "primary",
+      "priorit",
+      "interested"
+     ],
+     "answer": "The CEO is primarily interested in identifying which option provides the best opportunity for cost savings. Given the company’s trajectory over the last three years, they are also interested in projects that support future growth."
+    },
+    {
+     "keywords": [
+      "portion",
+      "percent",
+      "split",
+      "mix",
+      "kegs vs",
+      "how much",
+      "production",
+      "volume",
+      "packaged"
+     ],
+     "answer": "Of the 500,000 BBL produced, 60% is packaged in cases of cans and 40% is packaged in kegs."
+    },
+    {
+     "keywords": [
+      "how many kegs",
+      "kegs and cases",
+      "bbl",
+      "barrel",
+      "convert",
+      "per bbl",
+      "cases in",
+      "one bbl",
+      "gallon"
+     ],
+     "answer": "Each BBL (approximately 31 gallons) produces two kegs or fourteen 24-can cases of beer."
+    },
+    {
+     "keywords": [
+      "value chain",
+      "distribut",
+      "supply chain",
+      "sell",
+      "who buys",
+      "channel"
+     ],
+     "answer": "The brewery will produce beer and package it in either kegs or cases of cans. Nearly all the kegs and cans are then sold to a network of national distributors, who in turn sell them to restaurants, bars, and retail stores, who sell them to the end consumer."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Process / root cause",
+     "keywords": [
+      "process",
+      "root cause",
+      "bottleneck",
+      "step",
+      "workflow",
+      "cycle"
+     ]
+    },
+    {
+     "name": "Capacity & utilization",
+     "keywords": [
+      "capacity",
+      "utilization",
+      "throughput",
+      "volume",
+      "demand"
+     ]
+    },
+    {
+     "name": "Cost structure",
+     "keywords": [
+      "cost",
+      "labor",
+      "materials",
+      "overhead",
+      "efficiency"
+     ]
+    },
+    {
+     "name": "Quality & external",
+     "keywords": [
+      "quality",
+      "defect",
+      "customer",
+      "supplier",
+      "external"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "brewery",
+    "craft",
+    "keg",
+    "kegs",
+    "cans",
+    "canning",
+    "bbl",
+    "lease",
+    "distributor",
+    "beer",
+    "packaging"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-08",
+   "shape": "calculate",
+   "caseTypeLine": "Analytical decision: choose between two investments within a $20M budget. The deciding number is savings per dollar invested (payback), with growth fit as the tie-breaker.",
+   "purpose": "To decide how to spend the $20M, I’d calculate the savings from each option, then check which one better supports growth and what could go wrong:",
+   "buckets": [
+    {
+     "question": "What does buying kegs save vs. leasing?",
+     "points": [
+      "The brewery fills about 400,000 kegs a year.",
+      "How many kegs are needed, given return times and losses?",
+      "How does the cost of owning compare with the lease fee?"
+     ],
+     "hypothesis": "I expect the saving is smaller than it looks, as the lessor absorbs losses."
+    },
+    {
+     "question": "What does the canning system save?",
+     "points": [
+      "The brewery packs about 4.2 million cases a year.",
+      "How much does it save per case in labour and waste?",
+      "How quickly does it pay back?"
+     ]
+    },
+    {
+     "question": "Which option supports growth better?",
+     "points": [
+      "Which line becomes the bottleneck first?",
+      "Leasing scales more easily than an owned fleet.",
+      "Is any of the $20M left for growth?"
+     ],
+     "hypothesis": "I expect cans are growing faster, so canning is the constraint."
+    },
+    {
+     "question": "What are the risks?",
+     "points": [
+      "Owned kegs get lost and tie up capital.",
+      "A new canning line risks downtime.",
+      "Exiting the lease may carry penalties."
+     ]
+    }
+   ],
+   "start": {
+    "text": "I’d start by calculating annual savings and payback for each option. Cost savings are the CEO’s primary goal, so the maths should decide unless it’s close."
+   },
+   "clarifying": [
+    {
+     "question": "What are the brewery’s primary goals moving forward?",
+     "answer": "The CEO is primarily interested in identifying which option provides the best opportunity for cost savings. Given the company’s trajectory over the last three years, they are also interested in projects that support future growth."
+    },
+    {
+     "question": "What portion of the brewery’s production is packaged in kegs vs. cans?",
+     "answer": "Of the 500,000 BBL produced, 60% is packaged in cases of cans and 40% is packaged in kegs."
+    },
+    {
+     "question": "How many kegs and cases are in one BBL?",
+     "answer": "Each BBL (approximately 31 gallons) produces two kegs or fourteen 24-can cases of beer."
+    },
+    {
+     "question": "How does the value chain work?",
+     "answer": "The brewery will produce beer and package it in either kegs or cases of cans. Nearly all the kegs and cans are then sold to a network of national distributors, who in turn sell them to restaurants, bars, and retail stores, who sell them to the end consumer."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex09",
+   "title": "NewsCo.",
+   "source": "Darden Casebook 2024-25",
+   "type": "operations",
+   "prompt": "NewsCo. is a TV network that offers live news and pre-recorded entertainment programming. They're concerned about a recent survey showing a decline in viewers' trust. This is particularly worrisome because NewsCo. prides itself on high-quality journalism and uses the tagline \"News You Can Trust.\" Our team was hired to identify the root causes and provide recommendations.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "survey",
+      "study",
+      "poll",
+      "methodology",
+      "respondents",
+      "ranking",
+      "compare",
+      "trust score",
+      "data"
+     ],
+     "answer": "A US-based consumer intelligence agency compared NewsCo. to other major news networks across several dimensions. While NewsCo. scored well in most dimensions, only 46% of viewers considered it trustworthy. It ranked fourth most trustworthy out of six major news networks. In 2018, over 75% of consumers rated NewsCo. as trustworthy, ranking first. Survey respondents were asked to assess “NewsCo. is a reliable and trustworthy news source.”"
+    },
+    {
+     "keywords": [
+      "other forms",
+      "print",
+      "digital",
+      "website",
+      "online",
+      "platforms",
+      "other media",
+      "other products"
+     ],
+     "answer": "Yes, NewsCo. operates a website, but management is currently focused only on its television programming."
+    },
+    {
+     "keywords": [
+      "objective",
+      "goal",
+      "aim",
+      "hoping",
+      "trying to achieve",
+      "target",
+      "success",
+      "looking for",
+      "primary"
+     ],
+     "answer": "NewsCo. wants to understand the root cause of the low trustworthiness score and recommended actions to improve it."
+    },
+    {
+     "keywords": [
+      "revenue",
+      "make money",
+      "generate",
+      "business model",
+      "advertis",
+      "monetiz"
+     ],
+     "answer": "NewsCo. earns most of its revenue from advertising on its TV programming, but it also earns revenue through cable subscriptions, website advertising, and selling prepackaged content to third parties such as airports and hotels."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Process / root cause",
+     "keywords": [
+      "process",
+      "root cause",
+      "bottleneck",
+      "step",
+      "workflow",
+      "cycle"
+     ]
+    },
+    {
+     "name": "Capacity & utilization",
+     "keywords": [
+      "capacity",
+      "utilization",
+      "throughput",
+      "volume",
+      "demand"
+     ]
+    },
+    {
+     "name": "Cost structure",
+     "keywords": [
+      "cost",
+      "labor",
+      "materials",
+      "overhead",
+      "efficiency"
+     ]
+    },
+    {
+     "name": "Quality & external",
+     "keywords": [
+      "quality",
+      "defect",
+      "customer",
+      "supplier",
+      "external"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "newsco",
+    "news",
+    "trust",
+    "trustworthy",
+    "survey",
+    "viewers",
+    "network",
+    "tv",
+    "anchor",
+    "advertis",
+    "opinion"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-09",
+   "shape": "diagnosis",
+   "caseTypeLine": "Diagnosis. The metric is the trust score, which fell from over 75% (first of six) in 2018 to 46% (fourth).",
+   "purpose": "The trust score fell from over 75% to 46% while other scores held up. I’ll find where the drop is concentrated, trace it to a root cause, then recommend fixes. I’d go through four steps:",
+   "buckets": [
+    {
+     "question": "Is the drop specific to NewsCo.?",
+     "points": [
+      "How have the other five networks’ scores moved?",
+      "Did the survey method change?"
+     ],
+     "hypothesis": "I expect trust fell everywhere, but NewsCo. fell fastest."
+    },
+    {
+     "question": "Which viewers stopped trusting it?",
+     "points": [
+      "How does trust differ by political leaning, age and region?",
+      "Are loyal or occasional viewers driving the drop?",
+      "Is it worse among news or entertainment viewers?"
+     ],
+     "hypothesis": "I expect the drop is concentrated in one political group."
+    },
+    {
+     "question": "What changed at NewsCo. since 2018?",
+     "points": [
+      "Has opinion replaced straight reporting?",
+      "Have there been high-profile errors?",
+      "Have key anchors or editors left?",
+      "Have advertisers or owners influenced coverage?"
+     ]
+    },
+    {
+     "question": "What should NewsCo. do?",
+     "points": [
+      "Fix the root cause, such as separating news from opinion.",
+      "Track trust by segment alongside ratings and ad revenue."
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 1,
+    "text": "I’d start with area 1 and ask for the competitors’ trust scores over time, then segment NewsCo.’s respondents. Those two cuts will narrow down the root cause quickly."
+   },
+   "clarifying": [
+    {
+     "question": "What can you tell me about the survey?",
+     "answer": "A US-based consumer intelligence agency compared NewsCo. to other major news networks across several dimensions. While NewsCo. scored well in most dimensions, only 46% of viewers considered it trustworthy. It ranked fourth most trustworthy out of six major news networks. In 2018, over 75% of consumers rated NewsCo. as trustworthy, ranking first. Survey respondents were asked to assess “NewsCo. is a reliable and trustworthy news source.”"
+    },
+    {
+     "question": "Does NewsCo. publish other forms of news, such as print or digital?",
+     "answer": "Yes, NewsCo. operates a website, but management is currently focused only on its television programming."
+    },
+    {
+     "question": "What is the client's objective?",
+     "answer": "NewsCo. wants to understand the root cause of the low trustworthiness score and recommended actions to improve it."
+    },
+    {
+     "question": "How does NewsCo. generate revenue?",
+     "answer": "NewsCo. earns most of its revenue from advertising on its TV programming, but it also earns revenue through cable subscriptions, website advertising, and selling prepackaged content to third parties such as airports and hotels."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex10",
+   "title": "Opus Two",
+   "source": "Darden Casebook 2024-25",
+   "type": "market_entry",
+   "prompt": "Our client, Opus Two, is one of the most prestigious wineries in Napa Valley. The winery is renowned for crafting a single, exceptional wine – a Meritage Red Blend. Despite its reputation, Opus Two faces significant challenges due to climate change. Rising temperatures, extended droughts, and recent forest fires have made their location unsuitable for grape growing. As such, Opus Two is looking to relocate outside of Napa Valley and is seeking the firm’s help in choosing a new region and wine to produce. What factors should be considered when selecting a new location for Opus Two?",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "meritage",
+      "what is a",
+      "blend",
+      "grape",
+      "varietal",
+      "wine"
+     ],
+     "answer": "A Meritage Red Blend combines several grapes (vs. just one varietal like Pinot Noir) into a single wine. A portmanteau of \"merit\" and \"heritage,\" the name conveys high quality and tradition."
+    },
+    {
+     "keywords": [
+      "objective",
+      "goal",
+      "aim",
+      "hoping",
+      "trying to achieve",
+      "target",
+      "success",
+      "looking for",
+      "primary",
+      "return"
+     ],
+     "answer": "Opus Two is a passion project jointly owned by Darden's Wine and Cuisine Club (WACC) and a sommelier from Philadelphia. Their primary goal is not to achieve a specific financial return, but rather to maintain their current level of production, quality of wine, and brand reputation."
+    },
+    {
+     "keywords": [
+      "sell",
+      "distribut",
+      "channel",
+      "customers",
+      "restaurants",
+      "how does opus",
+      "price",
+      "revenue",
+      "volume",
+      "production"
+     ],
+     "answer": "They sell a limited supply of 10,000 cases (120,000 bottles) of wine per year to high-end restaurants all around the world as well as DTC online and in-person at the winery. A bottle sells for $500."
+    },
+    {
+     "keywords": [
+      "timeline",
+      "time frame",
+      "timeframe",
+      "deadline",
+      "how soon",
+      "by when",
+      "horizon",
+      "how long",
+      "urgency",
+      "when"
+     ],
+     "answer": "As soon as a new region and wine is identified."
+    },
+    {
+     "keywords": [
+      "locations",
+      "candidate",
+      "identified",
+      "shortlist",
+      "regions",
+      "considered",
+      "options",
+      "already",
+      "potential"
+     ],
+     "answer": "Yes, we will see explore these locations later in our analysis."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Market attractiveness",
+     "keywords": [
+      "market",
+      "size",
+      "growth",
+      "demand",
+      "segment",
+      "customer",
+      "tam"
+     ]
+    },
+    {
+     "name": "Competition",
+     "keywords": [
+      "competitor",
+      "competition",
+      "incumbent",
+      "rivals",
+      "share",
+      "differentiation"
+     ]
+    },
+    {
+     "name": "Company capability & fit",
+     "keywords": [
+      "capability",
+      "fit",
+      "product",
+      "brand",
+      "resources",
+      "team",
+      "operations"
+     ]
+    },
+    {
+     "name": "Financials / economics",
+     "keywords": [
+      "revenue",
+      "cost",
+      "profit",
+      "investment",
+      "roi",
+      "payback",
+      "margin",
+      "price"
+     ]
+    },
+    {
+     "name": "Entry mode & risk",
+     "keywords": [
+      "entry",
+      "build",
+      "buy",
+      "partner",
+      "acquisition",
+      "risk",
+      "regulation"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "opus two",
+    "napa",
+    "wine",
+    "winery",
+    "meritage",
+    "vineyard",
+    "climate",
+    "relocat",
+    "region",
+    "restaurant",
+    "bottle"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-10",
+   "shape": "selection",
+   "caseTypeLine": "Selection among options (where to relocate). The criteria come straight from the goal: keep production, quality and brand. Cost is secondary.",
+   "purpose": "Opus Two’s goal is to keep its volume, its quality and its brand, so I’d judge each candidate region on four criteria, from knockout factors to tie-breakers:",
+   "buckets": [
+    {
+     "question": "Can the region grow great grapes for decades?",
+     "points": [
+      "Will the climate stay suitable as it warms?",
+      "Does the soil suit Bordeaux-style grapes?",
+      "Is water reliable?"
+     ],
+     "hypothesis": "I expect cooler regions are the safest bet."
+    },
+    {
+     "question": "Can it make 10,000 cases at the same quality soon?",
+     "points": [
+      "Is enough good vineyard land available?",
+      "Can it buy grapes or an estate while new vines mature?",
+      "Are skilled winemakers and suppliers available?",
+      "Do local rules allow the blend and foreign ownership?"
+     ]
+    },
+    {
+     "question": "Will the brand and customers follow?",
+     "points": [
+      "Is the region prestigious enough for top restaurants?",
+      "Can it still ship worldwide affordably?",
+      "Can visitors still reach the winery?"
+     ]
+    },
+    {
+     "question": "What does it cost?",
+     "points": [
+      "How do land and setup costs compare?",
+      "How do running costs compare with Napa?"
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 1,
+    "text": "Climate and terroir are pass/fail, so I’d use area 1 to shortlist the candidate locations, then compare the survivors on areas 2 and 3."
+   },
+   "clarifying": [
+    {
+     "question": "What is a Meritage Red Blend?",
+     "answer": "A Meritage Red Blend combines several grapes (vs. just one varietal like Pinot Noir) into a single wine. A portmanteau of \"merit\" and \"heritage,\" the name conveys high quality and tradition."
+    },
+    {
+     "question": "What is the client’s goal?",
+     "answer": "Opus Two is a passion project jointly owned by Darden's Wine and Cuisine Club (WACC) and a sommelier from Philadelphia. Their primary goal is not to achieve a specific financial return, but rather to maintain their current level of production, quality of wine, and brand reputation."
+    },
+    {
+     "question": "How does Opus Two sell its wine?",
+     "answer": "They sell a limited supply of 10,000 cases (120,000 bottles) of wine per year to high-end restaurants all around the world as well as DTC online and in-person at the winery. A bottle sells for $500."
+    },
+    {
+     "question": "When does Opus Two want to move?",
+     "answer": "As soon as a new region and wine is identified."
+    },
+    {
+     "question": "Has Opus Two identified any potential locations?",
+     "answer": "Yes, we will see explore these locations later in our analysis."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex11",
+   "title": "Pedal Pals",
+   "source": "Darden Casebook 2024-25",
+   "type": "profitability",
+   "prompt": "Pedal Pals is an interactive fitness platform with millions of members, offering connected, technology-enabled fitness classes that utilize its proprietary hardware, the Pedal Pal stationary bicycle. Recently the company has been challenged by a large, activist investor. The activist investor is citing the plummeting stock price impacting shareholder returns. The activist has attributed the issue directly to poor cost control throughout Pedal Pals. Pedal Pals CEO has hired your organization to determine how to manage its cost issue.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "objective",
+      "goal",
+      "aim",
+      "hoping",
+      "trying to achieve",
+      "target",
+      "success",
+      "looking for",
+      "primary",
+      "how much",
+      "cut",
+      "savings",
+      "restructuring",
+      "profit",
+      "margin"
+     ],
+     "answer": "If Pedal Pals CEO cannot decrease their costs to start obtaining an annual profit again, there is a high risk that the investor will engage in a leveraged buyout. Currently the CEO would like to cut costs enough to achieve a 5% profit target."
+    },
+    {
+     "keywords": [
+      "business model",
+      "how does",
+      "make money",
+      "revenue model",
+      "revenue",
+      "earn",
+      "money",
+      "subscription",
+      "sell"
+     ],
+     "answer": "Pedal Pals earns its revenue through the subscription revenue of its members, hardware sales of its stationary bicycle, and branded fitness gear."
+    },
+    {
+     "keywords": [
+      "timeline",
+      "time frame",
+      "timeframe",
+      "deadline",
+      "how soon",
+      "by when",
+      "horizon",
+      "how long",
+      "urgency"
+     ],
+     "answer": "Investors are demanding cost decreases in the next two quarters to meet year end corporate goals."
+    },
+    {
+     "keywords": [
+      "supply chain",
+      "supplier",
+      "manufactur",
+      "distribution",
+      "sourcing",
+      "distribute",
+      "logistic",
+      "retail"
+     ],
+     "answer": "Pedal Pals has an international supply chain made of up suppliers across multiple countries to source parts for their bicycle. For distribution, they distribute online through their own website as well as offline through retail locations owned by the company."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Revenue (price x volume, mix)",
+     "keywords": [
+      "revenue",
+      "price",
+      "pricing",
+      "volume",
+      "units",
+      "mix",
+      "sales",
+      "customers"
+     ]
+    },
+    {
+     "name": "Costs (fixed & variable)",
+     "keywords": [
+      "cost",
+      "costs",
+      "cogs",
+      "fixed",
+      "variable",
+      "labor",
+      "overhead",
+      "supplier",
+      "materials"
+     ]
+    },
+    {
+     "name": "External / market & competition",
+     "keywords": [
+      "competition",
+      "competitor",
+      "market",
+      "demand",
+      "customer",
+      "industry",
+      "macro"
+     ]
+    },
+    {
+     "name": "Internal / operations",
+     "keywords": [
+      "operations",
+      "process",
+      "efficiency",
+      "productivity",
+      "capacity",
+      "supply chain"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "pedal",
+    "pals",
+    "fitness",
+    "bike",
+    "activist",
+    "investor",
+    "subscription",
+    "cost",
+    "stock",
+    "margin",
+    "stores"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-11",
+   "shape": "diagnosis",
+   "caseTypeLine": "Diagnosis of costs leading into an open-ended choice of cost levers, with a hard target (5% profit margin) and a short timeline (two quarters).",
+   "purpose": "To reach a 5% profit margin within two quarters, I’d size the gap, find where costs have grown, then pick the levers that save enough quickly without hurting subscriptions. Four steps:",
+   "buckets": [
+    {
+     "question": "How big is the gap?",
+     "points": [
+      "How much cost must go to reach a 5% margin?",
+      "What margin does each revenue stream earn?"
+     ]
+    },
+    {
+     "question": "Where have costs grown?",
+     "points": [
+      "Have bike parts, freight or tariffs risen?",
+      "Are the company-owned stores worth their cost?",
+      "Are content and tech costs growing faster than revenue?",
+      "Is marketing spend per new member rising?"
+     ],
+     "hypothesis": "I expect the stores are a heavy fixed cost."
+    },
+    {
+     "question": "Which levers work within two quarters?",
+     "points": [
+      "Close weak stores, trim marketing and freeze hiring.",
+      "Consolidate suppliers and renegotiate freight.",
+      "Consider outsourcing manufacturing in the longer term.",
+      "Protect class quality to keep members."
+     ]
+    },
+    {
+     "question": "What are the risks?",
+     "points": [
+      "Will members cancel if quality drops?",
+      "Will key staff leave?",
+      "Will the cuts satisfy the activist?"
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 1,
+    "text": "I’d start with area 1 to size the gap, then ask for the cost breakdown by line vs. last year to see where the overrun sits."
+   },
+   "clarifying": [
+    {
+     "question": "Does Pedal Pals have a goal for their cost restructuring?",
+     "answer": "If Pedal Pals CEO cannot decrease their costs to start obtaining an annual profit again, there is a high risk that the investor will engage in a leveraged buyout. Currently the CEO would like to cut costs enough to achieve a 5% profit target."
+    },
+    {
+     "question": "What is Pedal Pals current business model?",
+     "answer": "Pedal Pals earns its revenue through the subscription revenue of its members, hardware sales of its stationary bicycle, and branded fitness gear."
+    },
+    {
+     "question": "What is the timeline for Pedal Pals to perform the cost restructuring?",
+     "answer": "Investors are demanding cost decreases in the next two quarters to meet year end corporate goals."
+    },
+    {
+     "question": "How is Pedal Pals supply chain structured?",
+     "answer": "Pedal Pals has an international supply chain made of up suppliers across multiple countries to source parts for their bicycle. For distribution, they distribute online through their own website as well as offline through retail locations owned by the company."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex12",
+   "title": "PharmaCo",
+   "source": "Darden Casebook 2024-25",
+   "type": "ma",
+   "prompt": "PharmaCo is a pharmaceutical company with $10 billion in annual revenue. It’s corporate HQ and primary R&D centers are in Switzerland, with regional sales offices worldwide. PharmaCo is interested in entering a new, rapidly growing segment of drugs called “biologicals.” To gain the R&D capabilities requisite for biologicals, PharmaCo is considering acquiring BioLead, a biologicals start-up in Austin. BioLead is privately owned and has an estimated valuation of $1 billion. Our firm has been hired to evaluate the BioLead acquisition and to advise on its strategic fit with PharmaCo’s biologicals strategy. What factors should the team consider when evaluating whether PharmaCo should acquire BioLead?",
+   "facts": [
+    {
+     "keywords": [
+      "revenue",
+      "annual",
+      "sales"
+     ],
+     "kind": "number",
+     "value": 10,
+     "unit": "billion",
+     "correctText": "$10 billion"
+    },
+    {
+     "keywords": [
+      "valuation",
+      "worth",
+      "valued"
+     ],
+     "kind": "number",
+     "value": 1,
+     "unit": "billion",
+     "correctText": "$1 billion"
+    }
+   ],
+   "clarifiers": [
+    {
+     "keywords": [
+      "core business",
+      "what does pharmaco",
+      "main business",
+      "products",
+      "small molecule",
+      "focus"
+     ],
+     "answer": "GP has a long, successful tradition in researching, developing, and selling “small molecule” drugs. This class of drugs represents the vast majority of drugs today, including aspirin and most blood-pressure or cholesterol medications."
+    },
+    {
+     "keywords": [
+      "only",
+      "other option",
+      "alternative",
+      "acquisition",
+      "organic",
+      "partner",
+      "license",
+      "build",
+      "entry"
+     ],
+     "answer": "R&D for biologicals is vastly different from small-molecule R&D. Since its competitors are already several years ahead of PharmaCo in the biologicals market, PharmaCo wants to jumpstart its biologicals program via acquisition."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Standalone value of target",
+     "keywords": [
+      "revenue",
+      "growth",
+      "cash flow",
+      "valuation",
+      "pipeline",
+      "standalone",
+      "assets"
+     ]
+    },
+    {
+     "name": "Synergies",
+     "keywords": [
+      "synergy",
+      "synergies",
+      "cost",
+      "revenue",
+      "cross-sell",
+      "distribution",
+      "scale"
+     ]
+    },
+    {
+     "name": "Strategic fit / rationale",
+     "keywords": [
+      "strategic",
+      "fit",
+      "rationale",
+      "capabilities",
+      "portfolio",
+      "market"
+     ]
+    },
+    {
+     "name": "Price / returns",
+     "keywords": [
+      "price",
+      "valuation",
+      "multiple",
+      "roi",
+      "return",
+      "npv",
+      "payback"
+     ]
+    },
+    {
+     "name": "Risks & integration",
+     "keywords": [
+      "risk",
+      "integration",
+      "regulatory",
+      "culture",
+      "execution"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "pharmaco",
+    "biolead",
+    "biologic",
+    "acquisition",
+    "acquire",
+    "start-up",
+    "pipeline",
+    "r&d",
+    "switzerland",
+    "austin",
+    "small molecule"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-12",
+   "shape": "gate",
+   "caseTypeLine": "Strategic decision (acquisition). I’ve structured it around the questions that must all be true for the answer to be yes: strategic fit, value vs. price, and ability to integrate.",
+   "purpose": "For PharmaCo to buy BioLead, four things need to be true. I’d test each one:",
+   "buckets": [
+    {
+     "question": "Does BioLead fill PharmaCo’s gap?",
+     "points": [
+      "How strong is its drug pipeline?",
+      "How strong are its scientists, patents and labs?",
+      "Do the two companies complement each other?"
+     ],
+     "hypothesis": "I expect BioLead brings R&D and PharmaCo brings global sales."
+    },
+    {
+     "question": "Is it worth more than $1B?",
+     "points": [
+      "What is the risk-adjusted value of the pipeline?",
+      "How much more can PharmaCo’s salesforce sell?",
+      "Cost synergies will be small, so the case rests on revenue.",
+      "What will integration and retention cost?"
+     ]
+    },
+    {
+     "question": "Can PharmaCo integrate it without losing value?",
+     "points": [
+      "Will the scientists stay?",
+      "Can a Swiss corporate and an Austin start-up work together?",
+      "Will BioLead’s partnerships survive the deal?"
+     ],
+     "hypothesis": "I expect they leave unless BioLead stays semi-independent."
+    },
+    {
+     "question": "Is this the best route?",
+     "points": [
+      "Are there better or cheaper targets?",
+      "Would licensing or a partnership be enough?",
+      "How will competitors respond?"
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 2,
+    "text": "I’d start with area 2, the value of BioLead’s pipeline vs. the $1B price. If the risk-adjusted pipeline plus synergies can’t justify $1B, fit alone won’t save the deal."
+   },
+   "clarifying": [
+    {
+     "question": "What is PharmaCo’s core business?",
+     "answer": "GP has a long, successful tradition in researching, developing, and selling “small molecule” drugs. This class of drugs represents the vast majority of drugs today, including aspirin and most blood-pressure or cholesterol medications."
+    },
+    {
+     "question": "Is entry-by-acquisition the only approach we should consider?",
+     "answer": "R&D for biologicals is vastly different from small-molecule R&D. Since its competitors are already several years ahead of PharmaCo in the biologicals market, PharmaCo wants to jumpstart its biologicals program via acquisition."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex13",
+   "title": "Pineapple Express",
+   "source": "Darden Casebook 2024-25",
+   "type": "pricing",
+   "prompt": "Your client is Alex DSouza, CEO of a new semi-conductor startup, Moore Semiconductors, based in the US. Moore Semiconductors has recently built a new microchip, the ID-5, that is significantly faster and more efficient relative to other chips for smartphones in the industry. Pine-apple has approached Moore Semiconductors to use the chip in the new PA-25, a cutting-edge smartphone to be release in a year. Negotiations with Pine-apple are to take place in a week. The client wants your assistance in figuring out how to price the product for Pine-apple.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "want",
+      "goal",
+      "objective",
+      "aim",
+      "hoping",
+      "negotiat",
+      "interests",
+      "priorit",
+      "outcome"
+     ],
+     "answer": "Moore Semiconductors wants to price the product at a price that best considers all their interests as a startup."
+    },
+    {
+     "keywords": [
+      "manufactur",
+      "process",
+      "production",
+      "fab",
+      "cost to make",
+      "make the chip",
+      "how is"
+     ],
+     "answer": "Microchip manufacturing involves creating tiny circuits on a silicon wafer using light, chemicals, and precise machinery in ultra-clean environments. These circuits contain billions of transistors that work together to process and store information, powering devices like smartphones, computers, and cars."
+    },
+    {
+     "keywords": [
+      "relationship",
+      "existing",
+      "history",
+      "worked",
+      "prior",
+      "before",
+      "know pine",
+      "pine-apple",
+      "pineapple"
+     ],
+     "answer": "We currently do not have an existing relationship with Pine-apple."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Cost-based floor",
+     "keywords": [
+      "cost",
+      "variable",
+      "fixed",
+      "break-even",
+      "margin",
+      "floor"
+     ]
+    },
+    {
+     "name": "Competition-based reference",
+     "keywords": [
+      "competitor",
+      "competition",
+      "benchmark",
+      "reference",
+      "substitute",
+      "market price"
+     ]
+    },
+    {
+     "name": "Customer value / willingness to pay",
+     "keywords": [
+      "customer",
+      "value",
+      "willingness",
+      "wtp",
+      "benefit",
+      "premium"
+     ]
+    },
+    {
+     "name": "Strategy / objectives",
+     "keywords": [
+      "strategy",
+      "skim",
+      "penetration",
+      "share",
+      "objective",
+      "brand",
+      "long-term"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "moore",
+    "semiconductor",
+    "chip",
+    "id-5",
+    "pine-apple",
+    "pineapple",
+    "pa-25",
+    "smartphone",
+    "price",
+    "negotiat",
+    "startup"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-13",
+   "shape": "calculate",
+   "caseTypeLine": "Pricing, which is mostly an analytical decision: set a floor from cost and a ceiling from value, then use the startup’s strategic interests to decide where to land.",
+   "purpose": "To price the ID-5 for Pine-apple, I’d set a floor from our costs, a ceiling from the chip’s value to Pine-apple, and then use our interests as a startup to choose a price and deal terms in between:",
+   "buckets": [
+    {
+     "question": "What is our price floor?",
+     "points": [
+      "What does each chip cost to make?",
+      "How much R&D and cash do we need to recover?",
+      "How does Pine-apple’s volume lower our unit cost?"
+     ]
+    },
+    {
+     "question": "What is the chip worth to Pine-apple?",
+     "points": [
+      "How much extra phone revenue does the chip unlock?",
+      "What do competing chips cost and how do they perform?",
+      "How costly would switching be for Pine-apple?"
+     ],
+     "hypothesis": "I expect it is a lot, as speed and battery life sell flagship phones."
+    },
+    {
+     "question": "Where should we land, given we are a startup?",
+     "points": [
+      "Who has more bargaining power?",
+      "A marquee client helps us scale and raise funds.",
+      "Which terms matter most: volume tiers, commitments or exclusivity?",
+      "Can we supply their volume on time?"
+     ],
+     "hypothesis": "I expect we do, because they need the chip for launch."
+    }
+   ],
+   "start": {
+    "bucket": 2,
+    "text": "Our chip is clearly better than alternatives, so value (area 2) should anchor the price. I’d start by asking for competitor chip prices and the performance gap."
+   },
+   "clarifying": [
+    {
+     "question": "What does Moore Semiconductors want from the negotiations?",
+     "answer": "Moore Semiconductors wants to price the product at a price that best considers all their interests as a startup."
+    },
+    {
+     "question": "What is the micro-chip manufacturing process?",
+     "answer": "Microchip manufacturing involves creating tiny circuits on a silicon wafer using light, chemicals, and precise machinery in ultra-clean environments. These circuits contain billions of transistors that work together to process and store information, powering devices like smartphones, computers, and cars."
+    },
+    {
+     "question": "Do we have an existing relationship Pine-apple?",
+     "answer": "We currently do not have an existing relationship with Pine-apple."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex14",
+   "title": "Sticky Surfactants",
+   "source": "Darden Casebook 2024-25",
+   "type": "profitability",
+   "prompt": "Your client, CavalierChem, is a global chemicals manufacturer. CavalierChem recently acquired a manufacturing facility that makes surfactants as part of a larger purchase of competitor assets. Surfactants are a specialty chemical used for a variety of purposes, including laundry detergent, and the client has very little prior experience with this type of product. The manufacturing facility is not currently generating profits, and the client wants your help in determining what to do.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "objective",
+      "goal",
+      "aim",
+      "hoping",
+      "trying to achieve",
+      "target",
+      "success",
+      "looking for",
+      "primary",
+      "return"
+     ],
+     "answer": "The client wants to make the highest return from this facility as possible in the next 5 years"
+    },
+    {
+     "keywords": [
+      "core business",
+      "make money",
+      "revenue",
+      "what does cavalier",
+      "main business",
+      "business model"
+     ],
+     "answer": "80% of CavalierChem’s revenues come from the sale of commodity plastics to other manufacturers. The other 20% comes from a wide mix of products that are either downstream or byproducts of their core business."
+    },
+    {
+     "keywords": [
+      "why did",
+      "acquisition",
+      "acquire",
+      "purchase",
+      "rationale",
+      "bundle",
+      "reason for"
+     ],
+     "answer": "The manufacturing facility in question was part of a bundled acquisition of other manufacturing assets that are of strategic importance to CavalierChem. CavalierChem now wants to evaluate the surfactant factory on its own."
+    },
+    {
+     "keywords": [
+      "market",
+      "competitor",
+      "size",
+      "surfactant market",
+      "competition",
+      "demand",
+      "share",
+      "players"
+     ],
+     "answer": "The market for this particular surfactant is $300M annually. CavalierChem and one other competitor are the only significant manufacturers."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Revenue (price x volume, mix)",
+     "keywords": [
+      "revenue",
+      "price",
+      "pricing",
+      "volume",
+      "units",
+      "mix",
+      "sales",
+      "customers"
+     ]
+    },
+    {
+     "name": "Costs (fixed & variable)",
+     "keywords": [
+      "cost",
+      "costs",
+      "cogs",
+      "fixed",
+      "variable",
+      "labor",
+      "overhead",
+      "supplier",
+      "materials"
+     ]
+    },
+    {
+     "name": "External / market & competition",
+     "keywords": [
+      "competition",
+      "competitor",
+      "market",
+      "demand",
+      "customer",
+      "industry",
+      "macro"
+     ]
+    },
+    {
+     "name": "Internal / operations",
+     "keywords": [
+      "operations",
+      "process",
+      "efficiency",
+      "productivity",
+      "capacity",
+      "supply chain"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "cavalierchem",
+    "surfactant",
+    "plant",
+    "facility",
+    "chemical",
+    "detergent",
+    "competitor",
+    "acquisition",
+    "tonne",
+    "profit",
+    "capacity"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-14",
+   "shape": "diagnosis",
+   "caseTypeLine": "Diagnosis (why is the plant losing money?) followed by a decision between options (fix, sell or close) based on five-year return.",
+   "purpose": "To maximise the plant’s return over five years, I’d first find why it isn’t profitable, then see how much can be fixed, then compare keeping it with selling or closing it:",
+   "buckets": [
+    {
+     "question": "Why is the plant unprofitable?",
+     "points": [
+      "How do our share and price compare with the competitor’s?",
+      "How do our costs per tonne compare with the competitor’s?",
+      "Are large buyers squeezing our price?"
+     ],
+     "hypothesis": "I expect we are underpricing or underusing capacity."
+    },
+    {
+     "question": "How much can we improve it?",
+     "points": [
+      "Can we raise prices in a two-player market?",
+      "Can contracts fill spare capacity?",
+      "Can CavalierChem’s scale cut our costs?"
+     ]
+    },
+    {
+     "question": "Which option returns the most over five years?",
+     "points": [
+      "What would five years of improved profit be worth?",
+      "Who would buy the plant, and for how much?",
+      "What would closing it cost?"
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 1,
+    "text": "I’d start with area 1 and ask for the plant’s revenue and cost breakdown compared with the competitor, to see whether the problem is price, volume or cost."
+   },
+   "clarifying": [
+    {
+     "question": "Does CavalierChem have a target in mind?",
+     "answer": "The client wants to make the highest return from this facility as possible in the next 5 years"
+    },
+    {
+     "question": "What is CavalierChem’s core business/how do they make money?",
+     "answer": "80% of CavalierChem’s revenues come from the sale of commodity plastics to other manufacturers. The other 20% comes from a wide mix of products that are either downstream or byproducts of their core business."
+    },
+    {
+     "question": "Why did they make this acquisition?",
+     "answer": "The manufacturing facility in question was part of a bundled acquisition of other manufacturing assets that are of strategic importance to CavalierChem. CavalierChem now wants to evaluate the surfactant factory on its own."
+    },
+    {
+     "question": "What does the surfactant market look like?",
+     "answer": "The market for this particular surfactant is $300M annually. CavalierChem and one other competitor are the only significant manufacturers."
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "id": "ex15",
+   "title": "Weasleys’ Wizarding Warehouse",
+   "source": "Darden Casebook 2024-25",
+   "type": "market_entry",
+   "prompt": "Fred and George Weasley operate a magic joke shop, Weasleys' Wizarding Warehouse (Weasleys’). They currently have a single storefront located in the Diagon Alley shopping district. This store primarily sells magic products used for pranks to young students that attend Hogwarts School of Witchcraft and Wizardry. It has come to their attention that another store location has become available for sale in Hogsmeade, a small village near Hogwarts. The Weasley brothers are interested in expanding the business and are curious if opening a second location in Hogsmeade makes sense.",
+   "facts": [],
+   "clarifiers": [
+    {
+     "keywords": [
+      "competitor",
+      "competition",
+      "zonko",
+      "rival",
+      "other shops",
+      "compete",
+      "existing"
+     ],
+     "answer": "Zonko’s joke shop is another magical store currently located in Hogsmeade. Fred and George aren’t too worried, however. They believe they will be able to capture up to 30% of the existing market in Hogsmeade."
+    },
+    {
+     "keywords": [
+      "financial",
+      "goal",
+      "objective",
+      "breakeven",
+      "payback",
+      "profit",
+      "return",
+      "invest"
+     ],
+     "answer": "Looking to breakeven on the investment within 4 years of expansion."
+    },
+    {
+     "keywords": [
+      "product",
+      "sell",
+      "best-sell",
+      "offerings",
+      "items",
+      "categor",
+      "wares",
+      "what do they"
+     ],
+     "answer": "They have three best-selling products: fake wands, smart-answer quills, and love potions."
+    }
+   ],
+   "meceDimensions": [
+    {
+     "name": "Market attractiveness",
+     "keywords": [
+      "market",
+      "size",
+      "growth",
+      "demand",
+      "segment",
+      "customer",
+      "tam"
+     ]
+    },
+    {
+     "name": "Competition",
+     "keywords": [
+      "competitor",
+      "competition",
+      "incumbent",
+      "rivals",
+      "share",
+      "differentiation"
+     ]
+    },
+    {
+     "name": "Company capability & fit",
+     "keywords": [
+      "capability",
+      "fit",
+      "product",
+      "brand",
+      "resources",
+      "team",
+      "operations"
+     ]
+    },
+    {
+     "name": "Financials / economics",
+     "keywords": [
+      "revenue",
+      "cost",
+      "profit",
+      "investment",
+      "roi",
+      "payback",
+      "margin",
+      "price"
+     ]
+    },
+    {
+     "name": "Entry mode & risk",
+     "keywords": [
+      "entry",
+      "build",
+      "buy",
+      "partner",
+      "acquisition",
+      "risk",
+      "regulation"
+     ]
+    }
+   ],
+   "caseKeywords": [
+    "weasley",
+    "joke shop",
+    "hogsmeade",
+    "diagon alley",
+    "zonko",
+    "hogwarts",
+    "store",
+    "wands",
+    "quills",
+    "potions",
+    "breakeven"
+   ]
+  },
+  "framework": {
+   "version": 1,
+   "origin": "darden-2024-25-case-15",
+   "shape": "gate",
+   "caseTypeLine": "Market entry that works mainly as an analytical decision: does a second store break even within four years?",
+   "purpose": "To decide whether a Hogsmeade store makes sense, I’d check the market, whether the brothers can win their 30% share, and whether the store breaks even within four years:",
+   "buckets": [
+    {
+     "question": "How big is the Hogsmeade market?",
+     "points": [
+      "How many students visit, how often, and how much do they spend?",
+      "How strong is Zonko’s?",
+      "How much would the new store cannibalise Diagon Alley?"
+     ],
+     "hypothesis": "I expect only a little, as it captures term-time spending."
+    },
+    {
+     "question": "Can they win 30% of the market?",
+     "points": [
+      "Are their products better than Zonko’s?",
+      "Can they run two stores at once?",
+      "Will Hogwarts ban products like love potions?",
+      "How will Zonko’s respond?"
+     ]
+    },
+    {
+     "question": "Does it break even within four years?",
+     "points": [
+      "What does the store cost to buy and fit out?",
+      "What annual profit does a 30% share generate?",
+      "Is the payback four years or less?"
+     ]
+    }
+   ],
+   "start": {
+    "bucket": 3,
+    "text": "The four-year breakeven is the deciding test, so I’d start with area 3 and ask for the size of the Hogsmeade joke-shop market and the store’s price."
+   },
+   "clarifying": [
+    {
+     "question": "Are there current competitors in the market?",
+     "answer": "Zonko’s joke shop is another magical store currently located in Hogsmeade. Fred and George aren’t too worried, however. They believe they will be able to capture up to 30% of the existing market in Hogsmeade."
+    },
+    {
+     "question": "What are the Weasley’s financial goals?",
+     "answer": "Looking to breakeven on the investment within 4 years of expansion."
+    },
+    {
+     "question": "What type of products to they sell?",
+     "answer": "They have three best-selling products: fake wands, smart-answer quills, and love potions."
+    }
+   ]
+  }
+ }
+]

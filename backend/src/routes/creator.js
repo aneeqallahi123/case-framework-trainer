@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const { pool } = require('../db');
 const { requireCreator } = require('../middleware/auth');
+const { validateSolvedFramework } = require('../lib/solvedFramework');
 
 const router = express.Router();
 router.use(requireCreator);
@@ -13,6 +14,10 @@ router.post('/solved-frameworks', async (req, res) => {
   const { caseId, framework } = req.body;
   if (!caseId || !framework) {
     return res.status(400).json({ error: 'Case ID and framework are required' });
+  }
+  const checked = validateSolvedFramework(framework);
+  if (!checked.ok) {
+    return res.status(400).json({ error: checked.errors.join('; '), errors: checked.errors });
   }
 
   try {
@@ -28,7 +33,7 @@ router.post('/solved-frameworks', async (req, res) => {
       `INSERT INTO solved_frameworks (creator_id, case_id, framework, status, approved_by)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, creator_id, case_id, framework, status, version, approved_by, created_at, updated_at`,
-      [req.user.id, caseId, JSON.stringify(framework), status, approvedBy]
+      [req.user.id, caseId, JSON.stringify(checked.value), status, approvedBy]
     );
 
     res.status(201).json(result.rows[0]);
@@ -62,6 +67,10 @@ router.patch('/solved-frameworks/:id', async (req, res) => {
   if (!framework) {
     return res.status(400).json({ error: 'Framework is required' });
   }
+  const checked = validateSolvedFramework(framework);
+  if (!checked.ok) {
+    return res.status(400).json({ error: checked.errors.join('; '), errors: checked.errors });
+  }
 
   try {
     const existing = await pool.query(
@@ -83,7 +92,7 @@ router.patch('/solved-frameworks/:id', async (req, res) => {
        SET framework = $1, updated_at = NOW()
        WHERE id = $2
        RETURNING id, creator_id, case_id, framework, status, version, approved_by, created_at, updated_at`,
-      [JSON.stringify(framework), id]
+      [JSON.stringify(checked.value), id]
     );
 
     res.json(result.rows[0]);

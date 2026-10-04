@@ -179,6 +179,12 @@ async function initDB() {
 
     await seedAdmins(client);
     await seedCases(client);
+    try {
+      await seedExpertCases(client);
+    } catch (err) {
+      // Optional content: never let it stop the app from booting.
+      console.warn('⚠️  Expert case seed failed:', err.message);
+    }
     await seedMarkingCriteria(client);
     await seedSystemConfig(client);
   } catch (err) {
@@ -219,6 +225,47 @@ async function seedCases(client) {
     );
   }
   console.log(`✅ Seeded ${cases.length} cases into the database`);
+}
+
+// Expert-solved cases (case + approved solved framework). Opt-in: set SEED_EXPERT_CASES=true once you have
+// confirmed you may show these prompts and frameworks to students. Idempotent and non-destructive: an existing
+// case id is never overwritten (admins may have edited it), and each framework is inserted once per origin marker.
+async function seedExpertCases(client) {
+  if (process.env.SEED_EXPERT_CASES !== 'true') return;
+
+  const filePath = path.join(__dirname, 'data', 'expert-cases.json');
+  if (!fs.existsSync(filePath)) return;
+  const { validateSolvedFramework } = require('./lib/solvedFramework');
+
+  const admin = await client.query('SELECT id FROM users WHERE email = $1', [SEED_ADMINS[0].email]);
+  if (!admin.rows.length) return;
+  const adminId = admin.rows[0].id;
+
+  const entries = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  let added = 0;
+  for (const { case: c, framework } of entries) {
+    const checked = validateSolvedFramework(framework);
+    if (!checked.ok) {
+      console.warn(`⚠️  Skipping expert framework for ${c.id}: ${checked.errors.join('; ')}`);
+      continue;
+    }
+    if (!checked.value.origin) {
+      console.warn(`⚠️  Skipping expert framework for ${c.id}: missing origin marker (needed to seed once)`);
+      continue;
+    }
+    await client.query(
+      'INSERT INTO cases (id, title, source, type, data) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
+      [c.id, c.title, c.source || '', c.type || '', JSON.stringify(c)]
+    );
+    const result = await client.query(
+      `INSERT INTO solved_frameworks (creator_id, case_id, framework, status, approved_by)
+       SELECT $1::int, $2::varchar, $3::jsonb, 'approved', $1::int
+       WHERE NOT EXISTS (SELECT 1 FROM solved_frameworks WHERE case_id = $2::varchar AND framework->>'origin' = $4::text)`,
+      [adminId, c.id, JSON.stringify(checked.value), checked.value.origin || null]
+    );
+    added += result.rowCount;
+  }
+  if (added) console.log(`✅ Seeded ${added} expert solved frameworks`);
 }
 
 async function seedMarkingCriteria(client) {

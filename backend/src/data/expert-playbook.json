@@ -1,0 +1,102 @@
+{
+ "status": "draft",
+ "note": "Drafted from the 15 expert solutions. Not yet reviewed by the consultant: do not treat as their words or send to a model until reviewed. Case ids refer to expert-cases.json.",
+ "shapes": {
+  "gate": {
+   "summary": "Several things must all be true for the answer to be yes. The buckets are those conditions, and the client's own hurdles (numbers, deadlines, share targets) show up as buckets.",
+   "reasoningChecks": [
+    "Are the client's stated hurdles (for example a revenue bar, a breakeven deadline, a share target) each tested somewhere in the structure?",
+    "Is each bucket a condition that must hold, so that one \"no\" would change the answer?",
+    "Does it say which test is most decisive and start there, even if it is not the first bucket?"
+   ],
+   "typicalStart": "The test most likely to rule the idea out on its own, with the specific data to request first (ex07 starts at bucket 3, ex12 at 2, ex15 at 3, ex04 at 2).",
+   "oftenPresent": "A closing bucket on risks, alternatives or implementation (ex01, ex02, ex04, ex07, ex12).",
+   "examples": [
+    "ex02",
+    "ex07",
+    "ex15"
+   ]
+  },
+  "diagnosis": {
+   "summary": "A metric has moved and the job is to find why. Localize before explaining: the buckets are steps along a process or cuts of the data that eliminate branches.",
+   "reasoningChecks": [
+    "Does the structure narrow down where the problem sits (which step, segment or comparison) before listing causes?",
+    "Could the first cut rule whole branches in or out?",
+    "Do fixes or levers appear only after the cause, and are they weighed against the client's stated constraint (cost, time)?"
+   ],
+   "typicalStart": "The one cut that localizes the problem fastest: planned versus actual output by month (ex03), competitor trust scores over time and segments (ex09), revenue and cost breakdown against the competitor (ex14), sizing the gap (ex11).",
+   "oftenPresent": "A final step on actions or choosing among fixes (ex09, ex11, ex14).",
+   "examples": [
+    "ex03",
+    "ex09",
+    "ex14"
+   ]
+  },
+  "selection": {
+   "summary": "Choose among candidate options. The criteria come straight from the client's stated goal, ordered from knockouts to tie-breakers.",
+   "reasoningChecks": [
+    "Are the criteria derived from what the client said it wants, not from a generic list?",
+    "Are pass/fail criteria separated from tie-breakers, and ordered that way?",
+    "Does it say how the options would be compared (a shared definition, a shortlist step)?"
+   ],
+   "typicalStart": "Fix the comparison first: agree one definition of the key measure (ex06) or use pass/fail factors to shortlist before comparing the rest (ex10).",
+   "oftenPresent": "Delivery risk, flagship value or cost used as tie-breakers, not the lead criterion (ex06, ex10).",
+   "examples": [
+    "ex06",
+    "ex10"
+   ]
+  },
+  "calculate": {
+   "summary": "The numbers decide. Compute the quantity the client's goal names, then use strategic fit or the client's interests as the tie-breaker.",
+   "reasoningChecks": [
+    "Is the deciding quantity named (savings per dollar and payback, or a price floor and ceiling) and are its inputs listed?",
+    "Does it bring in growth fit or the client's own interests only after the numbers?",
+    "Does it say what could change the answer (risks, penalties, supply)?"
+   ],
+   "typicalStart": "The calculation itself, with the inputs to request (ex08 annual savings and payback per option; ex13 competitor chip prices and the performance gap).",
+   "oftenPresent": "A risks bucket after the numbers (ex08).",
+   "examples": [
+    "ex08",
+    "ex13"
+   ]
+  },
+  "open_ended": {
+   "summary": "A strategy question without a single yes/no. Size the situation first, then position, options, and how to choose.",
+   "reasoningChecks": [
+    "Does it size the problem before proposing responses?",
+    "Does it lay out distinct options and criteria for choosing between them?"
+   ],
+   "typicalStart": "Quantify the threat by segment, for example market share and churn split by client size and service (ex05).",
+   "oftenPresent": "Choice criteria such as revenue protected, speed and cost (ex05).",
+   "examples": [
+    "ex05"
+   ]
+  }
+ },
+ "habits": {
+  "clarifying": "Most of the 15 ask about the objective, goal or target (14 of 15; ex12 asks about the core business and entry options instead). Other common questions: how the business makes money, timeline, definitions of unfamiliar terms, competitors and the current state.",
+  "hypotheses": "Every framework states at least one hypothesis, written as \"I expect ...\" with a reason, and usually one or two across the buckets (24 of 57 buckets).",
+  "bucketsAsQuestions": "Buckets are phrased as questions, and the first line says what the structure will answer."
+ },
+ "observed": {
+  "frameworks": 15,
+  "shapeCounts": {
+   "gate": 6,
+   "diagnosis": 4,
+   "open_ended": 1,
+   "selection": 2,
+   "calculate": 2
+  },
+  "bucketsPerFramework": {
+   "min": 3,
+   "max": 4
+  },
+  "pointsPerBucket": {
+   "min": 2,
+   "max": 4
+  },
+  "bucketsWithFourOrMorePoints": 16,
+  "totalBuckets": 57,
+  "comment": "These frameworks mostly have fewer points per bucket than the app's Structure rule asks for (4-5)."
+ }
+}

@@ -1450,9 +1450,37 @@
           </div>
           <input type="hidden" id="creatorFrameworkCaseId" value="">
 
-          <label class="fld" style="margin-top:14px">Framework</label>
-          <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">Paste your framework structure (JSON or text format)</p>
-          <textarea id="creatorFrameworkText" placeholder='{"bucket1": [...], "bucket2": [...]}' style="width:100%;min-height:180px;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);font-family:monospace;font-size:13px;resize:vertical"></textarea>
+          <label class="fld" style="margin-top:14px">Answer shape</label>
+          <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">What kind of answer does the case need? This is about the answer, not the industry.</p>
+          <select id="creatorFwShape" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px">
+            <option value="">— Choose —</option>
+            <option value="gate">Go / no-go: several things must all be true</option>
+            <option value="diagnosis">Diagnosis: trace a metric to its cause</option>
+            <option value="selection">Selection: score options against criteria</option>
+            <option value="calculate">Calculate: the numbers decide</option>
+            <option value="open_ended">Open-ended strategy</option>
+          </select>
+
+          <label class="fld" style="margin-top:14px">Case type line <span style="color:var(--gray);font-weight:400">(optional)</span></label>
+          <input type="text" id="creatorFwTypeLine" placeholder="Strategic decision (market entry) with a hard financial gate" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px">
+
+          <label class="fld" style="margin-top:14px">Purpose</label>
+          <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">One line on what the structure will answer, then how many areas you will look at.</p>
+          <textarea id="creatorFwPurpose" placeholder="To decide whether X, I'd look at four areas:" style="width:100%;min-height:60px;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px;resize:vertical"></textarea>
+
+          <label class="fld" style="margin-top:14px">Buckets</label>
+          <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">2–6 buckets. Start each with <b>#</b> and phrase it as a question. List sub-questions with <b>-</b>. Add your hypothesis for a bucket with <b>&gt;</b>.</p>
+          <textarea id="creatorFrameworkText" placeholder="# Will the merged platform earn more revenue?&#10;- How many subscribers are on one service only, or both?&#10;- How many would trade up at a bundle price?&#10;&gt; I expect the overlap is small, so the upside is in upselling.&#10;# What will it cost and save?&#10;- ..." style="width:100%;min-height:200px;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);font-family:monospace;font-size:13px;resize:vertical"></textarea>
+
+          <label class="fld" style="margin-top:14px">Where I'd start</label>
+          <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">Which test is most decisive, why, and what data you would ask for first.</p>
+          <textarea id="creatorFwStart" placeholder="The break-even test can rule the idea out on its own, so I'd start there and ask for construction cost and expected occupancy." style="width:100%;min-height:70px;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px;resize:vertical"></textarea>
+          <label class="fld" style="margin-top:10px">Starting bucket number <span style="color:var(--gray);font-weight:400">(optional)</span></label>
+          <input type="number" id="creatorFwStartBucket" min="1" max="6" style="width:100px;padding:10px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px">
+
+          <label class="fld" style="margin-top:14px">Clarifying questions <span style="color:var(--gray);font-weight:400">(optional)</span></label>
+          <p style="color:var(--gray);font-size:13px;margin:6px 0 10px">What you would ask and the answers you were given. Write <b>Q:</b> then <b>A:</b>, with a blank line between pairs.</p>
+          <textarea id="creatorFwClarifying" placeholder="Q: What is the client's objective?&#10;A: To reach breakeven within three years.&#10;&#10;Q: ..." style="width:100%;min-height:110px;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px;resize:vertical"></textarea>
 
           <div class="btnbar" style="margin-top:16px">
             <button class="btn primary" id="submitFrameworkBtn">Submit framework</button>
@@ -3397,19 +3425,70 @@ async function loadCreatorFrameworkCases(){
   }catch(err){ console.error(err); }
 }
 
+/* FWFORM:BEGIN — pure helpers (no DOM, no globals); tests load this block verbatim */
+// "# question / - point / > hypothesis" text -> [{question, points, hypothesis?}]. Returns {buckets, errors}.
+function parseBucketText(text){
+  const buckets=[], errors=[];
+  String(text||'').split(/\n/).forEach((raw,i)=>{
+    const t=raw.trim(); if(!t) return;
+    if(t.startsWith('#')) buckets.push({question:t.replace(/^#+\s*/,''),points:[]});
+    else if(!buckets.length) errors.push(`Line ${i+1}: start with a # bucket question first.`);
+    else if(/^[-*•]/.test(t)) buckets[buckets.length-1].points.push(t.replace(/^[-*•]\s*/,''));
+    else if(t.startsWith('>')){ const b=buckets[buckets.length-1], h=t.replace(/^>\s*/,''); b.hypothesis=b.hypothesis?b.hypothesis+' '+h:h; }
+    else errors.push(`Line ${i+1}: start with #, - or >.`);
+  });
+  return {buckets,errors};
+}
+// "Q: ... A: ..." blocks separated by blank lines -> [{question, answer}]. Returns {pairs, errors}.
+function parseClarifyingText(text){
+  const pairs=[], errors=[];
+  String(text||'').split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean).forEach((blk,i)=>{
+    const m=blk.match(/^Q:\s*([\s\S]*?)\n\s*A:\s*([\s\S]*)$/i);
+    if(m&&m[1].trim()&&m[2].trim()) pairs.push({question:m[1].trim().replace(/\s*\n\s*/g,' '),answer:m[2].trim().replace(/\s*\n\s*/g,' ')});
+    else errors.push(`Clarifying pair ${i+1}: write "Q: ..." then "A: ..." on the next line.`);
+  });
+  return {pairs,errors};
+}
+// Form field values -> solved-framework record (server validates the rest). Returns {framework, errors}.
+function buildFrameworkFromForm(f){
+  const b=parseBucketText(f.buckets), c=parseClarifyingText(f.clarifying), errors=b.errors.concat(c.errors);
+  const fw={version:1,shape:f.shape,purpose:(f.purpose||'').trim(),buckets:b.buckets,start:{text:(f.start||'').trim()}};
+  if((f.typeLine||'').trim()) fw.caseTypeLine=f.typeLine.trim();
+  const k=parseInt(f.startBucket,10); if(Number.isInteger(k)) fw.start.bucket=k;
+  if(c.pairs.length) fw.clarifying=c.pairs;
+  return {framework:fw,errors};
+}
+// Plain-text view of a stored framework for admin review. Handles legacy free-text rows too.
+function frameworkPlain(fw){
+  if(!fw||typeof fw!=='object') return '';
+  if(typeof fw.text==='string') return fw.text;
+  if(!Array.isArray(fw.buckets)) return JSON.stringify(fw,null,1);
+  const out=[];
+  if(fw.shape) out.push('Shape: '+fw.shape);
+  if(fw.caseTypeLine) out.push('Type: '+fw.caseTypeLine);
+  if(fw.purpose) out.push('Purpose: '+fw.purpose);
+  fw.buckets.forEach((b,i)=>{ out.push('',(i+1)+'. '+b.question); (b.points||[]).forEach(p=>out.push('   - '+p)); if(b.hypothesis) out.push('   > '+b.hypothesis); });
+  if(fw.start&&fw.start.text) out.push('',"Where I'd start"+(fw.start.bucket?' (bucket '+fw.start.bucket+')':'')+': '+fw.start.text);
+  (fw.clarifying||[]).forEach(c=>out.push('','Q: '+c.question,'A: '+c.answer));
+  return out.join('\n');
+}
+/* FWFORM:END */
+
 async function submitFramework(){
   const btn = event.target;
   const caseId = el('creatorFrameworkCaseId').value;
-  const frameworkText = el('creatorFrameworkText').value;
   const status = el('frameworkStatus');
 
   if(!caseId){ status.textContent = 'Please select a case'; status.style.color = 'var(--red)'; return; }
-  if(!frameworkText){ status.textContent = 'Please enter a framework'; status.style.color = 'var(--red)'; return; }
+  const built = buildFrameworkFromForm({
+    shape: el('creatorFwShape').value, typeLine: el('creatorFwTypeLine').value, purpose: el('creatorFwPurpose').value,
+    buckets: el('creatorFrameworkText').value, start: el('creatorFwStart').value, startBucket: el('creatorFwStartBucket').value,
+    clarifying: el('creatorFwClarifying').value
+  });
+  if(built.errors.length){ status.textContent = built.errors[0]; status.style.color = 'var(--red)'; return; }
 
   try{
-    let framework;
-    try{ framework = JSON.parse(frameworkText); }
-    catch{ framework = {text: frameworkText}; }
+    const framework = built.framework;
 
     btn.disabled = true;
     status.textContent = 'Submitting...';
@@ -3423,7 +3502,8 @@ async function submitFramework(){
 
     status.textContent = 'Framework submitted!';
     status.style.color = 'var(--good)';
-    el('creatorFrameworkText').value = '';
+    ['creatorFrameworkText','creatorFwTypeLine','creatorFwPurpose','creatorFwStart','creatorFwStartBucket','creatorFwClarifying'].forEach(id=>{ el(id).value = ''; });
+    el('creatorFwShape').value = '';
     if(_pickerCreatorFramework) _pickerCreatorFramework.reset();
     setTimeout(()=>{ status.textContent = ''; }, 2500);
   }catch(err){
@@ -4112,7 +4192,7 @@ async function loadSolvedFrameworks(){
     tbody.innerHTML = res.map(f=>`
       <tr>
         <td>${esc(f.first_name||f.email)}</td>
-        <td>${esc(f.case_id)}</td>
+        <td>${esc(f.case_id)}<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;color:var(--gray)">View framework</summary><pre style="white-space:pre-wrap;font-size:12px;margin:6px 0 0;max-width:520px">${esc(frameworkPlain(f.framework))}</pre></details></td>
         <td><span style="font-size:12px;padding:3px 6px;border-radius:var(--r-sm);${f.status==='approved'?'background:var(--bg2);color:var(--good)':'background:var(--line)'}">${f.status}</span></td>
         <td style="font-size:13px;color:var(--gray)">${new Date(f.created_at).toLocaleDateString()}</td>
         <td style="text-align:right">${f.status==='pending'?`<button class="btn ghost" onclick="approveFramework(${f.id})">Approve</button> <button class="btn ghost" onclick="rejectFramework(${f.id})">Reject</button>`:'—'}</td>
