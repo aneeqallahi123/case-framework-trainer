@@ -103,6 +103,7 @@ Marking is a hybrid. Rules score what can be counted: **Structure** (bucket and 
 
 - The coach's instructions are the **System prompt** in the admin panel, combined with the live marking criteria and the expert frameworks. Write `{{Structure.minPointsPerBucket}}` to insert a live setting. The admin panel also keeps prompt versions, shows the prompt's size and usage, and can run a planted-flaw test (judges test frameworks built from each expert solution with that case's own expert framework left out).
 - Identical frameworks reuse the stored result, so a retry costs nothing and reads the same. Each user is limited to `JUDGE_RATE_PER_HOUR` judged reviews per hour.
+- The per-shape playbook (`backend/src/data/expert-playbook.json`) is included once its `status` is `reviewed`; it is.
 - Cost: the stable prompt is roughly 8k tokens. Prompt caching is off by default; see `.env.example` for when to turn it on.
 
 ## Expert frameworks
@@ -148,5 +149,5 @@ case-framework-trainer/
             └── transcribe.js← /api/transcribe + /structure
         ├── judge/           ← prompt builder, model call, service, test samples
         ├── lib/             ← solved-framework schema, JSON helpers, rate limiter
-        └── data/            ← case bank, expert cases, draft playbook
+        └── data/            ← case bank, expert cases, reviewed playbook
 ```

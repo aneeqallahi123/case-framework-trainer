@@ -1,6 +1,7 @@
 {
- "status": "draft",
- "note": "Drafted from the 15 expert solutions. Not yet reviewed by the consultant: do not treat as their words or send to a model until reviewed. Case ids refer to expert-cases.json.",
+ "status": "reviewed",
+ "reviewedAt": "2026-10-05",
+ "note": "Drafted from the 15 expert solutions and reviewed and approved by the consultant. Case ids refer to expert-cases.json.",
  "shapes": {
   "gate": {
    "summary": "Several things must all be true for the answer to be yes. The buckets are those conditions, and the client's own hurdles (numbers, deadlines, share targets) show up as buckets.",

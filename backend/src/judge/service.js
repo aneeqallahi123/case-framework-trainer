@@ -22,8 +22,8 @@ function loadPlaybook() {
   }
 }
 
-// The draft playbook is the assistant's reading of the 15 solutions, not the consultant's words, so it only
-// reaches the model once reviewed (status "reviewed") or when explicitly opted in.
+// The playbook was drafted from the 15 solutions, so it only reaches the model once it has been reviewed (status "reviewed")
+// or when explicitly forced with JUDGE_USE_DRAFT_PLAYBOOK=true.
 function shouldUsePlaybook(playbook) {
   return !!playbook && (playbook.status === 'reviewed' || process.env.JUDGE_USE_DRAFT_PLAYBOOK === 'true');
 }
@@ -101,7 +101,8 @@ async function judge({ pool, input, callModel = callAnthropic, excludeCaseId, no
     reply = await callModel({ system: built.system, user });
     const judgement = validateJudgement(parseJsonReply(reply.text), {
       judged: built.judged, groundingText: `${input.structText || ''}\n${input.transcript || ''}`,
-      protectedTexts: protectedTexts(ctx.exemplars)
+      // The case being judged is exempt: its student has just attempted it, so "what an expert would add" is fair game.
+      protectedTexts: protectedTexts(ctx.exemplars.filter(x => x.caseId !== input.caseId))
     });
     if (!Object.keys(judgement.criteria).length) throw new Error('Judge reply had no usable verdicts');
 

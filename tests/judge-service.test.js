@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
 const root = path.join(__dirname, '..', 'backend', 'src');
-const { judge, isTooShort, stats } = require(path.join(root, 'judge', 'service'));
+const { judge, isTooShort, stats, shouldUsePlaybook } = require(path.join(root, 'judge', 'service'));
 const { buildSamples, checkExpectations, toText } = require(path.join(root, 'judge', 'samples'));
 const entries = require(path.join(root, 'data', 'expert-cases.json'));
 
@@ -196,4 +196,37 @@ test('a reply that repeats an expert framework (for example after a prompt-injec
   const before = stats.leaksBlocked;
   await judge({ pool: state.pool, input: input({ structText: injection + ' x' }), callModel: fakeModel(reply) });
   assert.strictEqual(stats.leaksBlocked, before + 1);
+});
+
+test('the reviewed playbook is part of the prompt the model receives; an unreviewed one is not unless forced', async () => {
+  const { pool } = fakePool();
+  const model = fakeModel(goodReply());
+  await judge({ pool, input: input(), callModel: model });
+  assert.match(model.calls[0].system, /## Playbook by answer shape/);
+  assert.match(model.calls[0].system, /### gate/);
+
+  const keep = process.env.JUDGE_USE_DRAFT_PLAYBOOK;
+  try {
+    delete process.env.JUDGE_USE_DRAFT_PLAYBOOK;
+    assert.strictEqual(shouldUsePlaybook({ status: 'reviewed' }), true);
+    assert.strictEqual(shouldUsePlaybook({ status: 'draft' }), false);
+    assert.strictEqual(shouldUsePlaybook(null), false);
+    process.env.JUDGE_USE_DRAFT_PLAYBOOK = 'true';
+    assert.strictEqual(shouldUsePlaybook({ status: 'draft' }), true);
+  } finally {
+    if (keep === undefined) delete process.env.JUDGE_USE_DRAFT_PLAYBOOK; else process.env.JUDGE_USE_DRAFT_PLAYBOOK = keep;
+  }
+});
+
+test('feedback may draw on the expert framework for the case being judged, but never on another case\'s', async () => {
+  const own = entries.find(e => e.case.id === 'ex07').framework.buckets[2].points[0];   // this case's expert point
+  const other = entries.find(e => e.case.id === 'ex03').framework.buckets[0].points[0]; // a different case's expert point
+  const state = fakePool();
+  const r = await judge({
+    pool: state.pool, input: input(), noCache: true,
+    callModel: fakeModel(goodReply({ consultantWouldAdd: 'An expert would ask: ' + own, topPriority: 'Also ' + other }))
+  });
+  assert.ok(r.judgement.consultantWouldAdd.includes(own), 'the attempted case\'s expert wording is allowed');
+  assert.strictEqual(r.judgement.topPriority, '', 'another case\'s expert wording is blanked');
+  assert.strictEqual(r.leaksBlocked, 1);
 });

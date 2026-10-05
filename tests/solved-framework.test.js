@@ -159,9 +159,10 @@ test('frameworkPlain renders structured and legacy rows for admin review', () =>
   assert.strictEqual(frameworkPlain(null), '');
 });
 
-test('the draft playbook only cites real exemplar cases and stays marked as a draft', () => {
+test('the playbook only cites real exemplar cases and records that it was reviewed', () => {
   const pb = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'backend', 'src', 'data', 'expert-playbook.json'), 'utf8'));
-  assert.strictEqual(pb.status, 'draft');
+  assert.strictEqual(pb.status, 'reviewed');
+  assert.match(pb.reviewedAt, /^\d{4}-\d{2}-\d{2}$/);
   assert.deepStrictEqual(Object.keys(pb.shapes).sort(), SHAPES.slice().sort());
   const ids = new Set(entries.map(e => e.case.id));
   for (const [shape, s] of Object.entries(pb.shapes)) {

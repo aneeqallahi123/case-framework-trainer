@@ -3514,7 +3514,7 @@ async function previewJudge(){
     if(p.error){ panel.textContent = p.error; return; }
     const lines = [
       `Stable prompt: ${p.chars.toLocaleString()} characters, ${p.exactTokens!=null?p.exactTokens.toLocaleString()+' tokens':'about '+p.estimatedTokens.toLocaleString()+' tokens (estimate)'}`,
-      `Expert frameworks included: ${p.exemplarCount}. Coach scores: ${p.judged.join(', ')||'nothing'}. Playbook included: ${p.playbookIncluded?'yes':'no (draft, not reviewed)'}`,
+      `Expert frameworks included: ${p.exemplarCount}. Coach scores: ${p.judged.join(', ')||'nothing'}. Playbook included: ${p.playbookIncluded?'yes':'no (not marked reviewed)'}`,
       `Model: ${p.settings.model}. Prompt caching: ${p.settings.promptCaching?'on ('+p.settings.cacheTtl+')':'off'}. ${p.cacheableOnHaiku?'Large enough to cache on Haiku.':'Too small to cache on Haiku (needs 4,096 tokens).'}`
     ];
     if(p.unresolvedPlaceholders.length) lines.push('Placeholders that did not resolve: '+p.unresolvedPlaceholders.join(', '));
