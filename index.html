@@ -856,52 +856,67 @@
 
   /* ---- auth screen ---- */
   #authScreen{position:fixed;inset:0;background:var(--bg);z-index:100;display:grid;
-    grid-template-columns:minmax(0,1.05fr) minmax(320px,1fr);overflow-y:auto}
+    grid-template-columns:minmax(0,1.1fr) minmax(340px,1fr);overflow-y:auto}
   #authScreen.hidden{display:none}
-  .auth-aside{position:relative;overflow:hidden;background:linear-gradient(150deg,var(--char) 0%,var(--char-2) 100%);
-    color:#fff;padding:60px 56px;display:flex;flex-direction:column;justify-content:space-between}
+  .auth-aside{position:relative;overflow:hidden;background:linear-gradient(155deg,#0d0d0f 0%,#141418 55%,#1a0a0a 100%);
+    color:#fff;padding:64px 60px;display:flex;flex-direction:column;justify-content:space-between}
   .auth-aside::before{content:"";position:absolute;inset:0;
-    background:radial-gradient(720px 420px at 18% 8%,rgba(204,0,0,.4),transparent 60%)}
-  .auth-aside::after{content:"";position:absolute;inset:0;opacity:.45;
-    background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
-      linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
-    background-size:52px 52px;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 28% 42%,#000 10%,transparent 78%);
-    mask-image:radial-gradient(ellipse 80% 70% at 28% 42%,#000 10%,transparent 78%)}
+    background:radial-gradient(800px 500px at 10% 5%,rgba(180,0,0,.32),transparent 58%)}
+  .auth-aside::after{content:"";position:absolute;inset:0;opacity:.3;
+    background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+    background-size:48px 48px;-webkit-mask-image:radial-gradient(ellipse 75% 65% at 30% 45%,#000 10%,transparent 75%);
+    mask-image:radial-gradient(ellipse 75% 65% at 30% 45%,#000 10%,transparent 75%)}
   .auth-aside>*{position:relative;z-index:1}
-  .auth-aside .brand{font-size:22px;color:#fff}
-  .auth-aside .brand b{color:var(--red-l)}
-  .auth-copy h2{font-size:clamp(28px,3.4vw,42px);line-height:1.1;letter-spacing:-.035em;max-width:14ch}
-  .auth-copy p{color:rgba(255,255,255,.66);font-size:15.5px;margin-top:16px;max-width:42ch;line-height:1.65}
-  .auth-points{list-style:none;padding:0;margin:30px 0 0;display:flex;flex-direction:column;gap:13px}
-  .auth-points li{display:flex;align-items:flex-start;gap:11px;font-size:14px;color:rgba(255,255,255,.86);
-    animation:riseSm .55s var(--ease-out) both}
-  .auth-points li:nth-child(2){animation-delay:.09s}
-  .auth-points li:nth-child(3){animation-delay:.18s}
-  .auth-points li i{flex:0 0 20px;height:20px;border-radius:50%;background:rgba(255,255,255,.12);display:grid;
-    place-items:center;font-style:normal;font-size:11px;color:#fff;margin-top:1px}
-  .auth-foot{font-size:12.5px;color:rgba(255,255,255,.4)}
-  .auth-main{display:flex;align-items:center;justify-content:center;padding:40px 24px;min-width:0}
-  .authbox{width:400px;max-width:100%;padding:8px 4px;animation:riseSm .45s var(--ease-out) both}
-  .authbox .brand{font-size:22px;font-weight:700;margin-bottom:6px;display:none}
-  .auth-h{font-size:27px;font-weight:700;letter-spacing:-.03em}
+  .auth-aside .brand{font-size:20px;font-weight:700;letter-spacing:-.02em;color:#fff}
+  .auth-aside .brand b{color:#e85252;font-weight:800}
+  .auth-eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+    color:rgba(255,255,255,.4);margin-bottom:20px;margin-top:60px}
+  .auth-copy h2{font-size:clamp(30px,3.5vw,46px);line-height:1.08;letter-spacing:-.04em;max-width:15ch;
+    font-weight:800;color:#fff}
+  .auth-copy h2 span{color:#e85252}
+  .auth-copy p{color:rgba(255,255,255,.55);font-size:15px;margin-top:18px;max-width:40ch;line-height:1.7}
+  .auth-points{list-style:none;padding:0;margin:36px 0 0;display:flex;flex-direction:column;gap:0}
+  .auth-points li{display:flex;align-items:flex-start;gap:14px;font-size:14px;color:rgba(255,255,255,.78);
+    animation:riseSm .55s var(--ease-out) both;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+  .auth-points li:first-child{border-top:1px solid rgba(255,255,255,.07)}
+  .auth-points li:nth-child(2){animation-delay:.08s}
+  .auth-points li:nth-child(3){animation-delay:.16s}
+  .auth-points li i{flex:0 0 22px;height:22px;border-radius:6px;background:rgba(232,82,82,.18);border:1px solid rgba(232,82,82,.25);display:grid;
+    place-items:center;font-style:normal;font-size:11px;font-weight:700;color:#e85252;margin-top:1px}
+  .auth-points li span{line-height:1.55}
+  .auth-foot{font-size:12px;color:rgba(255,255,255,.28);letter-spacing:.01em}
+  .auth-main{display:flex;align-items:center;justify-content:center;padding:48px 32px;min-width:0;
+    background:var(--bg)}
+  .authbox{width:420px;max-width:100%;padding:0;animation:riseSm .45s var(--ease-out) both}
+  .authbox .brand{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px;display:none}
+  .authbox .brand b{color:#e85252;font-weight:800}
+  .auth-h{font-size:26px;font-weight:800;letter-spacing:-.035em;color:var(--ink)}
+  .auth-sub{font-size:13.5px;color:var(--gray);margin:6px 0 28px;line-height:1.55}
   .auth-p{font-size:14px;color:var(--gray);margin:7px 0 26px}
-  .authfield{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;position:relative}
-  .authfield label{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gray2)}
-  .authfield input{border:1px solid var(--line);padding:13px 15px;font-family:var(--f);font-size:15px;
-    border-radius:var(--r-sm);background:var(--surface);color:var(--ink);
+  .authfield{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;position:relative}
+  .authfield label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray2)}
+  .authfield input{border:1.5px solid var(--line);padding:13px 15px;font-family:var(--f);font-size:15px;
+    border-radius:8px;background:var(--surface);color:var(--ink);
     transition:border-color .16s,box-shadow .16s}
-  .authfield input:focus{outline:none;border-color:var(--red);box-shadow:var(--focus)}
+  .authfield input:focus{outline:none;border-color:#cc2222;box-shadow:0 0 0 3px rgba(204,34,34,.12)}
+  .authfield input::placeholder{color:var(--gray2)}
   .pw-toggle{position:absolute;right:10px;bottom:9px;background:transparent;border:0;cursor:pointer;color:var(--gray2);
     padding:5px;border-radius:var(--r-xs);display:grid;place-items:center;transition:color .15s,background .15s}
   .pw-toggle:hover{color:var(--ink);background:var(--bg2)}
   .pw-toggle svg{width:17px;height:17px;display:block}
-  .autherr{color:var(--red);font-size:13px;min-height:18px;margin-bottom:8px}
+  .autherr{color:#cc2222;font-size:13px;min-height:18px;margin-bottom:8px}
   .autherr:not(:empty){animation:shake .4s var(--ease)}
   @keyframes shake{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(3px)}50%{transform:translateX(-3px)}}
-  .authswitch{font-size:13.5px;color:var(--gray);margin-top:16px;text-align:center}
+  .authswitch{font-size:13px;color:var(--gray);margin-top:18px;text-align:center}
   .authswitch span{color:var(--ink);font-weight:600;cursor:pointer;border-bottom:1px solid var(--line-2);
     transition:border-color .15s}
   .authswitch span:hover{border-bottom-color:var(--ink)}
+  .auth-divider{border:none;border-top:1px solid var(--line);margin:24px 0}
+  .auth-trust{display:flex;align-items:center;gap:8px;margin-top:20px;padding:14px 16px;
+    background:var(--surface);border-radius:8px;border:1px solid var(--line)}
+  .auth-trust-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}
+  .auth-trust p{font-size:12px;color:var(--gray);line-height:1.45;margin:0}
 
   /* ---- deepgram transcription status ---- */
   .dg-status{display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--surface-2);
@@ -1062,6 +1077,7 @@
     .rblock:nth-child(2){border-right:0}
     .rblock:nth-child(3){grid-column:1 / -1;padding-left:0;padding-right:0}
     #authScreen{grid-template-columns:minmax(0,1fr)}
+    .auth-main{padding:40px 24px}
     .auth-main{padding:32px 20px}
     .auth-aside{display:none}
     .authbox .brand{display:flex;justify-content:center}
@@ -1190,37 +1206,38 @@
     <aside class="auth-aside">
       <div class="brand">Case<b>room</b></div>
       <div class="auth-copy">
-        <h2>Frameworks, out loud, under the clock.</h2>
-        <p>Draw a live case, structure it in the time limit, deliver it by voice and get it scored against the criteria that matter.</p>
+        <div class="auth-eyebrow">Case Interview Training</div>
+        <h2>Structure your thinking. <span>Score higher.</span></h2>
+        <p>Practice live case interviews at pace. Speak your framework out loud, get it structured automatically, and receive objective feedback on every drill.</p>
         <ul class="auth-points">
-          <li><i>1</i><span>400+ real and modelled case prompts, read to you like an interviewer would.</span></li>
-          <li><i>2</i><span>Speak your framework — it is transcribed and structured into an issue tree.</span></li>
-          <li><i>3</i><span>Scored on structure, MECE, succinctness and relevance, drill after drill.</span></li>
+          <li><i>1</i><span>400+ real and modelled case prompts delivered the way an interviewer would present them.</span></li>
+          <li><i>2</i><span>Your spoken framework is transcribed and organised into a structured issue tree in real time.</span></li>
+          <li><i>3</i><span>Scored on structure, MECE coverage, succinctness and relevance after every drill.</span></li>
         </ul>
       </div>
-      <div class="auth-foot">Practice platform for case interview preparation.</div>
+      <div class="auth-foot">Built for candidates preparing for consulting and strategy interviews.</div>
     </aside>
     <div class="auth-main">
       <div class="authbox">
         <div class="brand">Case<b>room</b></div>
         <div id="authLoginView">
-          <h1 class="auth-h">Welcome back</h1>
-          <p class="auth-p">Sign in to pick up where your last drill left off.</p>
-          <div class="authfield"><label for="loginEmail">Email</label><input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"></div>
+          <h1 class="auth-h">Sign in to Caseroom</h1>
+          <p class="auth-sub">Continue your preparation and pick up where you left off.</p>
+          <div class="authfield"><label for="loginEmail">Email address</label><input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"></div>
           <div class="authfield"><label for="loginPassword">Password</label><input type="password" id="loginPassword" placeholder="Your password" autocomplete="current-password"><button type="button" class="pw-toggle" data-pw="loginPassword" aria-label="Show password"></button></div>
           <div class="autherr" id="loginErr" role="alert"></div>
-          <button class="btn primary" style="width:100%" id="loginBtn">Sign in →</button>
+          <button class="btn primary" style="width:100%;margin-top:4px" id="loginBtn">Sign in</button>
           <div class="authswitch">No account? <span id="goSignup" role="button" tabindex="0">Create one</span></div>
         </div>
         <div id="authSignupView" style="display:none">
           <h1 class="auth-h">Create your account</h1>
-          <p class="auth-p">It takes a few seconds. Your drills and scores sync across devices.</p>
+          <p class="auth-sub">Free to start. Your drills and scores sync across all your devices.</p>
           <div class="authfield"><label for="signupName">First name</label><input type="text" id="signupName" placeholder="Alex" autocomplete="given-name"></div>
-          <div class="authfield"><label for="signupEmail">Email</label><input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email"></div>
+          <div class="authfield"><label for="signupEmail">Email address</label><input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email"></div>
           <div class="authfield"><label for="signupPassword">Password</label><input type="password" id="signupPassword" placeholder="At least 6 characters" autocomplete="new-password"><button type="button" class="pw-toggle" data-pw="signupPassword" aria-label="Show password"></button></div>
           <div class="authfield"><label for="signupPasswordConfirm">Confirm password</label><input type="password" id="signupPasswordConfirm" placeholder="Repeat your password" autocomplete="new-password"><button type="button" class="pw-toggle" data-pw="signupPasswordConfirm" aria-label="Show password"></button></div>
           <div class="autherr" id="signupErr" role="alert"></div>
-          <button class="btn primary" style="width:100%" id="signupBtn">Create account →</button>
+          <button class="btn primary" style="width:100%;margin-top:4px" id="signupBtn">Create account</button>
           <div class="authswitch">Already have an account? <span id="goLogin" role="button" tabindex="0">Sign in</span></div>
         </div>
       </div>
@@ -1311,7 +1328,6 @@
     <!-- PROGRESS -->
     <section id="viewProgress" class="enter" style="display:none">
       <div class="dash-head">
-        <div class="eyebrow red">Progress</div>
         <h1>How you're trending</h1>
         <p>Your scores over time, how last week and this month compare, and the ten things most worth working on next.</p>
       </div>
@@ -1336,7 +1352,6 @@
     <!-- ADMIN -->
     <section id="viewAdmin" style="display:none">
       <div class="dash-head" style="padding:34px 0 24px">
-        <div class="eyebrow red">Admin</div>
         <h1 style="font-size:clamp(28px,3.6vw,40px)">Admin console</h1>
         <p>Manage accounts, the case directory, marking criteria and everything waiting for review.</p>
       </div>
@@ -1688,7 +1703,6 @@
         <div class="ready">
           <div class="readysplit">
             <div>
-              <div class="eyebrow red">Ready room</div>
               <h1>Ready to begin</h1>
               <p class="lead">A random case will be drawn. You will hear the prompt once, summarize it, ask clarifying questions, build a framework within the time limit, then deliver it for scoring.</p>
               <div class="readygrid">
