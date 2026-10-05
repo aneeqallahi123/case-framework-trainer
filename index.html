@@ -1896,6 +1896,19 @@
           </label>
         </div>
       </div>
+      <div style="margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:var(--r)">
+        <div style="font-weight:600;font-size:14px">Change password</div>
+        <div style="font-size:12.5px;color:var(--gray);margin-top:3px" id="pwHint">Use at least 8 characters. Your other devices are signed out when you change it.</div>
+        <form id="pwForm" onsubmit="return false" style="margin-top:12px;display:grid;gap:8px">
+          <input type="password" id="pwCurrent" placeholder="Current password" autocomplete="current-password" aria-label="Current password" style="padding:10px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px">
+          <input type="password" id="pwNew" placeholder="New password" autocomplete="new-password" aria-label="New password" style="padding:10px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px">
+          <input type="password" id="pwConfirm" placeholder="Confirm new password" autocomplete="new-password" aria-label="Confirm new password" style="padding:10px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px">
+          <div class="btnbar" style="margin-top:4px">
+            <button class="btn ghost" id="pwSaveBtn" type="submit">Change password</button>
+            <span id="pwStatus" role="status" style="font-size:13px;color:var(--gray);margin-left:10px"></span>
+          </div>
+        </form>
+      </div>
       <div class="btnbar" style="justify-content:flex-end;margin-top:20px">
         <button class="btn ghost" id="closeProfileSettings">Done</button>
       </div>
@@ -4733,10 +4746,47 @@ function inDrill(){ return el('viewDrill').style.display!=='none' && el('drillRu
 function openSetup(){ if(inDrill()){ pauseSession(); }
   else { modalMode='set'; el('closeSettings').textContent='Done'; el('pauseNote').style.display='none'; el('cancelDrill').style.display='none'; el('settingsModal').classList.add('show'); } }
 
+/* PWFORM:BEGIN — pure helpers (no DOM, no globals); tests load this block verbatim */
+// Admin and creator accounts need a longer password (the server enforces the same rule).
+function minPasswordLength(role){ return role==='admin'||role==='creator'?12:8; }
+// Returns an error message for the change-password form, or '' when it can be sent.
+function passwordFormError(f,role){
+  if(!f.current||!f.next||!f.confirm) return 'Fill in all three fields.';
+  const min=minPasswordLength(role);
+  if(f.next.length<min) return 'The new password must be at least '+min+' characters.';
+  if(f.next!==f.confirm) return 'The new passwords do not match.';
+  if(f.next===f.current) return 'The new password must be different from the current one.';
+  return '';
+}
+/* PWFORM:END */
+
 function openProfileSettings(){
   const current = AUTH.user?.showStats !== false;
   el('statsVisibilityInput').checked = current;
+  ['pwCurrent','pwNew','pwConfirm'].forEach(id=>{ el(id).value=''; });
+  el('pwStatus').textContent=''; el('pwStatus').style.color='var(--gray)';
+  const min=minPasswordLength(AUTH.user&&AUTH.user.role);
+  el('pwHint').textContent='Use at least '+min+' characters'+(min>8?' (required for admin and creator accounts)':'')+'. Your other devices are signed out when you change it.';
   el('profileSettingsModal').classList.add('show');
+}
+
+async function changePassword(){
+  const status=el('pwStatus'), btn=el('pwSaveBtn');
+  const fields={current:el('pwCurrent').value,next:el('pwNew').value,confirm:el('pwConfirm').value};
+  const problem=passwordFormError(fields,AUTH.user&&AUTH.user.role);
+  if(problem){ status.textContent=problem; status.style.color='var(--bad)'; return; }
+  btn.disabled=true; status.textContent='Saving\u2026'; status.style.color='var(--gray)';
+  try{
+    const r=await fetch(API_BASE+'/api/auth/password',{method:'PATCH',headers:authHeaders(),body:JSON.stringify({currentPassword:fields.current,newPassword:fields.next})});
+    if(r.status===401){ handleUnauth(); return; }
+    const res=await r.json().catch(()=>({}));
+    if(!r.ok||!res.token){ status.textContent=res.error||'Could not change the password.'; status.style.color='var(--bad)'; return; }
+    // The server ended every session, including this one; keep this device signed in with the fresh token.
+    AUTH.token=res.token; localStorage.setItem('cf_token',res.token);
+    ['pwCurrent','pwNew','pwConfirm'].forEach(id=>{ el(id).value=''; });
+    status.textContent='Password changed. Your other devices were signed out.'; status.style.color='var(--good)';
+  }catch(err){ status.textContent='Could not change the password. Check your connection and try again.'; status.style.color='var(--bad)'; console.error(err); }
+  finally{ btn.disabled=false; }
 }
 
 async function setStatsVisibility(newVal){
@@ -4769,6 +4819,7 @@ el('statsVisibilityInput').addEventListener('change', async function(){
 });
 
 el('closeProfileSettings').onclick = () => el('profileSettingsModal').classList.remove('show');
+el('pwForm').addEventListener('submit', e => { e.preventDefault(); changePassword(); });
 function pauseSession(){ modalMode='pause'; S.paused=true; TTS.stop(); Mic.hide();
   pauseWasTiming=!!timerInt; if(timerInt){ clearInterval(timerInt); timerInt=null; }
   if(tStarted) el('timerLog').textContent='|| Paused';

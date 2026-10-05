@@ -1,7 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const { pool } = require('../db');
-const { requireAdmin } = require('../middleware/auth');
+const { requireAdmin, forgetAccount } = require('../middleware/auth');
 const { judge, loadContext, loadPlaybook, shouldUsePlaybook, stats: judgeStats } = require('../judge/service');
 const { buildSystem } = require('../judge/prompt');
 const { modelName, cacheControl, countPromptTokens } = require('../judge/model');
@@ -45,6 +45,7 @@ router.patch('/users/:id/role', async (req, res) => {
       [role, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    forgetAccount(result.rows[0].id);
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Admin update role error:', err);
@@ -60,6 +61,7 @@ router.delete('/users/:id', async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [req.params.id]);
     if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    forgetAccount(result.rows[0].id);
     res.json({ ok: true });
   } catch (err) {
     console.error('Admin delete user error:', err);
@@ -383,6 +385,7 @@ router.patch('/users/:id/bypass-approval', async (req, res) => {
       [bypassApproval, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    forgetAccount(result.rows[0].id);
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Admin update bypass approval error:', err);

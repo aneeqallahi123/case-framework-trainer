@@ -156,8 +156,60 @@ const check = (name, fn) => async () => { try { await fn(); results.push(['PASS'
     assert.ok(t.includes('0 public post'));
   })();
 
+  // ---- change password (Profile & Privacy)
+  await page.evaluate(() => { document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show')); openProfileSettings(); });
+  await page.waitForSelector('#profileSettingsModal.show #pwCurrent');
+  const oldToken = su.token;
+  const fillPw = async (cur, next, conf) => { await page.fill('#pwCurrent', cur); await page.fill('#pwNew', next); await page.fill('#pwConfirm', conf); };
+  await fillPw('password123', 'brand-new-pass-1', 'something-else');
+  await page.click('#pwSaveBtn');
+  await check('change password: a mismatch is caught in the form before anything is sent', async () => {
+    assert.ok(has(await page.locator('#pwStatus').innerText(), 'do not match'));
+    assert.strictEqual(await page.evaluate(() => localStorage.getItem('cf_token')), oldToken);
+  })();
+  await fillPw('password123', 'short', 'short');
+  await page.click('#pwSaveBtn');
+  await check('change password: a too-short password is explained, with the right minimum for this account', async () => {
+    assert.ok(has(await page.locator('#pwStatus').innerText(), 'at least 8 characters'));
+    assert.ok(has(await page.locator('#pwHint').innerText(), 'at least 8 characters'));
+  })();
+  await fillPw('not-my-password', 'brand-new-pass-1', 'brand-new-pass-1');
+  await page.click('#pwSaveBtn');
+  await page.waitForFunction(() => /incorrect/i.test(document.getElementById('pwStatus').textContent), null, { timeout: 10000 });
+  await check('change password: a wrong current password shows the server\'s message and keeps you signed in', async () => {
+    assert.strictEqual(await page.evaluate(() => localStorage.getItem('cf_token')), oldToken);
+    assert.strictEqual((await get('/api/auth/me', oldToken)).email, su.user.email);
+  })();
+  await fillPw('password123', 'brand-new-pass-1', 'brand-new-pass-1');
+  await page.click('#pwSaveBtn');
+  await page.waitForFunction(() => /Password changed/.test(document.getElementById('pwStatus').textContent), null, { timeout: 10000 });
+  await page.screenshot({ path: SHOTS + '10-change-password.png', fullPage: true });
+  const newToken = await page.evaluate(() => localStorage.getItem('cf_token'));
+  await check('change password: success stores a fresh token, clears the form, and the old token stops working', async () => {
+    assert.ok(newToken && newToken !== oldToken);
+    assert.strictEqual(await page.inputValue('#pwCurrent'), '');
+    assert.strictEqual(await page.inputValue('#pwNew'), '');
+    assert.ok(has((await get('/api/auth/me', oldToken)).error || '', 'Session expired'));
+    assert.strictEqual((await get('/api/auth/me', newToken)).email, su.user.email);
+    assert.ok(Array.isArray(await page.evaluate(() => apiGet('/api/drills'))), 'this device keeps working');
+  })();
+  await check('change password: the old password no longer signs in and the new one does', async () => {
+    assert.ok((await post('/api/auth/login', { email: su.user.email, password: 'password123' })).error);
+    assert.ok((await post('/api/auth/login', { email: su.user.email, password: 'brand-new-pass-1' })).token);
+  })();
+  // another device still holding the old token is signed out the next time it talks to the server
+  const octx = await browser.newContext();
+  await octx.addInitScript(([t, u]) => { localStorage.setItem('cf_token', t); localStorage.setItem('cf_user', u); }, [oldToken, JSON.stringify(su.user)]);
+  const opage = await octx.newPage();
+  await opage.goto(BASE);
+  await opage.waitForFunction(() => localStorage.getItem('cf_token') === null, null, { timeout: 15000 }).catch(() => {});
+  await check('change password: another device holding the old session is signed out', async () => {
+    assert.strictEqual(await opage.evaluate(() => localStorage.getItem('cf_token')), null);
+  })();
+  await octx.close();
+
   // ---- admin: structured creator form + approval preview
-  const adminLogin = await post('/api/auth/login', { email: 'aneeq@caseroom.app', password: 'CaseFramework1' });
+  const adminLogin = await post('/api/auth/login', { email: 'aneeq@caseroom.app', password: process.env.UI_ADMIN_PASSWORD || 'ui-admin-password-1' });
   const actx = await browser.newContext({ viewport: { width: 1200, height: 1000 } });
   await actx.addInitScript(([t, u]) => { localStorage.setItem('cf_token', t); localStorage.setItem('cf_user', u); }, [adminLogin.token, JSON.stringify(adminLogin.user)]);
   const ap = await actx.newPage();

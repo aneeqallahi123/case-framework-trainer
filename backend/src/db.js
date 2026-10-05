@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
 
@@ -8,11 +9,21 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Accounts created automatically on first boot. Change these passwords after logging in.
+// Admin accounts managed from the server's environment: ADMIN_PASSWORD_<NAME> sets (and, when its value changes,
+// resets) that account's password. Without the variable the account is not created, and nothing ships a password.
 const SEED_ADMINS = [
-  { email: 'aneeq@caseroom.app', password: 'CaseFramework1', firstName: 'Aneeq' },
-  { email: 'chohan@caseroom.app', password: 'CaseFramework2', firstName: 'Chohan' }
+  { email: 'aneeq@caseroom.app', firstName: 'Aneeq', envVar: 'ADMIN_PASSWORD_ANEEQ' },
+  { email: 'chohan@caseroom.app', firstName: 'Chohan', envVar: 'ADMIN_PASSWORD_CHOHAN' }
 ];
+const MIN_ADMIN_PASSWORD = 12;
+
+// Earlier versions created these accounts with passwords that were published in the repository. They are kept here
+// only to detect and flag a database that still accepts one (and to refuse them as new passwords). Nothing uses
+// them to sign in or to create an account.
+const LEGACY_DEFAULT_PASSWORDS = {
+  'aneeq@caseroom.app': 'CaseFramework1',
+  'chohan@caseroom.app': 'CaseFramework2'
+};
 
 // Create all tables if they don't exist
 async function initDB() {
@@ -160,6 +171,11 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS show_stats BOOLEAN DEFAULT true;
     `);
 
+    // Bumped on a password change or reset; tokens carry the version they were issued under, so older sessions end.
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
+    `);
+
     // Judge results keyed by a hash of (prompt, framework, model): identical retries cost nothing and read the same.
     await client.query(`
       CREATE TABLE IF NOT EXISTS judge_cache (
@@ -221,17 +237,57 @@ async function initDB() {
   }
 }
 
-// Idempotent: only creates each seed admin if that email doesn't already exist.
+// Creates or resets the seed admin accounts from their ADMIN_PASSWORD_* variables.
+// - A variable that is not set creates nothing and changes nothing (an existing account that still accepts its old
+//   published default password is flagged in the log).
+// - A variable is applied once per value: a fingerprint of (email, password) is stored, so changing the value in the
+//   environment resets the password on the next start (this is also the recovery path), while a password the admin
+//   later changes in the app is left alone until the variable's value changes again.
+// - Resetting a password ends that account's existing sessions.
 async function seedAdmins(client) {
   for (const admin of SEED_ADMINS) {
-    const existing = await client.query('SELECT id FROM users WHERE email = $1', [admin.email]);
-    if (existing.rows.length > 0) continue;
-    const hash = await bcrypt.hash(admin.password, 10);
+    const password = process.env[admin.envVar];
+    const found = await client.query('SELECT id, password_hash FROM users WHERE email = $1', [admin.email]);
+    const existing = found.rows[0];
+
+    if (!password) {
+      if (!existing) {
+        console.warn(`⚠️  No ${admin.email} account yet: set ${admin.envVar} (at least ${MIN_ADMIN_PASSWORD} characters) to create it.`);
+      } else if (await bcrypt.compare(LEGACY_DEFAULT_PASSWORDS[admin.email], existing.password_hash)) {
+        console.warn(`⚠️  SECURITY: ${admin.email} still accepts the old published default password. Set ${admin.envVar} to replace it.`);
+      }
+      continue;
+    }
+    if (password.length < MIN_ADMIN_PASSWORD || password === LEGACY_DEFAULT_PASSWORDS[admin.email]) {
+      console.warn(`⚠️  ${admin.envVar} is ignored: it must be at least ${MIN_ADMIN_PASSWORD} characters and not the old default.`);
+      continue;
+    }
+
+    const fingerprint = crypto.createHash('sha256').update(admin.email + '\n' + password).digest('hex');
+    const marker = 'admin_password_applied:' + admin.email;
+    const stored = await client.query('SELECT value FROM system_config WHERE key = $1', [marker]);
+    if (existing && stored.rows[0] && stored.rows[0].value === fingerprint) continue;
+
+    const hash = await bcrypt.hash(password, 10);
+    if (existing) {
+      await client.query(
+        "UPDATE users SET password_hash = $1, role = 'admin', token_version = token_version + 1 WHERE id = $2",
+        [hash, existing.id]
+      );
+      // Required here, not at the top, because the middleware imports this module. Drops any cached copy of the
+      // account so its old sessions stop working immediately, not after the cache expires.
+      require('./middleware/auth').forgetAccount(existing.id);
+    } else {
+      await client.query(
+        'INSERT INTO users (email, password_hash, first_name, role) VALUES ($1, $2, $3, $4)',
+        [admin.email, hash, admin.firstName, 'admin']
+      );
+    }
     await client.query(
-      'INSERT INTO users (email, password_hash, first_name, role) VALUES ($1, $2, $3, $4)',
-      [admin.email, hash, admin.firstName, 'admin']
+      'INSERT INTO system_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()',
+      [marker, fingerprint]
     );
-    console.log(`✅ Seeded admin account: ${admin.email}`);
+    console.log(`✅ ${existing ? 'Reset the password of' : 'Created'} admin account ${admin.email} from ${admin.envVar}`);
   }
 }
 
@@ -385,8 +441,9 @@ async function seedMarkingCriteria(client) {
 }
 
 async function seedSystemConfig(client) {
-  const { rows } = await client.query('SELECT COUNT(*)::int AS count FROM system_config');
-  if (rows[0].count > 0) return;
+  // Keyed on the row itself: system_config also holds other settings (such as the admin password markers).
+  const { rows } = await client.query("SELECT 1 FROM system_config WHERE key = 'system_prompt'");
+  if (rows.length > 0) return;
 
   const defaultPrompt = `You are an expert case interview evaluator. Your role is to assess frameworks across four key dimensions:
 
@@ -414,4 +471,4 @@ Focus feedback on what's working and what to address next, providing actionable 
   console.log('✅ Seeded default system prompt');
 }
 
-module.exports = { pool, initDB };
+module.exports = { pool, initDB, seedAdmins };

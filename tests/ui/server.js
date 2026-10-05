@@ -4,7 +4,7 @@
 const path = require('path');
 const root = path.join(__dirname, '..', '..', 'backend', 'src');
 if (!process.env.UI_DATABASE_URL) { console.error('Set UI_DATABASE_URL to an empty scratch database'); process.exit(1); }
-Object.assign(process.env, { DATABASE_URL: process.env.UI_DATABASE_URL, JWT_SECRET: 'ui-secret-ui-secret-ui-secret-123456', PORT: '3001', NODE_ENV: 'development', SEED_EXPERT_CASES: 'true', EXPERT_DISPLAY_NAME: 'Test Expert', ANTHROPIC_API_KEY: 'unused', JUDGE_RATE_PER_HOUR: '200' });
+Object.assign(process.env, { DATABASE_URL: process.env.UI_DATABASE_URL, JWT_SECRET: 'ui-secret-ui-secret-ui-secret-123456', PORT: '3001', NODE_ENV: 'development', SEED_EXPERT_CASES: 'true', EXPERT_DISPLAY_NAME: 'Test Expert', ANTHROPIC_API_KEY: 'unused', JUDGE_RATE_PER_HOUR: '200', ADMIN_PASSWORD_ANEEQ: process.env.UI_ADMIN_PASSWORD || 'ui-admin-password-1' });
 const model = require(path.join(root, 'judge', 'model'));
 model.callAnthropic = async req => {
   if (req.user.includes('FAILME')) throw new Error('simulated outage');

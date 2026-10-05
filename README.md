@@ -106,6 +106,15 @@ Marking is a hybrid. Rules score what can be counted: **Structure** (bucket and 
 - The per-shape playbook (`backend/src/data/expert-playbook.json`) is included once its `status` is `reviewed`; it is.
 - Cost: the stable prompt is roughly 8k tokens. Prompt caching is off by default; see `.env.example` for when to turn it on.
 
+## Admin accounts and passwords
+
+No password is built into the code. The admin accounts `aneeq@caseroom.app` and `chohan@caseroom.app` are created from the `ADMIN_PASSWORD_ANEEQ` and `ADMIN_PASSWORD_CHOHAN` settings (at least 12 characters). Everyone, admins included, can change their own password under **Profile & Privacy > Change password**: 8 characters or more, 12 or more for admin and creator accounts.
+
+- Changing a password ends every other session for that account, and removing or demoting an account takes effect immediately.
+- A setting is applied once per value. To reset a forgotten password, change the setting on Railway and redeploy. A password you chose inside the app is kept across restarts until you change the setting.
+- If an account in an older database still accepts its old published default password, the server log says so at start-up (`SECURITY: ... still accepts the old published default password`). Set its setting or change the password in the app.
+- Wrong passwords are limited to 10 attempts per 15 minutes per email address, and 5 wrong current-password entries per 15 minutes when changing a password.
+
 ## Expert frameworks
 
 Creators submit structured solved frameworks (answer shape, purpose, buckets as questions with hypotheses, where to start, clarifying Q&A) which admins approve. Approved ones feed the coach as calibration examples and appear under **Community > Expert frameworks**, where each one unlocks after the student has attempted that case (enforced by the server).
@@ -115,7 +124,7 @@ Creators submit structured solved frameworks (answer shape, purpose, buckets as 
 ## Tests
 
 ```
-node --test tests/analytics.test.js tests/scoring.test.js tests/solved-framework.test.js tests/judge.test.js tests/judge-service.test.js
+node --test tests/analytics.test.js tests/scoring.test.js tests/solved-framework.test.js tests/judge.test.js tests/judge-service.test.js tests/auth.test.js
 ```
 
 Two further suites need a scratch Postgres and make no real model calls:

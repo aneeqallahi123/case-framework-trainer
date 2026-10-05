@@ -13,4 +13,19 @@ function makeLimiter({ max, windowMs, now = () => Date.now() }) {
   };
 }
 
-module.exports = { makeLimiter };
+// Counts failures only, so correct logins never use up the allowance: blocked(key) before checking a credential,
+// fail(key) after a wrong one, reset(key) after a right one.
+function makeFailureLimiter({ max, windowMs, now = () => Date.now() }) {
+  const fails = new Map();
+  const recent = key => { const t = now(); const r = (fails.get(key) || []).filter(ts => t - ts < windowMs); fails.set(key, r); return r; };
+  return {
+    blocked: key => recent(key).length >= max,
+    fail(key) {
+      const r = recent(key); r.push(now());
+      if (fails.size > 5000) for (const [k, v] of fails) if (!v.some(ts => now() - ts < windowMs)) fails.delete(k);
+    },
+    reset: key => { fails.delete(key); }
+  };
+}
+
+module.exports = { makeLimiter, makeFailureLimiter };

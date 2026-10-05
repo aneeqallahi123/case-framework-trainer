@@ -9,7 +9,8 @@ const DB = process.env.E2E_DATABASE_URL;
 const skip = DB ? false : 'set E2E_DATABASE_URL to run';
 const root = path.join(__dirname, '..', 'backend', 'src');
 
-let base, pool, modelCalls = [];
+let base, pool, seedAdmins, modelCalls = [];
+const ADMIN_PW = 'e2e-admin-password-1';
 const fakeJudgeReply = () => JSON.stringify({
   criteria: {
     MECE: { level: 'strong', reason: 'Distinct areas.', evidence: 'how big is the market' },
@@ -36,11 +37,11 @@ const STRUCT = '# Market size\n- how big is the market\n- how fast is it growing
 
 test.before(async () => {
   if (skip) return;
-  Object.assign(process.env, { DATABASE_URL: DB, JWT_SECRET: 'e2e-secret-e2e-secret-e2e-secret-1', PORT: '3077', NODE_ENV: 'development', SEED_EXPERT_CASES: 'true', EXPERT_DISPLAY_NAME: 'E2E Expert', ANTHROPIC_API_KEY: 'unused' });
+  Object.assign(process.env, { DATABASE_URL: DB, JWT_SECRET: 'e2e-secret-e2e-secret-e2e-secret-1', PORT: '3077', NODE_ENV: 'development', SEED_EXPERT_CASES: 'true', ADMIN_PASSWORD_ANEEQ: ADMIN_PW, EXPERT_DISPLAY_NAME: 'E2E Expert', ANTHROPIC_API_KEY: 'unused' });
   // Replace the model call before the service module loads, so the real route and service run against a fake.
   const model = require(path.join(root, 'judge', 'model'));
   model.callAnthropic = async req => { modelCalls.push(req); return { text: fakeJudgeReply(), usage: { input_tokens: 1, output_tokens: 1 }, model: 'fake' }; };
-  ({ pool } = require(path.join(root, 'db')));
+  ({ pool, seedAdmins } = require(path.join(root, 'db')));
   require(path.join(root, 'index.js'));
   for (let i = 0; i < 50; i++) {
     try { if ((await fetch('http://localhost:3077/health')).ok) break; } catch (e) { /* not up yet */ }
@@ -181,7 +182,7 @@ test('student posts still work as before', { skip }, async () => {
 });
 
 test('creator submissions are validated and show up for the admin with their structure', { skip }, async () => {
-  const login = await api('POST', '/api/auth/login', null, { email: 'aneeq@caseroom.app', password: 'CaseFramework1' });
+  const login = await api('POST', '/api/auth/login', null, { email: 'aneeq@caseroom.app', password: ADMIN_PW });
   const admin = login.json.token;
   assert.strictEqual((await api('POST', '/api/creator/solved-frameworks', admin, { caseId: 'ex01', framework: { text: 'free text' } })).status, 400);
   const admin1 = await api('GET', '/api/admin/judge-preview', admin);
@@ -193,7 +194,7 @@ test('creator submissions are validated and show up for the admin with their str
 });
 
 test('admin: prompt history records saves and the first save keeps the original', { skip }, async () => {
-  const admin = (await api('POST', '/api/auth/login', null, { email: 'aneeq@caseroom.app', password: 'CaseFramework1' })).json.token;
+  const admin = (await api('POST', '/api/auth/login', null, { email: 'aneeq@caseroom.app', password: ADMIN_PW })).json.token;
   const original = (await api('GET', '/api/admin/system-config/system-prompt', admin)).json.systemPrompt;
   assert.ok(original.length > 50);
   assert.strictEqual((await api('PUT', '/api/admin/system-config/system-prompt', admin, { systemPrompt: original + '\nExtra line.' })).status, 200);
@@ -212,7 +213,7 @@ test('admin: prompt history records saves and the first save keeps the original'
 });
 
 test('admin: the planted-flaw test needs explicit confirmation and runs three variants per case', { skip }, async () => {
-  const admin = (await api('POST', '/api/auth/login', null, { email: 'aneeq@caseroom.app', password: 'CaseFramework1' })).json.token;
+  const admin = (await api('POST', '/api/auth/login', null, { email: 'aneeq@caseroom.app', password: ADMIN_PW })).json.token;
   assert.strictEqual((await api('POST', '/api/admin/judge-test', admin, {})).status, 400);
   const before = modelCalls.length;
   const r = await api('POST', '/api/admin/judge-test', admin, { confirm: true, cases: 2 });
@@ -227,4 +228,143 @@ test('admin: the planted-flaw test needs explicit confirmation and runs three va
   assert.deepStrictEqual(r.json.results.filter(x => !x.pass).map(x => x.variant), ['overlap', 'overlap']);
   const stats = (await api('GET', '/api/admin/judge-stats', admin)).json;
   assert.ok(stats.modelCalls >= 7);
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Authentication: environment-managed admin passwords, session versioning, password change, brute-force limits
+// ---------------------------------------------------------------------------------------------------------------
+const login = (email, password) => api('POST', '/api/auth/login', null, { email, password });
+const me = token => api('GET', '/api/auth/me', token);
+
+test('auth: the seed admin signs in with the environment password and the old published default is refused', { skip }, async () => {
+  assert.strictEqual((await login('aneeq@caseroom.app', ADMIN_PW)).status, 200);
+  assert.strictEqual((await login('aneeq@caseroom.app', 'CaseFramework1')).status, 401);
+  const q = await pool.query("SELECT email FROM users WHERE email = 'chohan@caseroom.app'");
+  assert.strictEqual(q.rows.length, 0, 'an admin whose variable is not set is not created with a built-in password');
+});
+
+test('auth: changing your password ends the old session and every other one, and returns a working new token', { skip }, async () => {
+  const signupRes = await api('POST', '/api/auth/signup', null, { email: 'pwuser@e2e.test', password: 'password123', firstName: 'pw' });
+  const old = signupRes.json.token;
+  assert.strictEqual((await me(old)).status, 200);
+
+  assert.strictEqual((await api('PATCH', '/api/auth/password', null, { currentPassword: 'a', newPassword: 'b' })).status, 401);
+  const wrong = await api('PATCH', '/api/auth/password', old, { currentPassword: 'not-it-at-all', newPassword: 'brand-new-pass-1' });
+  assert.strictEqual(wrong.status, 400);
+  assert.match(wrong.json.error, /Current password is incorrect/);
+  assert.strictEqual((await api('PATCH', '/api/auth/password', old, { currentPassword: 'password123', newPassword: 'short' })).status, 400);
+  assert.strictEqual((await api('PATCH', '/api/auth/password', old, { currentPassword: 'password123', newPassword: 'password123' })).status, 400);
+  assert.strictEqual((await api('PATCH', '/api/auth/password', old, { currentPassword: 'password123' })).status, 400);
+  assert.strictEqual((await me(old)).status, 200, 'rejected attempts leave the session alone');
+
+  const changed = await api('PATCH', '/api/auth/password', old, { currentPassword: 'password123', newPassword: 'brand-new-pass-1' });
+  assert.strictEqual(changed.status, 200);
+  assert.ok(changed.json.token && changed.json.token !== old);
+  assert.strictEqual((await me(old)).status, 401, 'the previous token no longer works');
+  assert.strictEqual((await me(changed.json.token)).status, 200, 'the fresh token does');
+  assert.strictEqual((await login('pwuser@e2e.test', 'password123')).status, 401);
+  const relogin = await login('pwuser@e2e.test', 'brand-new-pass-1');
+  assert.strictEqual(relogin.status, 200);
+  assert.strictEqual((await me(relogin.json.token)).status, 200);
+  assert.strictEqual((await me(changed.json.token)).status, 200, 'logging in again does not end the other session');
+});
+
+test('auth: admin and creator accounts need a 12-character password', { skip }, async () => {
+  const admin = (await login('aneeq@caseroom.app', ADMIN_PW)).json.token;
+  const r = await api('PATCH', '/api/auth/password', admin, { currentPassword: ADMIN_PW, newPassword: 'eleven-char' });
+  assert.strictEqual(r.status, 400);
+  assert.match(r.json.error, /at least 12 characters/);
+  assert.strictEqual((await me(admin)).status, 200);
+});
+
+test('auth: failed logins are limited per email and a correct login is not what uses the allowance', { skip }, async () => {
+  await api('POST', '/api/auth/signup', null, { email: 'limited@e2e.test', password: 'password123', firstName: 'l' });
+  for (let i = 0; i < 3; i++) assert.strictEqual((await login('limited@e2e.test', 'wrong' + i)).status, 401);
+  assert.strictEqual((await login('limited@e2e.test', 'password123')).status, 200, 'a correct login still works and clears the count');
+  for (let i = 0; i < 10; i++) assert.strictEqual((await login('limited@e2e.test', 'wrong' + i)).status, 401);
+  const blocked = await login('limited@e2e.test', 'password123');
+  assert.strictEqual(blocked.status, 429);
+  assert.match(blocked.json.error, /Too many failed attempts/);
+  assert.strictEqual((await login('someone-else@e2e.test', 'x')).status, 401, 'other addresses are unaffected');
+  for (let i = 0; i < 10; i++) await login('nobody@e2e.test', 'x' + i);
+  assert.strictEqual((await login('nobody@e2e.test', 'x')).status, 429, 'unknown addresses are limited too, so the limit does not reveal which exist');
+});
+
+test('auth: wrong current-password entries when changing a password are limited per user', { skip }, async () => {
+  const t = (await api('POST', '/api/auth/signup', null, { email: 'pwlimit@e2e.test', password: 'password123', firstName: 'p' })).json.token;
+  for (let i = 0; i < 5; i++) assert.strictEqual((await api('PATCH', '/api/auth/password', t, { currentPassword: 'nope' + i, newPassword: 'another-new-pass-1' })).status, 400);
+  assert.strictEqual((await api('PATCH', '/api/auth/password', t, { currentPassword: 'password123', newPassword: 'another-new-pass-1' })).status, 429);
+});
+
+test('auth: a role change or deletion applies to an existing token straight away', { skip }, async () => {
+  const admin = (await login('aneeq@caseroom.app', ADMIN_PW)).json.token;
+  const t = (await api('POST', '/api/auth/signup', null, { email: 'promoted@e2e.test', password: 'password123', firstName: 'r' })).json.token;
+  const id = (await me(t)).json.id;
+  assert.strictEqual((await api('GET', '/api/creator/solved-frameworks', t)).status, 403);
+  assert.strictEqual((await api('PATCH', `/api/admin/users/${id}/role`, admin, { role: 'creator' })).status, 200);
+  assert.strictEqual((await api('GET', '/api/creator/solved-frameworks', t)).status, 200, 'promotion needs no new login');
+  assert.strictEqual((await api('PATCH', `/api/admin/users/${id}/role`, admin, { role: 'user' })).status, 200);
+  assert.strictEqual((await api('GET', '/api/creator/solved-frameworks', t)).status, 403, 'demotion is immediate');
+  assert.strictEqual((await api('DELETE', `/api/admin/users/${id}`, admin)).status, 200);
+  assert.strictEqual((await me(t)).status, 401, 'a deleted account\'s token stops working');
+});
+
+test('auth: an existing admin account that still has the old published password is flagged, then rotated from the environment', { skip }, async () => {
+  const bcrypt = require(path.join(__dirname, '..', 'backend', 'node_modules', 'bcryptjs'));
+  const q = (sql, p) => pool.query(sql, p);
+  // This is the production situation: the account already exists with the password that was published in the repo.
+  await q("INSERT INTO users (email, password_hash, first_name, role) VALUES ('chohan@caseroom.app', $1, 'Chohan', 'admin')", [await bcrypt.hash('CaseFramework2', 10)]);
+  const oldToken = (await login('chohan@caseroom.app', 'CaseFramework2')).json.token;
+  assert.strictEqual((await api('GET', '/api/admin/users', oldToken)).status, 200, 'precondition: the old password works');
+
+  const run = async () => { const c = await pool.connect(); try { await seedAdmins(c); } finally { c.release(); } };
+  const warnings = [];
+  const realWarn = console.warn; console.warn = (...a) => warnings.push(a.join(' '));
+  try {
+    delete process.env.ADMIN_PASSWORD_CHOHAN;
+    await run();
+    assert.ok(warnings.some(w => /SECURITY: chohan@caseroom.app still accepts the old published default password/.test(w)));
+    assert.strictEqual((await login('chohan@caseroom.app', 'CaseFramework2')).status, 200, 'without the variable nothing changes');
+
+    process.env.ADMIN_PASSWORD_CHOHAN = 'short';
+    await run();
+    assert.ok(warnings.some(w => /ADMIN_PASSWORD_CHOHAN is ignored/.test(w)));
+    process.env.ADMIN_PASSWORD_CHOHAN = 'CaseFramework2';
+    await run();
+    assert.strictEqual((await login('chohan@caseroom.app', 'CaseFramework2')).status, 200, 'the old default is not accepted as the new value');
+  } finally { console.warn = realWarn; }
+
+  process.env.ADMIN_PASSWORD_CHOHAN = 'rotated-admin-password-9';
+  await run();
+  assert.strictEqual((await login('chohan@caseroom.app', 'CaseFramework2')).status, 401, 'the old password stops working');
+  assert.strictEqual((await api('GET', '/api/admin/users', oldToken)).status, 401, 'and so does a session opened with it');
+  const fresh = await login('chohan@caseroom.app', 'rotated-admin-password-9');
+  assert.strictEqual(fresh.status, 200);
+
+  const hash1 = (await q("SELECT password_hash FROM users WHERE email = 'chohan@caseroom.app'")).rows[0].password_hash;
+  await run();
+  assert.strictEqual((await q("SELECT password_hash FROM users WHERE email = 'chohan@caseroom.app'")).rows[0].password_hash, hash1, 'restarting with the same value changes nothing');
+
+  // The admin then picks their own password in the app; a restart must not undo it.
+  const changed = await api('PATCH', '/api/auth/password', fresh.json.token, { currentPassword: 'rotated-admin-password-9', newPassword: 'chosen-in-the-app-pass-1' });
+  assert.strictEqual(changed.status, 200);
+  await run();
+  assert.strictEqual((await login('chohan@caseroom.app', 'chosen-in-the-app-pass-1')).status, 200, 'an in-app change survives a restart');
+  assert.strictEqual((await login('chohan@caseroom.app', 'rotated-admin-password-9')).status, 401);
+
+  // Changing the variable's value is the recovery path if the password is forgotten.
+  process.env.ADMIN_PASSWORD_CHOHAN = 'recovered-admin-password-3';
+  await run();
+  assert.strictEqual((await login('chohan@caseroom.app', 'recovered-admin-password-3')).status, 200);
+  assert.strictEqual((await login('chohan@caseroom.app', 'chosen-in-the-app-pass-1')).status, 401);
+});
+
+test('auth: a variable that is set creates a missing admin account with that password', { skip }, async () => {
+  await pool.query("DELETE FROM users WHERE email = 'chohan@caseroom.app'");
+  await pool.query("DELETE FROM system_config WHERE key = 'admin_password_applied:chohan@caseroom.app'");
+  process.env.ADMIN_PASSWORD_CHOHAN = 'created-from-env-password-1';
+  const c = await pool.connect(); try { await seedAdmins(c); } finally { c.release(); }
+  const r = await login('chohan@caseroom.app', 'created-from-env-password-1');
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(r.json.user.role, 'admin');
 });
