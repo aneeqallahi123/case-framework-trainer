@@ -81,6 +81,48 @@ Return ONLY JSON, no markdown fences:
   return { grounded, raw };
 }
 
+// STAGE 1b — entailment. The quote check proves the words were said, not that the
+// point actually follows from them (a real quote can be attached to an invented
+// idea). One narrow yes/no call per submission asks, for each point, whether its
+// quote directly states or clearly implies it. Points answered "no" are dropped.
+// Fails open: if the verifier errors or skips a point, the point is kept, because
+// the other code-side checks still apply and a flaky verifier must not block users.
+async function verifyPoints(points, generateJson = defaultGenerateJson) {
+  if (!points.length) return { verified: points, rejected: [] };
+  const list = points.map(p => `- id: ${p.id} | claim: ${JSON.stringify(p.text)} | quote: ${JSON.stringify(p.quote)}`).join('\n');
+  const prompt = `You are verifying extracted claims against the exact words a candidate said in a case interview.
+
+For each item below, decide whether the QUOTE directly states, or clearly implies, the CLAIM.
+
+- supported = true: the claim is a fair paraphrase of what the quote says, even if shorter or reworded.
+- supported = false: the claim adds a topic, number, or idea that the quote does not contain, or the quote is about something different.
+- Judge ONLY from the quote. Do not use outside knowledge about what a good framework would include.
+
+Items:
+${list}
+
+Return ONLY JSON, no markdown fences:
+{ "verdicts": [ { "id": "p1", "supported": true } ] }`;
+
+  let verdicts;
+  try {
+    const { parsed } = await generateJson(prompt);
+    verdicts = Array.isArray(parsed && parsed.verdicts) ? parsed.verdicts : [];
+  } catch (err) {
+    console.warn('Structure: entailment check failed, keeping all points:', err.message);
+    return { verified: points, rejected: [] };
+  }
+  const unsupported = new Set(verdicts.filter(v => v && v.supported === false).map(v => v.id));
+  const rejected = points.filter(p => unsupported.has(p.id));
+  const verified = points.filter(p => !unsupported.has(p.id));
+  if (verified.length === 0) {
+    console.warn('Structure: entailment check rejected every point; treating as a verifier misfire and keeping all.');
+    return { verified: points, rejected: [] };
+  }
+  if (rejected.length) console.warn(`Structure: entailment check dropped ${rejected.length} point(s):`, rejected.map(p => `${p.text} <- "${p.quote}"`));
+  return { verified, rejected };
+}
+
 // STAGE 2 — structuring. The model organizes ONLY the pre-validated points into
 // a MECE tree by referencing their ids; it cannot introduce new leaf content.
 // Bucket/grouping labels (nodes with no pointId) are the only freeform text
@@ -197,6 +239,8 @@ async function runStructure({ transcript, caseType, caseTitle }, generateJson = 
   try {
     ({ grounded } = await extractPoints(transcript, generateJson));
   } catch (e) { e.stage = 'extraction'; throw e; }
+  const { verified } = await verifyPoints(grounded, generateJson);
+  grounded = verified;
   if (grounded.length === 0) {
     const e = new Error('Could not extract any grounded points from the transcript');
     e.stage = 'empty';
@@ -231,4 +275,4 @@ async function runStructure({ transcript, caseType, caseTitle }, generateJson = 
   return out;
 }
 
-module.exports = { extractPoints, structurePoints, validateAndCleanTree, metricIsGrounded, runStructure, defaultGenerateJson };
+module.exports = { verifyPoints, extractPoints, structurePoints, validateAndCleanTree, metricIsGrounded, runStructure, defaultGenerateJson };

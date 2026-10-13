@@ -4,7 +4,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { quoteIsGrounded } = require('../backend/src/lib/json');
-const { runStructure, validateAndCleanTree, metricIsGrounded } = require('../backend/src/lib/structure');
+const { runStructure, validateAndCleanTree, metricIsGrounded, verifyPoints } = require('../backend/src/lib/structure');
 
 const T = 'So first I will look at revenue and within that price sensitivity and average price per category, ' +
   'then costs, specifically labor costs in the stores, which are up 12 percent from last year.';
@@ -12,7 +12,11 @@ const T = 'So first I will look at revenue and within that price sensitivity and
 const leaves = node => (node.children || []).flatMap(c => (c.pointId ? [c] : leaves(c)));
 
 // Fake model: stage 1 prompt contains "Extract the", stage 2 contains "Organize ONLY".
-const fake = (points, tree) => async prompt => {
+const fake = (points, tree, verdicts) => async prompt => {
+  if (prompt.includes('verifying extracted claims')) {
+    if (verdicts === 'throw') throw new Error('boom');
+    return { raw: '', parsed: { verdicts: verdicts || [] } };
+  }
   const parsed = prompt.includes('Organize ONLY') ? { tree, hypothesis: 'h' } : { points };
   return { raw: JSON.stringify(parsed), parsed };
 };
@@ -102,3 +106,25 @@ test('validateAndCleanTree: leaf children are discarded', () => {
   const out = validateAndCleanTree({ label: 'R', children: [{ label: 'A', pointId: 'p1', children: [{ label: 'sneaky', pointId: null, children: [] }] }] }, m, new Set());
   assert.deepStrictEqual(out.children[0].children, []);
 });
+
+test('entailment: a real quote attached to an unsupported claim is dropped', quiet(async () => {
+  const pts = [
+    { id: 'p1', text: 'Labor costs', quote: 'labor costs in the stores', metric: null },
+    { id: 'p2', text: 'Employee turnover', quote: 'labor costs in the stores', metric: null } // real quote, invented claim
+  ];
+  const tree = { label: 'Root', children: [
+    { label: 'Labor costs', pointId: 'p1', children: [] }, { label: 'Employee turnover', pointId: 'p2', children: [] }] };
+  const out = await runStructure({ transcript: T }, fake(pts, tree, [{ id: 'p1', supported: true }, { id: 'p2', supported: false }]));
+  assert.deepStrictEqual(leaves(out.tree).map(l => l.pointId), ['p1']);
+}));
+
+test('entailment: verifier errors, skipped ids and all-rejected misfires fail open', quiet(async () => {
+  const pts = [{ id: 'p1', text: 'Labor costs', quote: 'labor costs in the stores', metric: null },
+               { id: 'p2', text: 'Price sensitivity', quote: 'price sensitivity', metric: null }];
+  const r1 = await verifyPoints(pts, fake(pts, null, 'throw'));
+  assert.strictEqual(r1.verified.length, 2);
+  const r2 = await verifyPoints(pts, fake(pts, null, [{ id: 'p1', supported: false }])); // p2 skipped -> kept
+  assert.deepStrictEqual(r2.verified.map(p => p.id), ['p2']);
+  const r3 = await verifyPoints(pts, fake(pts, null, [{ id: 'p1', supported: false }, { id: 'p2', supported: false }]));
+  assert.strictEqual(r3.verified.length, 2);
+}));

@@ -1013,6 +1013,16 @@
   .tree-node .tn-label[contenteditable="true"]{outline:none;border-radius:var(--r-xs);cursor:text}
   .tree-node .tn-label[contenteditable="true"]:hover{background:var(--bg2)}
   .tree-node .tn-label[contenteditable="true"]:focus{background:var(--surface);box-shadow:0 0 0 2px var(--red) inset}
+  .tn-src{display:inline-block;margin-left:6px;width:18px;height:18px;line-height:17px;padding:0;border-radius:50%;
+    border:1px solid var(--line);background:var(--surface);font:700 13px/17px Georgia,serif;color:var(--gray);
+    cursor:help;vertical-align:middle}
+  .tn-src:hover,.tn-src:focus-visible{border-color:var(--ink);color:var(--ink)}
+  /* A branch the AI added to organise the candidate's points: dashed, so it reads as inferred, not said. */
+  .tree-node.inferred:not(.root){border-style:dashed}
+  #treeQuoteTip{position:fixed;z-index:1000;max-width:280px;padding:9px 12px;border-radius:var(--r-sm);
+    background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.45;box-shadow:var(--shadow-sm);
+    pointer-events:none;display:none}
+  #treeQuoteTip b{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.7;margin-bottom:3px}
   .tn-actions{position:absolute;top:-9px;right:-9px;display:flex;gap:4px;opacity:0;transition:opacity .16s}
   .tree-node:hover .tn-actions,.tree-node .tn-label:focus ~ .tn-actions{opacity:1}
   .tn-del,.tn-add{width:19px;height:19px;line-height:17px;padding:0;border-radius:50%;border:1px solid var(--line);
@@ -2606,9 +2616,10 @@ function outlineHtml(root, flat, opts){
   const idOf = node => { const e = flat.find(x => x.node === node); return e ? e.id : ''; };
   const nodeHtml = (node, depth) => {
     const id = idOf(node);
+    const src = nodeSource(node, depth===0);
     return `
-      <div class="tree-node to-node${depth===0?' root':''}">
-        <div class="tn-label" data-id="${id}" ${opts.editable ? 'contenteditable="true" spellcheck="false"' : ''}>${esc(node.label)}</div>
+      <div class="tree-node to-node${depth===0?' root':''}${src && src.kind==='inferred' ? ' inferred' : ''}"${nodeSourceAttrs(src)}>
+        <div class="tn-label" data-id="${id}" ${opts.editable ? 'contenteditable="true" spellcheck="false"' : ''}>${esc(node.label)}</div>${srcBadgeHtml(src)}
         ${metricHtml(node.metric)}
         ${opts.editable ? `<div class="tn-actions">
           ${depth>0 ? `<button type="button" class="tn-del" data-id="${id}" title="Delete this branch" aria-label="Delete branch">\u2715</button>` : ''}
@@ -2623,6 +2634,54 @@ function outlineHtml(root, flat, opts){
       `</li>`;
   };
   return `<ul class="to-list to-root">${walk(root, 0)}</ul>`;
+}
+
+// Provenance for a node. Leaves carry the candidate's verbatim quote; AI-added
+// grouping branches (pointId === null, not root) are flagged as inferred. Nodes
+// the user adds themselves have no pointId key, so they get neither.
+function nodeSource(node, isRoot){
+  if (node.quote) return { kind:'quote', tip: node.quote };
+  if (!isRoot && node.pointId === null) return { kind:'inferred', tip:'Grouping added by the AI to organise your points. It is not something you said.' };
+  return null;
+}
+function nodeSourceAttrs(src){
+  return src ? ` data-tip-kind="${src.kind}" data-tip="${esc(src.tip)}"` : '';
+}
+function srcBadgeHtml(src){
+  if (!src) return '';
+  return src.kind==='quote'
+    ? `<button type="button" class="tn-src" aria-label="Show what you said" title="Show what you said">\u201C</button>`
+    : '';
+}
+// One floating tooltip for the whole page (so the diagram's overflow can't clip it).
+// Hover on desktop, tap the \u201C badge on touch.
+function wireQuoteTip(container){
+  if (container._quoteTipWired) return;
+  container._quoteTipWired = true;
+  let tip = document.getElementById('treeQuoteTip');
+  if (!tip) { tip = document.createElement('div'); tip.id = 'treeQuoteTip'; tip.setAttribute('role','tooltip'); document.body.appendChild(tip); }
+  const hide = () => { tip.style.display = 'none'; };
+  const show = target => {
+    const kind = target.dataset.tipKind;
+    tip.innerHTML = kind === 'quote'
+      ? '<b>You said</b>\u201C' + esc(target.dataset.tip) + '\u201D'
+      : '<b>Inferred</b>' + esc(target.dataset.tip);
+    tip.style.display = 'block';
+    const r = target.getBoundingClientRect(), t = tip.getBoundingClientRect();
+    const left = Math.max(8, Math.min(window.innerWidth - t.width - 8, r.left + r.width / 2 - t.width / 2));
+    const top = r.bottom + 8 + t.height > window.innerHeight ? Math.max(8, r.top - t.height - 8) : r.bottom + 8;
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  };
+  container.addEventListener('mouseover', e => { const n = e.target.closest('[data-tip]'); if (n && container.contains(n)) show(n); });
+  container.addEventListener('mouseout', e => { const n = e.target.closest('[data-tip]'); if (n && !n.contains(e.relatedTarget)) hide(); });
+  container.addEventListener('focusin', e => { const n = e.target.closest('[data-tip]'); if (n) show(n); });
+  container.addEventListener('focusout', hide);
+  container.addEventListener('click', e => {
+    const b = e.target.closest('.tn-src'); if (!b) return;
+    const n = b.closest('[data-tip]'); if (!n) return;
+    if (tip.style.display === 'block' && tip._for === n) { hide(); tip._for = null; } else { show(n); tip._for = n; }
+  });
+  window.addEventListener('scroll', hide, { passive: true, capture: true });
 }
 
 function metricHtml(m){
@@ -2641,9 +2700,10 @@ function renderIssueTree(container, treeRoot, opts, focusNode){
     return `<div class="tree-col">${col.map(n => {
       const groupStart = i > 0 && n.parentId !== prevParentId;
       prevParentId = n.parentId;
+      const src = nodeSource(n.node, i===0);
       return `
-      <div class="tree-node${i===0?' root':''}${groupStart?' group-start':''}" id="${n.id}">
-        <div class="tn-label" data-id="${n.id}" ${opts.editable ? 'contenteditable="true" spellcheck="false"' : ''}>${esc(n.node.label)}</div>
+      <div class="tree-node${i===0?' root':''}${groupStart?' group-start':''}${src && src.kind==='inferred' ? ' inferred' : ''}" id="${n.id}"${nodeSourceAttrs(src)}>
+        <div class="tn-label" data-id="${n.id}" ${opts.editable ? 'contenteditable="true" spellcheck="false"' : ''}>${esc(n.node.label)}</div>${srcBadgeHtml(src)}
         ${metricHtml(n.node.metric)}
         ${opts.editable ? `<div class="tn-actions">
           ${i>0 ? `<button type="button" class="tn-del" data-id="${n.id}" title="Delete this branch">✕</button>` : ''}
@@ -2658,6 +2718,8 @@ function renderIssueTree(container, treeRoot, opts, focusNode){
   // edit in either re-renders both.
   container.innerHTML = `<div class="tree-diagram"><svg class="tree-lines"></svg><div class="tree-cols">${colsHtml}</div></div>`
     + `<div class="tree-outline">${outlineHtml(treeRoot, flat, opts)}</div>`;
+
+  wireQuoteTip(container);
 
   if (opts.editable) {
     const findNode = id => { const e = flat.find(x => x.id === id); return e ? e.node : null; };
