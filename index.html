@@ -2979,7 +2979,6 @@ function answerClarifiers(){
   const c=S.caseObj, qs=splitQuestions(el('clrText').value), box=el('clrAnswers');
   if(!qs.length){ box.innerHTML='<div class="fb warn">No questions recorded. You may continue.</div>'; return; }
   box.innerHTML=qs.map(q=>{ const r=classifyQuestion(q,c); const v=r.good?'<span class="verdict v-good">good clarifier</span>':'<span class="verdict v-bad">not a clarifier</span>'; return `<div class="qa"><div class="q">“${capitalize(q)}?” ${v}</div><div class="a">${r.answer}</div></div>`; }).join('');
-  const sp=qs.map(q=>classifyQuestion(q,c)).filter(r=>r.good).map(r=>r.answer).join(' '); if(sp)TTS.speak(sp,{rate:Math.min(1.1,S.rate+0.05)});
 }
 
 /* timer */
@@ -3082,7 +3081,7 @@ function showReview(c,st,r,o){
   el('reviewOut').innerHTML=html; el('reviewFoot').style.display='flex';
   if (hasTree) renderIssueTree(el('reviewTreeBox'), window._lastAIFramework.tree);
   requestAnimationFrame(()=>{ $$('#reviewOut .strbar i').forEach(i=>i.style.width=i.dataset.w+'%'); const gr=el('gring'); if(gr)gr.style.background=`conic-gradient(${gc} ${r.pct*3.6}deg,var(--track) 0)`; animateCount(el('gnum'),r.pct,1000); });
-  Beep.score(r.pct); TTS.speak(r.overall);
+  Beep.score(r.pct);
 }
 function recordResult(c,r,st){
   const lv={}; r.crits.forEach(cr=>lv[cr.name]=cr.level==='strong'?2:cr.level==='ok'?1:0);
