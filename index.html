@@ -4729,17 +4729,17 @@ function timerTick(){
   if(tElapsed%30===0&&rem>0){ const mk=$('#marks .mark[data-t="'+tElapsed+'"]'); if(mk)mk.classList.add('hit');
     ring.classList.remove('ring-beat'); void ring.offsetWidth; ring.classList.add('ring-beat');
     const msg=rem>=60?fmtClock(rem)+' remaining.':rem+' seconds left.'; el('timerLog').textContent=msg;
-    if(rem<=30)Beep.urgent(); else Beep.reminder(); }
+    if(rem<=30)Beep.urgent(); else Beep.reminder(); TTS.speak(msg,{rate:1.05}); }
   if(rem<=0) endTimer(true);
 }
 function startTimer(){ tLimit=S.timeLimit; tElapsed=0; tStarted=true;
   el('ring').classList.remove('ring-warn','ring-crit','ring-beat');
   el('startTimer').disabled=true; el('stopEarly').disabled=false; el('timerLog').textContent='';
-  renderMarks(); el('clocklbl').textContent='remaining'; Beep.start(); beginTick(); }
+  renderMarks(); el('clocklbl').textContent='remaining'; Beep.start(); TTS.speak('Your time starts now.'); beginTick(); }
 function endTimer(hard){ if(timerInt){clearInterval(timerInt);timerInt=null;} tStarted=false; el('stopEarly').disabled=true;
   const mk=$('#marks .mark[data-final="1"]'); if(mk&&hard)mk.classList.add('hit');
-  if(hard){ Beep.stopBell(); el('timerLog').textContent='Time. Pens down.'; }
-  gotoStage('recite2'); }
+  if(hard){ Beep.stopBell(); el('timerLog').textContent='Time. Pens down.'; TTS.speak("Time. Please deliver your framework.",{onEnd:()=>gotoStage('recite2')}); }
+  else TTS.speak('Please deliver your framework.',{onEnd:()=>gotoStage('recite2')}); }
 function remarkHits(){ for(let t=30;t<=tElapsed;t+=30){ const mk=$('#marks .mark[data-t="'+t+'"]'); if(mk)mk.classList.add('hit'); } }
 function inDrill(){ return el('viewDrill').style.display!=='none' && el('drillRun').style.display!=='none'; }
 function openSetup(){ if(inDrill()){ pauseSession(); }
