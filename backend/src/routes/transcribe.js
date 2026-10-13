@@ -1,7 +1,6 @@
 const express = require('express');
 const multer = require('multer');
 const { requireAuth } = require('../middleware/auth');
-const { getExampleForType } = require('../data/framework-examples');
 const { extractFirstJsonObject, quoteIsGrounded } = require('../lib/json');
 
 const router = express.Router();
@@ -53,6 +52,7 @@ async function generateJson(prompt) {
   const response = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
     max_tokens: 8000,
+    temperature: 0,
     messages: [{ role: 'user', content: prompt }]
   });
   const raw = response.content.find(b => b.type === 'text')?.text?.trim() || '';
@@ -122,7 +122,7 @@ Return ONLY JSON, no markdown fences:
 // a MECE tree by referencing their ids; it cannot introduce new leaf content.
 // Bucket/grouping labels (nodes with no pointId) are the only freeform text
 // allowed, since those are structural, not content.
-async function structurePoints({ transcript, caseType, caseTitle, points, example }) {
+async function structurePoints({ caseType, caseTitle, points }) {
   const pointsList = points.map(p => `- id: ${p.id} | text: "${p.text}"${p.metric ? ` | metric: ${JSON.stringify(p.metric)}` : ''}`).join('\n');
 
   const prompt = `You are a McKinsey case interview coach who is an expert at building MECE issue trees — the kind found in real casebooks (Wharton, Yale, Darden, MBB).
@@ -149,10 +149,7 @@ Rules:
 - Infer the grouping structure from how the candidate presented the points (the sequence and logical relationships in the transcript).
 - Only as many top-level branches as naturally emerge from the points — do not pad.
 
-## Reference example (STYLE ONLY — how deep nesting typically goes, how grouping nodes work. Do NOT borrow its actual branch names or content)
-
-Question: "${example.question}"
-Tree: ${JSON.stringify(example.tree)}
+- Grouping labels must be generic categories that cover the points beneath them. If the candidate named a grouping in their own words, prefer their wording. Never use a grouping label to introduce a topic that none of the points beneath it covers.
 
 ## Output format
 
@@ -188,18 +185,19 @@ Return ONLY JSON, no markdown fences:
 }
 
 // Validates that every leaf in the tree maps to a real, known pointId, and
-// collects which pointIds were actually placed. Strips any leaf that
-// references an unknown pointId (defensive — should not happen given the
+// collects which pointIds were actually placed. Leaf label/metric are overwritten
+// from the validated point. Strips any leaf that references an unknown pointId (defensive — should not happen given the
 // stage-2 prompt, but we don't trust model output blindly).
-function validateAndCleanTree(node, knownIds, usedIds) {
+function validateAndCleanTree(node, pointsById, usedIds) {
   if (!node || typeof node !== 'object') return null;
   const children = Array.isArray(node.children) ? node.children : [];
   const cleanedChildren = children
-    .map(child => validateAndCleanTree(child, knownIds, usedIds))
+    .map(child => validateAndCleanTree(child, pointsById, usedIds))
     .filter(Boolean);
 
   if (node.pointId != null) {
-    if (!knownIds.has(node.pointId)) {
+    const point = pointsById.get(node.pointId);
+    if (!point) {
       console.warn(`Structure: dropping node with unknown pointId "${node.pointId}"`);
       return null;
     }
@@ -208,9 +206,13 @@ function validateAndCleanTree(node, knownIds, usedIds) {
       return null;
     }
     usedIds.add(node.pointId);
+    // Leaf content comes from the validated extraction, never from the model's
+    // stage-2 output, so labels and metrics cannot be reworded or invented.
+    return { ...node, label: point.text, metric: point.metric || null, quote: point.quote, children: [] };
   }
 
-  return { ...node, children: cleanedChildren };
+  // Grouping nodes are structural only and never carry a metric.
+  return { ...node, metric: null, children: cleanedChildren };
 }
 
 // POST /api/transcribe/structure  - send transcript text, get back structured framework JSON
@@ -226,8 +228,6 @@ router.post('/structure', requireAuth, async (req, res) => {
       console.error('Structure route: ANTHROPIC_API_KEY is not set');
       return res.status(500).json({ error: 'AI structuring unavailable — ANTHROPIC_API_KEY not configured' });
     }
-
-    const example = getExampleForType(caseType);
 
     // Stage 1: extract atomic points and drop anything not grounded in the transcript.
     let extractRaw, grounded;
@@ -245,7 +245,7 @@ router.post('/structure', requireAuth, async (req, res) => {
     // Stage 2: structure only the validated points into a tree.
     let structureRaw, structured;
     try {
-      ({ structured, raw: structureRaw } = await structurePoints({ transcript, caseType, caseTitle, points: grounded, example }));
+      ({ structured, raw: structureRaw } = await structurePoints({ caseType, caseTitle, points: grounded }));
     } catch (parseErr) {
       console.error('Structuring JSON parse failed:', parseErr);
       return res.status(500).json({ error: 'Could not parse AI structuring response', raw: structureRaw });
@@ -254,9 +254,9 @@ router.post('/structure', requireAuth, async (req, res) => {
     // Code-enforced grounding check: strip any leaf that isn't a real,
     // once-used pointId from the validated extraction. This is what makes
     // fidelity guaranteed rather than merely requested.
-    const knownIds = new Set(grounded.map(p => p.id));
+    const pointsById = new Map(grounded.map(p => [p.id, p]));
     const usedIds = new Set();
-    const cleanedTree = validateAndCleanTree(structured?.tree, knownIds, usedIds);
+    const cleanedTree = validateAndCleanTree(structured?.tree, pointsById, usedIds);
 
     // Anything the candidate said but the model failed to place in the tree
     // is real content too — surface it instead of silently dropping it.

@@ -34,25 +34,34 @@ function normalizeForMatch(text) {
   return String(text || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-// Returns true if `quote` (normalized) is a substring of `transcript` (normalized).
+// Returns true if `quote` is actually present in `transcript`. An exact normalized
+// substring always passes. Otherwise a tightly-windowed fuzzy match tolerates minor
+// Deepgram/model drift (a dropped or swapped word) but not words scattered across
+// the transcript, so a fabricated quote cannot pass by reusing common words.
 function quoteIsGrounded(quote, transcript) {
   if (!quote || !String(quote).trim()) return false;
   const nq = normalizeForMatch(quote);
   const nt = normalizeForMatch(transcript);
   if (nq.length < 3) return false;
   if (nt.includes(nq)) return true;
-  // Allow minor Deepgram/model drift: require most of the quote's words to
-  // appear in order within a reasonably tight window of the transcript.
   const qWords = nq.split(' ');
+  // Too short to fuzzy-match safely: must be an exact substring.
+  if (qWords.length < 4) return false;
   const tWords = nt.split(' ');
-  let ti = 0, matched = 0;
-  for (let qi = 0; qi < qWords.length; qi++) {
-    const idx = tWords.indexOf(qWords[qi], ti);
-    if (idx === -1) continue;
-    matched++;
-    ti = idx + 1;
+  const windowSize = Math.ceil(qWords.length * 1.25) + 1;
+  for (let start = 0; start + 1 <= tWords.length; start++) {
+    if (tWords[start] !== qWords[0]) continue;
+    const end = Math.min(tWords.length, start + windowSize);
+    let ti = start, matched = 0;
+    for (const w of qWords) {
+      const idx = tWords.indexOf(w, ti);
+      if (idx === -1 || idx >= end) continue;
+      matched++;
+      ti = idx + 1;
+    }
+    if (matched / qWords.length >= 0.85) return true;
   }
-  return matched / qWords.length >= 0.8;
+  return false;
 }
 
 module.exports = { extractFirstJsonObject, parseJsonReply, normalizeForMatch, quoteIsGrounded };
