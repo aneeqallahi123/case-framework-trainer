@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const { requireAuth } = require('../middleware/auth');
-const { extractFirstJsonObject, quoteIsGrounded } = require('../lib/json');
+const { runStructure } = require('../lib/structure');
 
 const router = express.Router();
 
@@ -42,179 +42,6 @@ router.post('/', requireAuth, upload.single('audio'), async (req, res) => {
   }
 });
 
-async function generateJson(prompt) {
-  const Anthropic = require('@anthropic-ai/sdk');
-  const clientOpts = { apiKey: process.env.ANTHROPIC_API_KEY };
-  if (process.env.ANTHROPIC_WORKSPACE_ID) {
-    clientOpts.defaultHeaders = { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID };
-  }
-  const client = new Anthropic(clientOpts);
-  const response = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
-    max_tokens: 8000,
-    temperature: 0,
-    messages: [{ role: 'user', content: prompt }]
-  });
-  const raw = response.content.find(b => b.type === 'text')?.text?.trim() || '';
-  let cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-  cleaned = extractFirstJsonObject(cleaned) || cleaned;
-  return { raw, parsed: JSON.parse(cleaned) };
-}
-
-// STAGE 1 — extraction. Pulls a flat list of atomic points out of the transcript,
-// each anchored to a verbatim quote. Points whose quote can't be found in the
-// transcript are dropped by code (not by trusting the model), so nothing enters
-// stage 2 that wasn't actually said.
-async function extractPoints(transcript) {
-  const prompt = `A candidate just delivered a case interview framework out loud. Below is the raw transcript (messy — filler words, run-ons, restatements).
-
-Transcript:
-"${transcript}"
-
-## Your job
-
-Extract the **terminal analytical areas** the candidate named — the actual leaf-level things they said they would examine. These are the specific, concrete areas of analysis (e.g. "price sensitivity", "labor costs", "average items per transaction").
-
-## What NOT to extract
-- Structural announcements that introduce a container the candidate immediately breaks down further. For example, if they say "within revenue I'll look at price and volume — within price I'll look at price sensitivity and average price per category", then "revenue" and "price" are containers, NOT extraction points. Extract only "price sensitivity" and "average price per category".
-- Meta-commentary like "I'll be thinking about X and Y" is NOT a point when X and Y are themselves broken down into sub-areas.
-- Do not extract a parent bucket as a separate point if the candidate explicitly lists its sub-components.
-
-## What TO extract
-Only the terminal leaves — the most specific analytical areas the candidate mentioned that are NOT further broken down by the candidate themselves.
-
-For EACH point, give:
-- "text": a short, clean paraphrase of the idea (a business phrase, 2-8 words)
-- "quote": the exact verbatim words from the transcript that this point is based on (copy them exactly, do not paraphrase the quote itself — it must be a real substring of the transcript above)
-- "metric": if the candidate stated an actual number for this point, {"before":"...","after":"...","unit":"..."} or {"value":"...","unit":"..."}; otherwise null
-
-## CRITICAL
-- Every point must be traceable to words the candidate actually said. Do not add points for ideas that weren't spoken, even standard/expected ones.
-- "quote" must be copied verbatim from the transcript — not reworded, not summarized. This is what makes the point verifiable.
-- If the candidate only said 2 things, return 2 points. Do not pad the list.
-- A MECE tree has containers (Revenue, Costs) that are NOT leaf points — only the terminal items under them are leaf points.
-
-Return ONLY JSON, no markdown fences:
-{ "points": [ { "id": "p1", "text": "...", "quote": "...", "metric": null } ] }`;
-
-  const { raw, parsed } = await generateJson(prompt);
-  const points = Array.isArray(parsed.points) ? parsed.points : [];
-
-  const grounded = [];
-  const dropped = [];
-  points.forEach((p, i) => {
-    const id = p.id || `p${i + 1}`;
-    if (p && typeof p.text === 'string' && quoteIsGrounded(p.quote, transcript)) {
-      grounded.push({ id, text: p.text.trim(), quote: p.quote, metric: p.metric || null });
-    } else {
-      dropped.push({ id, text: p && p.text, quote: p && p.quote });
-    }
-  });
-
-  if (dropped.length) {
-    console.warn(`Structure: dropped ${dropped.length} ungrounded point(s):`, dropped.map(d => d.text));
-  }
-
-  return { grounded, raw };
-}
-
-// STAGE 2 — structuring. The model organizes ONLY the pre-validated points into
-// a MECE tree by referencing their ids; it cannot introduce new leaf content.
-// Bucket/grouping labels (nodes with no pointId) are the only freeform text
-// allowed, since those are structural, not content.
-async function structurePoints({ caseType, caseTitle, points }) {
-  const pointsList = points.map(p => `- id: ${p.id} | text: "${p.text}"${p.metric ? ` | metric: ${JSON.stringify(p.metric)}` : ''}`).join('\n');
-
-  const prompt = `You are a McKinsey case interview coach who is an expert at building MECE issue trees — the kind found in real casebooks (Wharton, Yale, Darden, MBB).
-
-Case: "${caseTitle || 'Unknown case'}"
-Case type: ${caseType || 'general'}
-
-A candidate delivered a framework verbally. It has already been broken into these validated atomic LEAF points (the most terminal analysis areas the candidate mentioned — extracted from their actual words):
-
-${pointsList}
-
-## Your job
-
-Organize ONLY these points into a hierarchical MECE issue tree. In a proper MECE issue tree:
-- The ROOT is the central question being analyzed
-- INTERMEDIATE nodes are grouping containers (e.g. "Revenue", "Costs", "Variable Costs") — they have NO pointId
-- LEAF nodes are the terminal analysis areas — each must reference exactly one pointId from the list above
-
-Rules:
-- Every point above MUST appear as exactly one leaf node in the tree. Do not drop any.
-- Do NOT invent new leaf nodes. The only new nodes you may add are intermediate grouping containers.
-- Grouping labels should be short business phrases (2-5 words) that name the category, NOT describe an action (use "Variable Costs" not "Analyze variable costs").
-- A leaf node's "label" must match the point's "text" field verbatim — do not reword.
-- Infer the grouping structure from how the candidate presented the points (the sequence and logical relationships in the transcript).
-- Only as many top-level branches as naturally emerge from the points — do not pad.
-
-- Grouping labels must be generic categories that cover the points beneath them. If the candidate named a grouping in their own words, prefer their wording. Never use a grouping label to introduce a topic that none of the points beneath it covers.
-
-## Output format
-
-Return ONLY JSON, no markdown fences:
-{
-  "frameworkType": "e.g. Profitability / Market Entry / Pricing / Growth / M&A / Operations",
-  "hypothesis": "One sentence: what is the candidate's main hypothesis or angle, based only on the points above?",
-  "tree": {
-    "label": "Root node — the case question, rephrased short",
-    "children": [
-      {
-        "label": "Grouping label OR a point's text",
-        "pointId": "p1 or null if this is a grouping node",
-        "metric": null,
-        "children": []
-      }
-    ]
-  },
-  "meceNotes": ["Any overlap or gap in MECE-ness you noticed across the top-level branches"],
-  "gaps": ["Important standard elements this case type usually needs that are absent from the points list — feedback only, do not add them to the tree"],
-  "strengths": ["What they did well in their structure"],
-  "overallQuality": "strong | ok | weak"
-}
-
-## Rules
-- Only as many top-level branches as naturally group the given points — do not pad the count.
-- Every leaf must carry a "pointId" that matches one of the ids listed above, exactly once each across the whole tree.
-- Grouping nodes must have "pointId": null.
-- Be honest about quality — a small tree that faithfully reflects a thin answer should score lower on completeness than a large one, so there is no incentive to invent content.`;
-
-  const { raw, parsed } = await generateJson(prompt);
-  return { raw, structured: parsed };
-}
-
-// Validates that every leaf in the tree maps to a real, known pointId, and
-// collects which pointIds were actually placed. Leaf label/metric are overwritten
-// from the validated point. Strips any leaf that references an unknown pointId (defensive — should not happen given the
-// stage-2 prompt, but we don't trust model output blindly).
-function validateAndCleanTree(node, pointsById, usedIds) {
-  if (!node || typeof node !== 'object') return null;
-  const children = Array.isArray(node.children) ? node.children : [];
-  const cleanedChildren = children
-    .map(child => validateAndCleanTree(child, pointsById, usedIds))
-    .filter(Boolean);
-
-  if (node.pointId != null) {
-    const point = pointsById.get(node.pointId);
-    if (!point) {
-      console.warn(`Structure: dropping node with unknown pointId "${node.pointId}"`);
-      return null;
-    }
-    if (usedIds.has(node.pointId)) {
-      console.warn(`Structure: dropping duplicate node for pointId "${node.pointId}"`);
-      return null;
-    }
-    usedIds.add(node.pointId);
-    // Leaf content comes from the validated extraction, never from the model's
-    // stage-2 output, so labels and metrics cannot be reworded or invented.
-    return { ...node, label: point.text, metric: point.metric || null, quote: point.quote, children: [] };
-  }
-
-  // Grouping nodes are structural only and never carry a metric.
-  return { ...node, metric: null, children: cleanedChildren };
-}
-
 // POST /api/transcribe/structure  - send transcript text, get back structured framework JSON
 router.post('/structure', requireAuth, async (req, res) => {
   const { transcript, caseType, caseTitle } = req.body;
@@ -223,61 +50,19 @@ router.post('/structure', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Transcript is too short to structure' });
   }
 
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('Structure route: ANTHROPIC_API_KEY is not set');
+    return res.status(500).json({ error: 'AI structuring unavailable — ANTHROPIC_API_KEY not configured' });
+  }
+
   try {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      console.error('Structure route: ANTHROPIC_API_KEY is not set');
-      return res.status(500).json({ error: 'AI structuring unavailable — ANTHROPIC_API_KEY not configured' });
-    }
-
-    // Stage 1: extract atomic points and drop anything not grounded in the transcript.
-    let extractRaw, grounded;
-    try {
-      ({ grounded, raw: extractRaw } = await extractPoints(transcript));
-    } catch (parseErr) {
-      console.error('Extraction JSON parse failed:', parseErr);
-      return res.status(500).json({ error: 'Could not parse AI extraction response', raw: extractRaw });
-    }
-
-    if (grounded.length === 0) {
-      return res.status(500).json({ error: 'Could not extract any grounded points from the transcript' });
-    }
-
-    // Stage 2: structure only the validated points into a tree.
-    let structureRaw, structured;
-    try {
-      ({ structured, raw: structureRaw } = await structurePoints({ caseType, caseTitle, points: grounded }));
-    } catch (parseErr) {
-      console.error('Structuring JSON parse failed:', parseErr);
-      return res.status(500).json({ error: 'Could not parse AI structuring response', raw: structureRaw });
-    }
-
-    // Code-enforced grounding check: strip any leaf that isn't a real,
-    // once-used pointId from the validated extraction. This is what makes
-    // fidelity guaranteed rather than merely requested.
-    const pointsById = new Map(grounded.map(p => [p.id, p]));
-    const usedIds = new Set();
-    const cleanedTree = validateAndCleanTree(structured?.tree, pointsById, usedIds);
-
-    // Anything the candidate said but the model failed to place in the tree
-    // is real content too — surface it instead of silently dropping it.
-    const missing = grounded.filter(p => !usedIds.has(p.id));
-    if (missing.length && cleanedTree) {
-      console.warn(`Structure: ${missing.length} extracted point(s) never placed in tree:`, missing.map(p => p.text));
-      cleanedTree.children = cleanedTree.children || [];
-      cleanedTree.children.push({
-        label: 'Other points mentioned',
-        pointId: null,
-        metric: null,
-        children: missing.map(p => ({ label: p.text, pointId: p.id, metric: p.metric || null, children: [] }))
-      });
-    } else if (missing.length) {
-      console.warn(`Structure: ${missing.length} extracted point(s) unplaced and tree is null — points:`, missing.map(p => p.text));
-    }
-
-    if (structured) structured.tree = cleanedTree;
+    const structured = await runStructure({ transcript, caseType, caseTitle });
     res.json({ structured });
   } catch (err) {
     console.error('Structure route error:', err);
+    if (err.stage === 'extraction') return res.status(500).json({ error: 'Could not parse AI extraction response' });
+    if (err.stage === 'structuring') return res.status(500).json({ error: 'Could not parse AI structuring response' });
+    if (err.stage === 'empty') return res.status(500).json({ error: err.message });
     res.status(500).json({ error: 'AI structuring unavailable' });
   }
 });
