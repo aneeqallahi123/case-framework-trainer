@@ -8,6 +8,15 @@ const router = express.Router();
 // Store audio in memory (not disk) - fine for short recordings
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
+// Domain vocabulary Nova-3 should favour (keyterm prompting)
+const KEYTERMS = [
+  'MECE', 'profitability', 'market entry', 'break-even', 'pricing',
+  'unit economics', 'revenue', 'cost structure', 'fixed costs', 'variable costs',
+  'market size', 'market share', 'competitors', 'value proposition',
+  'customer segments', 'framework', 'synergies', 'due diligence', 'ROI', 'NPV',
+  'EBITDA', 'CAGR', 'P&L', 'TAM', 'SAM', 'SOM'
+];
+
 // POST /api/transcribe  - send audio blob, get back plain transcript
 router.post('/', requireAuth, upload.single('audio'), async (req, res) => {
   if (!req.file) {
@@ -21,7 +30,8 @@ router.post('/', requireAuth, upload.single('audio'), async (req, res) => {
     const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
       req.file.buffer,
       {
-        model: 'nova-2',
+        model: 'nova-3',
+        keyterm: KEYTERMS,
         smart_format: true,
         punctuate: true,
         paragraphs: true,
